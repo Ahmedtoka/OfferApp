@@ -125,7 +125,7 @@ class BogoCalculatorTest extends TestCase
 
     public function test_offer_constants(): void
     {
-        config(['shopify.shared_constants_path' => dirname(__DIR__, 4).'/../shared/offer-constants.json']);
+        config(['shopify.shared_constants_path' => dirname(__DIR__, 4).'/shared/offer-constants.json']);
         $this->assertSame(30, OfferConstants::get('defaultPercent'));
         $this->assertSame('خصم 30%', OfferConstants::percentMessage(30));
     }
