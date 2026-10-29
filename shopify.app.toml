@@ -2,7 +2,7 @@
 # Ownership/hostname are configuration (design §3): change here and in web/.env only.
 client_id = "46f2939b12c1c3a59f0da6f5b16d4416"
 name = "offer-app"
-handle = "offer-app"
+handle = "levoile-bogo-offer"
 application_url = "https://offer.arenahere.com"
 embedded = true
 
