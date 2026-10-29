@@ -1,0 +1,1 @@
+{ "discountAutomaticAppCreate": { "automaticAppDiscount": null, "userErrors": [ { "field": ["automaticAppDiscount"], "message": "Function is not available" } ] } }

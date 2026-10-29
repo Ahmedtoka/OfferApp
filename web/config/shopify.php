@@ -19,6 +19,9 @@ return [
         explode(',', (string) env('SHOPIFY_ALLOWED_SHOPS', ''))
     ))),
 
+    // Title of our Discount Function as Shopify reports it (extension name).
+    'function_title' => env('SHOPIFY_FUNCTION_TITLE', 'BOGO Discount (Le Voile)'),
+
     // Absolute, or relative to base_path().
     'shared_constants_path' => env('SHOPIFY_SHARED_CONSTANTS_PATH', base_path('../shared/offer-constants.json')),
 ];
