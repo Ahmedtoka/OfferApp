@@ -1,0 +1,145 @@
+{
+  "payload": {
+    "export": "cart-lines-discounts-generate-run",
+    "target": "cart.lines.discounts.generate.run",
+    "input": {
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/a",
+            "quantity": 1,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "10.0"
+              },
+              "compareAtAmountPerQuantity": {
+                "amount": "500.0"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/a",
+              "product": {
+                "id": "gid://shopify/Product/a",
+                "isGiftCard": false
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/b",
+            "quantity": 1,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "500.0"
+              },
+              "compareAtAmountPerQuantity": {
+                "amount": "510.0"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/b",
+              "product": {
+                "id": "gid://shopify/Product/b",
+                "isGiftCard": false
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/c",
+            "quantity": 1,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "20.0"
+              },
+              "compareAtAmountPerQuantity": {
+                "amount": "520.0"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/c",
+              "product": {
+                "id": "gid://shopify/Product/c",
+                "isGiftCard": false
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/d",
+            "quantity": 1,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "530.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/d",
+              "product": {
+                "id": "gid://shopify/Product/d",
+                "isGiftCard": false
+              }
+            }
+          }
+        ]
+      },
+      "discount": {
+        "discountClasses": [
+          "PRODUCT"
+        ]
+      },
+      "shop": {
+        "metafield": {
+          "value": "{\"enabled\":true,\"percent\":30}"
+        }
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "productDiscountsAdd": {
+            "selectionStrategy": "ALL",
+            "candidates": [
+              {
+                "message": "هدية",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/a",
+                      "quantity": 1
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "10.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              },
+              {
+                "message": "هدية",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/b",
+                      "quantity": 1
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "500.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

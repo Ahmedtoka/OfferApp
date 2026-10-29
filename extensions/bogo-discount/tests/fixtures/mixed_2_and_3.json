@@ -1,0 +1,120 @@
+{
+  "payload": {
+    "export": "cart-lines-discounts-generate-run",
+    "target": "cart.lines.discounts.generate.run",
+    "input": {
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/X",
+            "quantity": 2,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "1200.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/X",
+              "product": {
+                "id": "gid://shopify/Product/X",
+                "isGiftCard": false
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/Y",
+            "quantity": 3,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "900.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/Y",
+              "product": {
+                "id": "gid://shopify/Product/Y",
+                "isGiftCard": false
+              }
+            }
+          }
+        ]
+      },
+      "discount": {
+        "discountClasses": [
+          "PRODUCT"
+        ]
+      },
+      "shop": {
+        "metafield": {
+          "value": "{\"enabled\":true,\"percent\":30}"
+        }
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "productDiscountsAdd": {
+            "selectionStrategy": "ALL",
+            "candidates": [
+              {
+                "message": "هدية",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/X",
+                      "quantity": 1
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "1200.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              },
+              {
+                "message": "هدية",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/Y",
+                      "quantity": 1
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "900.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              },
+              {
+                "message": "خصم 30%",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/Y",
+                      "quantity": 1
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "270.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
