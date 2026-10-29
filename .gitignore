@@ -1,0 +1,13 @@
+node_modules/
+web/vendor/
+web/.env
+web/storage/*.key
+web/storage/logs/
+web/storage/framework/cache/data/
+web/storage/framework/sessions/
+web/storage/framework/views/
+extensions/*/dist/
+.shopify/
+*.wasm
+.DS_Store
+Thumbs.db
