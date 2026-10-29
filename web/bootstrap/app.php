@@ -3,6 +3,7 @@
 use App\Http\Middleware\EmbeddedCsp;
 use App\Http\Middleware\VerifyAdminQueryHmac;
 use App\Http\Middleware\VerifySessionToken;
+use App\Http\Middleware\VerifyWebhookHmac;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -19,7 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'shopify.session' => VerifySessionToken::class,
             'shopify.hmac' => VerifyAdminQueryHmac::class,
+            'shopify.webhook' => VerifyWebhookHmac::class,
         ]);
+        $middleware->validateCsrfTokens(except: ['webhooks']);
         $middleware->appendToGroup('web', EmbeddedCsp::class);
         $middleware->appendToGroup('api', EmbeddedCsp::class);
     })
