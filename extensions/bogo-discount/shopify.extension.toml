@@ -1,0 +1,18 @@
+api_version = "2026-07"
+
+[[extensions]]
+name = "BOGO Discount (Le Voile)"
+handle = "bogo-discount"
+type = "function"
+uid = "050ce38e-0022-3f5b-0588-76a130a3ad3551d3f0b7"
+description = "Buy one get one free, or one piece alone at N% off"
+
+  [[extensions.targeting]]
+  target = "cart.lines.discounts.generate.run"
+  input_query = "src/cart_lines_discounts_generate_run.graphql"
+  export = "cart-lines-discounts-generate-run"
+
+
+  [extensions.build]
+  command = ""
+  path = "dist/function.wasm"

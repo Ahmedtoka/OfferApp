@@ -1,0 +1,34 @@
+{
+  "cart": {
+    "lines": [
+      {
+        "id": "gid://shopify/CartLine/0",
+        "quantity": 3,
+        "cost": {
+          "amountPerQuantity": {
+            "amount": "900.0"
+          },
+          "compareAtAmountPerQuantity": null
+        },
+        "merchandise": {
+          "__typename": "ProductVariant",
+          "id": "gid://shopify/ProductVariant/1",
+          "product": {
+            "id": "gid://shopify/Product/1",
+            "isGiftCard": false
+          }
+        }
+      }
+    ]
+  },
+  "discount": {
+    "discountClasses": [
+      "PRODUCT"
+    ]
+  },
+  "shop": {
+    "metafield": {
+      "value": "{\"enabled\":true,\"percent\":30}"
+    }
+  }
+}

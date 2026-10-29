@@ -1,0 +1,31 @@
+# Le Voile BOGO offer app — Shopify app configuration.
+# Ownership/hostname are configuration (design §3): change here and in web/.env only.
+client_id = "46f2939b12c1c3a59f0da6f5b16d4416"
+name = "offer-app"
+handle = "offer-app"
+application_url = "https://offer.arenahere.com"
+embedded = true
+
+[build]
+include_config_on_deploy = true
+automatically_update_urls_on_dev = true
+
+[webhooks]
+api_version = "2027-01"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "/webhooks"
+
+[access_scopes]
+# write_discounts: create/update the single automatic discount hosting the Function
+# read_orders: analytics (last 60 days only)
+# read_products: compareAtPrice for the scenario-2 recalculation
+scopes = "write_discounts,read_orders,read_products"
+
+[auth]
+redirect_urls = [ "https://offer.arenahere.com/auth/callback" ]

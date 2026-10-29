@@ -1,0 +1,23 @@
+query CartInput {
+  cart {
+    lines {
+      id
+      quantity
+      cost {
+        amountPerQuantity { amount }
+        compareAtAmountPerQuantity { amount }
+      }
+      merchandise {
+        __typename
+        ... on ProductVariant {
+          id
+          product { id isGiftCard }
+        }
+      }
+    }
+  }
+  discount { discountClasses }
+  shop {
+    metafield(namespace: "$app:bogo", key: "config") { value }
+  }
+}
