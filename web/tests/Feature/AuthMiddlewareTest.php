@@ -114,12 +114,12 @@ class AuthMiddlewareTest extends TestCase
 
     public function test_admin_load_with_bad_hmac_is_401(): void
     {
-        $this->get('/?shop=levoilestores.myshopify.com&timestamp=1&hmac=bad')->assertStatus(401);
+        $this->assertEmpty401($this->get('/?shop=levoilestores.myshopify.com&timestamp=1&hmac=bad'));
     }
 
     public function test_admin_load_without_hmac_or_id_token_is_401(): void
     {
-        $this->get('/?shop=levoilestores.myshopify.com')->assertStatus(401);
+        $this->assertEmpty401($this->get('/?shop=levoilestores.myshopify.com'));
     }
 
     public function test_admin_load_with_valid_hmac_for_disallowed_shop_is_401(): void
@@ -127,7 +127,7 @@ class AuthMiddlewareTest extends TestCase
         $params = ['shop' => 'evil.myshopify.com', 'timestamp' => '1700000000'];
         $params['hmac'] = SessionTokens::signQuery($params);
 
-        $this->get('/?'.http_build_query($params))->assertStatus(401);
+        $this->assertEmpty401($this->get('/?'.http_build_query($params)));
     }
 
     public function test_admin_load_with_correct_hmac_is_200_with_shop_csp(): void
@@ -145,6 +145,15 @@ class AuthMiddlewareTest extends TestCase
         $this->assertFalse($res->headers->has('X-Frame-Options'));
     }
 
+    public function test_admin_load_hmac_excludes_signature_param(): void
+    {
+        $params = ['shop' => SessionTokens::SHOP, 'timestamp' => '1700000000'];
+        $params['hmac'] = SessionTokens::signQuery($params);
+        $params['signature'] = 'legacy-signature-value';
+
+        $this->get('/?'.http_build_query($params))->assertOk();
+    }
+
     public function test_admin_load_with_valid_id_token_is_200(): void
     {
         $res = $this->get('/?'.http_build_query(['shop' => SessionTokens::SHOP, 'id_token' => SessionTokens::mint()]));
@@ -155,12 +164,12 @@ class AuthMiddlewareTest extends TestCase
 
     public function test_admin_load_with_id_token_for_other_shop_param_is_401(): void
     {
-        $this->get('/?'.http_build_query(['shop' => 'levoilest.myshopify.com', 'id_token' => SessionTokens::mint()]))->assertStatus(401);
+        $this->assertEmpty401($this->get('/?'.http_build_query(['shop' => 'levoilest.myshopify.com', 'id_token' => SessionTokens::mint()])));
     }
 
     public function test_admin_load_with_invalid_id_token_is_401(): void
     {
-        $this->get('/?'.http_build_query(['shop' => SessionTokens::SHOP, 'id_token' => SessionTokens::mint(['aud' => 'x'])]))->assertStatus(401);
+        $this->assertEmpty401($this->get('/?'.http_build_query(['shop' => SessionTokens::SHOP, 'id_token' => SessionTokens::mint(['aud' => 'x'])])));
     }
 
     public function test_rejected_load_gets_frame_ancestors_none(): void

@@ -47,6 +47,8 @@ class SessionTokenTest extends TestCase
             'iss host differs from dest' => [fn () => SessionTokens::mint(['iss' => 'https://evil.myshopify.com/admin'], $now)],
             'dest not a myshopify host' => [fn () => SessionTokens::mint(['dest' => 'https://levoilestores.myshopify.com.evil.com', 'iss' => 'https://levoilestores.myshopify.com.evil.com/admin'], $now)],
             'alg none' => [fn () => SessionTokens::mint([], $now, SessionTokens::API_SECRET, ['alg' => 'none'])],
+            'alg RS256' => [fn () => SessionTokens::mint([], $now, SessionTokens::API_SECRET, ['alg' => 'RS256', 'typ' => 'JWT'])],
+            'string exp' => [fn () => SessionTokens::mint(['exp' => (string) ($now + 60)], $now)],
             'tampered payload' => [function () use ($now) {
                 [$h, , $s] = explode('.', SessionTokens::mint([], $now));
                 $p = SessionTokens::b64(json_encode(SessionTokens::claims(['sub' => '1'], $now)));

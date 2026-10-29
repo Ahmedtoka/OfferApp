@@ -38,7 +38,8 @@ class VerifyAdminQueryHmac
     {
         $secret = (string) config('shopify.api_secret');
         $hmac = $query['hmac'];
-        unset($query['hmac']);
+        // Shopify excludes both `hmac` and the legacy `signature` param from the signed message.
+        unset($query['hmac'], $query['signature']);
 
         if ($secret === '' || ! is_string($hmac) || ! is_string($query['shop'] ?? null)) {
             return null;

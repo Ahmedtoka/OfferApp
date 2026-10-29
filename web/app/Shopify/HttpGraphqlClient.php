@@ -3,6 +3,7 @@
 namespace App\Shopify;
 
 use App\Models\Shop;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
@@ -21,9 +22,14 @@ class HttpGraphqlClient implements GraphqlClient
         }
 
         $version = config('shopify.api_version');
-        $response = Http::withHeaders(['X-Shopify-Access-Token' => $installed->access_token])
-            ->acceptJson()->asJson()->timeout(20)
-            ->post("https://{$installed->shop_domain}/admin/api/{$version}/graphql.json", $payload);
+        try {
+            $response = Http::withHeaders(['X-Shopify-Access-Token' => $installed->access_token])
+                ->acceptJson()->asJson()->timeout(20)
+                ->post("https://{$installed->shop_domain}/admin/api/{$version}/graphql.json", $payload);
+        } catch (ConnectionException) {
+            // Generic message: the underlying one may carry request details.
+            throw new ShopifyGraphqlException('Shopify GraphQL connection failed');
+        }
 
         return $this->dataFrom($response);
     }

@@ -7,6 +7,7 @@ use App\Shopify\GraphqlClient;
 use App\Shopify\HttpGraphqlClient;
 use App\Shopify\ShopifyGraphqlException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\Support\SessionTokens;
@@ -74,6 +75,18 @@ class HttpGraphqlClientTest extends TestCase
 
         $this->expectException(ShopifyGraphqlException::class);
         app(GraphqlClient::class)->query(SessionTokens::SHOP, '{ x }');
+    }
+
+    public function test_connection_failure_is_wrapped_without_token(): void
+    {
+        Http::fake([self::URL => fn () => throw new ConnectionException('cURL error 28: timed out for '.self::URL)]);
+
+        try {
+            app(GraphqlClient::class)->query(SessionTokens::SHOP, '{ x }');
+            $this->fail('expected exception');
+        } catch (ShopifyGraphqlException $e) {
+            $this->assertStringNotContainsString('shpat_x', $e->getMessage());
+        }
     }
 
     public function test_throws_for_shop_that_is_not_installed(): void

@@ -7,6 +7,7 @@ use App\Shopify\InvalidSessionToken;
 use App\Shopify\SessionToken;
 use App\Shopify\TokenExchange;
 use Closure;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -52,12 +53,26 @@ class VerifySessionToken
             return false;
         }
 
-        Shop::updateOrCreate(['shop_domain' => $shop], [
+        return $this->saveInstall($shop, [
             'access_token' => $token['access_token'],
             'scopes' => $token['scope'],
             'installed_at' => now(),
             'uninstalled_at' => null,
         ]);
+    }
+
+    /** Upsert the Shop row; a concurrent first install that loses the unique race re-reads and updates. */
+    private function saveInstall(string $shop, array $values): bool
+    {
+        try {
+            Shop::updateOrCreate(['shop_domain' => $shop], $values);
+        } catch (UniqueConstraintViolationException) {
+            $existing = Shop::where('shop_domain', $shop)->first();
+            if ($existing === null) {
+                return false;
+            }
+            $existing->update($values);
+        }
 
         return true;
     }
