@@ -1,0 +1,7 @@
+# Lets `shopify app dev` run the Laravel app behind the CLI's tunnel for local/embedded testing.
+name = "laravel"
+roles = ["backend", "frontend"]
+webhooks_path = "/webhooks"
+
+[commands]
+dev = "node dev-server.cjs"
