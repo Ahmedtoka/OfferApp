@@ -1,0 +1,62 @@
+{
+    "orders": {
+        "pageInfo": {
+            "hasNextPage": true,
+            "endCursor": "CUR1"
+        },
+        "nodes": [
+            {
+                "id": "gid://shopify/Order/3001",
+                "name": "#3001",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A"
+                            },
+                            "discountAllocations": []
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "gid://shopify/Order/3002",
+                "name": "#3002",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1100.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/2",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/2",
+                                "title": "Product B"
+                            },
+                            "discountAllocations": []
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

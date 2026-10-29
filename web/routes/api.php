@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -10,3 +11,6 @@ Route::middleware('shopify.session')->group(function () {
     Route::get('/settings', [SettingsController::class, 'show']);
     Route::put('/settings', [SettingsController::class, 'update']);
 });
+
+// Expensive (live Admin GraphQL), so throttled per shop on top of the session check.
+Route::middleware(['shopify.session', 'throttle:analytics'])->get('/analytics', [AnalyticsController::class, 'show']);
