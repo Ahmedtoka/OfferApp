@@ -1,0 +1,14 @@
+{
+  "discountTitle": "اشتري واحدة وخد واحدة",
+  "giftMessage": "هدية",
+  "percentMessageTemplate": "خصم {pct}%",
+  "metafieldNamespace": "$app:bogo",
+  "metafieldKey": "config",
+  "defaultPercent": 30,
+  "minPercent": 1,
+  "maxPercent": 99,
+  "analyticsRanges": [7, 30, 60],
+  "defaultRange": 30,
+  "analyticsOrderCap": 2000,
+  "analyticsCacheSeconds": 600
+}

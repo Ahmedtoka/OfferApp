@@ -1,0 +1,1063 @@
+[
+  {
+    "name": "a",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      }
+    ],
+    "expectedPay": 840,
+    "expectedSaving": 360,
+    "expectedSingle": "A",
+    "perLine": {
+      "A": {
+        "giftQty": 0,
+        "giftAmount": 0,
+        "singleQty": 1,
+        "singleAmount": 360
+      }
+    },
+    "scenario2Pay": 840
+  },
+  {
+    "name": "ac",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      }
+    ],
+    "expectedPay": 1200,
+    "expectedSaving": 900,
+    "expectedGifts": {
+      "C": 1
+    },
+    "perLine": {
+      "C": {
+        "giftQty": 1,
+        "giftAmount": 900,
+        "singleQty": 0,
+        "singleAmount": 0
+      }
+    }
+  },
+  {
+    "name": "abc",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      }
+    ],
+    "expectedPay": 1830,
+    "expectedSaving": 1370,
+    "expectedGifts": {
+      "B": 1
+    },
+    "expectedSingle": "C",
+    "perLine": {
+      "B": {
+        "giftQty": 1,
+        "giftAmount": 1100,
+        "singleQty": 0,
+        "singleAmount": 0
+      },
+      "C": {
+        "giftQty": 0,
+        "giftAmount": 0,
+        "singleQty": 1,
+        "singleAmount": 270
+      }
+    },
+    "scenario2Pay": 1970
+  },
+  {
+    "name": "abcd",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      }
+    ],
+    "expectedPay": 2100,
+    "expectedSaving": 1900,
+    "expectedGifts": {
+      "D": 1,
+      "B": 1
+    }
+  },
+  {
+    "name": "abcde",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      },
+      {
+        "id": "E",
+        "quantity": 1,
+        "pNow": 600,
+        "pFull": 600
+      }
+    ],
+    "expectedPay": 2520,
+    "expectedSaving": 2080,
+    "expectedGifts": {
+      "D": 1,
+      "B": 1
+    },
+    "expectedSingle": "E",
+    "scenario2Pay": 2770
+  },
+  {
+    "name": "a_x2",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 2,
+        "pNow": 1200,
+        "pFull": 1200
+      }
+    ],
+    "expectedPay": 1200,
+    "expectedSaving": 1200,
+    "expectedGifts": {
+      "A": 1
+    },
+    "perLine": {
+      "A": {
+        "giftQty": 1,
+        "giftAmount": 1200,
+        "singleQty": 0,
+        "singleAmount": 0
+      }
+    }
+  },
+  {
+    "name": "a_x3",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 3,
+        "pNow": 1200,
+        "pFull": 1200
+      }
+    ],
+    "expectedPay": 2040,
+    "expectedSaving": 1560,
+    "expectedGifts": {
+      "A": 1
+    },
+    "expectedSingle": "A",
+    "perLine": {
+      "A": {
+        "giftQty": 1,
+        "giftAmount": 1200,
+        "singleQty": 1,
+        "singleAmount": 360
+      }
+    },
+    "scenario2Pay": 2040
+  },
+  {
+    "name": "markdown_single_800",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 1000
+      }
+    ],
+    "expectedPay": 700,
+    "expectedSaving": 100,
+    "expectedSingle": "A",
+    "perLine": {
+      "A": {
+        "giftQty": 0,
+        "giftAmount": 0,
+        "singleQty": 1,
+        "singleAmount": 100
+      }
+    }
+  },
+  {
+    "name": "markdown_single_650",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 650,
+        "pFull": 1000
+      }
+    ],
+    "expectedPay": 650,
+    "expectedSaving": 0,
+    "expectedSingle": "A"
+  },
+  {
+    "name": "markdown_gift_800",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 1000
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      }
+    ],
+    "expectedPay": 900,
+    "expectedSaving": 800,
+    "expectedGifts": {
+      "A": 1
+    },
+    "perLine": {
+      "A": {
+        "giftQty": 1,
+        "giftAmount": 800,
+        "singleQty": 0,
+        "singleAmount": 0
+      }
+    }
+  },
+  {
+    "name": "sort_by_pnow",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 500,
+        "pFull": 1000
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      }
+    ],
+    "expectedPay": 900,
+    "expectedSaving": 500,
+    "expectedGifts": {
+      "A": 1
+    },
+    "perLine": {
+      "A": {
+        "giftQty": 1,
+        "giftAmount": 500,
+        "singleQty": 0,
+        "singleAmount": 0
+      }
+    }
+  },
+  {
+    "name": "optimality_markdowns",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "a",
+        "quantity": 1,
+        "pNow": 10,
+        "pFull": 500
+      },
+      {
+        "id": "b",
+        "quantity": 1,
+        "pNow": 500,
+        "pFull": 510
+      },
+      {
+        "id": "c",
+        "quantity": 1,
+        "pNow": 20,
+        "pFull": 520
+      },
+      {
+        "id": "d",
+        "quantity": 1,
+        "pNow": 530,
+        "pFull": 530
+      }
+    ],
+    "expectedPay": 550,
+    "expectedSaving": 510,
+    "expectedGifts": {
+      "a": 1,
+      "b": 1
+    }
+  },
+  {
+    "name": "mixed_2_and_3",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "X",
+        "quantity": 2,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "Y",
+        "quantity": 3,
+        "pNow": 900,
+        "pFull": 900
+      }
+    ],
+    "expectedPay": 2730,
+    "expectedSaving": 2370,
+    "expectedGifts": {
+      "X": 1,
+      "Y": 1
+    },
+    "expectedSingle": "Y",
+    "perLine": {
+      "X": {
+        "giftQty": 1,
+        "giftAmount": 1200,
+        "singleQty": 0,
+        "singleAmount": 0
+      },
+      "Y": {
+        "giftQty": 1,
+        "giftAmount": 900,
+        "singleQty": 1,
+        "singleAmount": 270
+      }
+    },
+    "scenario2Pay": 2940
+  },
+  {
+    "name": "empty",
+    "pct": 30,
+    "lines": [],
+    "expectedPay": 0,
+    "expectedSaving": 0
+  },
+  {
+    "name": "n3",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      }
+    ],
+    "expectedPay": 1830,
+    "expectedSaving": 1370,
+    "expectedSingle": "C",
+    "scenario2Pay": 1970
+  },
+  {
+    "name": "n4",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      }
+    ],
+    "expectedPay": 2100,
+    "expectedSaving": 1900,
+    "scenario2Pay": 2100
+  },
+  {
+    "name": "n5",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      },
+      {
+        "id": "E",
+        "quantity": 1,
+        "pNow": 600,
+        "pFull": 600
+      }
+    ],
+    "expectedPay": 2520,
+    "expectedSaving": 2080,
+    "expectedSingle": "E",
+    "scenario2Pay": 2770
+  },
+  {
+    "name": "n6",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      },
+      {
+        "id": "E",
+        "quantity": 1,
+        "pNow": 600,
+        "pFull": 600
+      },
+      {
+        "id": "F",
+        "quantity": 1,
+        "pNow": 700,
+        "pFull": 700
+      }
+    ],
+    "expectedPay": 2800,
+    "expectedSaving": 2500,
+    "scenario2Pay": 2800
+  },
+  {
+    "name": "n7",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      },
+      {
+        "id": "E",
+        "quantity": 1,
+        "pNow": 600,
+        "pFull": 600
+      },
+      {
+        "id": "F",
+        "quantity": 1,
+        "pNow": 700,
+        "pFull": 700
+      },
+      {
+        "id": "G",
+        "quantity": 1,
+        "pNow": 500,
+        "pFull": 500
+      }
+    ],
+    "expectedPay": 3150,
+    "expectedSaving": 2650,
+    "expectedSingle": "G",
+    "scenario2Pay": 3370
+  },
+  {
+    "name": "n8",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      },
+      {
+        "id": "E",
+        "quantity": 1,
+        "pNow": 600,
+        "pFull": 600
+      },
+      {
+        "id": "F",
+        "quantity": 1,
+        "pNow": 700,
+        "pFull": 700
+      },
+      {
+        "id": "G",
+        "quantity": 1,
+        "pNow": 500,
+        "pFull": 500
+      },
+      {
+        "id": "H",
+        "quantity": 1,
+        "pNow": 400,
+        "pFull": 400
+      }
+    ],
+    "expectedPay": 3300,
+    "expectedSaving": 2900,
+    "scenario2Pay": 3300
+  },
+  {
+    "name": "n9",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      },
+      {
+        "id": "E",
+        "quantity": 1,
+        "pNow": 600,
+        "pFull": 600
+      },
+      {
+        "id": "F",
+        "quantity": 1,
+        "pNow": 700,
+        "pFull": 700
+      },
+      {
+        "id": "G",
+        "quantity": 1,
+        "pNow": 500,
+        "pFull": 500
+      },
+      {
+        "id": "H",
+        "quantity": 1,
+        "pNow": 400,
+        "pFull": 400
+      },
+      {
+        "id": "I",
+        "quantity": 1,
+        "pNow": 300,
+        "pFull": 300
+      }
+    ],
+    "expectedPay": 3510,
+    "expectedSaving": 2990,
+    "expectedSingle": "I",
+    "scenario2Pay": 3770
+  },
+  {
+    "name": "n10",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      },
+      {
+        "id": "E",
+        "quantity": 1,
+        "pNow": 600,
+        "pFull": 600
+      },
+      {
+        "id": "F",
+        "quantity": 1,
+        "pNow": 700,
+        "pFull": 700
+      },
+      {
+        "id": "G",
+        "quantity": 1,
+        "pNow": 500,
+        "pFull": 500
+      },
+      {
+        "id": "H",
+        "quantity": 1,
+        "pNow": 400,
+        "pFull": 400
+      },
+      {
+        "id": "I",
+        "quantity": 1,
+        "pNow": 300,
+        "pFull": 300
+      },
+      {
+        "id": "J",
+        "quantity": 1,
+        "pNow": 250,
+        "pFull": 250
+      }
+    ],
+    "expectedPay": 3600,
+    "expectedSaving": 3150,
+    "scenario2Pay": 3600
+  },
+  {
+    "name": "n11",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      },
+      {
+        "id": "E",
+        "quantity": 1,
+        "pNow": 600,
+        "pFull": 600
+      },
+      {
+        "id": "F",
+        "quantity": 1,
+        "pNow": 700,
+        "pFull": 700
+      },
+      {
+        "id": "G",
+        "quantity": 1,
+        "pNow": 500,
+        "pFull": 500
+      },
+      {
+        "id": "H",
+        "quantity": 1,
+        "pNow": 400,
+        "pFull": 400
+      },
+      {
+        "id": "I",
+        "quantity": 1,
+        "pNow": 300,
+        "pFull": 300
+      },
+      {
+        "id": "J",
+        "quantity": 1,
+        "pNow": 250,
+        "pFull": 250
+      },
+      {
+        "id": "K",
+        "quantity": 1,
+        "pNow": 200,
+        "pFull": 200
+      }
+    ],
+    "expectedPay": 3740,
+    "expectedSaving": 3210,
+    "expectedSingle": "K",
+    "scenario2Pay": 4020
+  },
+  {
+    "name": "n12",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      },
+      {
+        "id": "E",
+        "quantity": 1,
+        "pNow": 600,
+        "pFull": 600
+      },
+      {
+        "id": "F",
+        "quantity": 1,
+        "pNow": 700,
+        "pFull": 700
+      },
+      {
+        "id": "G",
+        "quantity": 1,
+        "pNow": 500,
+        "pFull": 500
+      },
+      {
+        "id": "H",
+        "quantity": 1,
+        "pNow": 400,
+        "pFull": 400
+      },
+      {
+        "id": "I",
+        "quantity": 1,
+        "pNow": 300,
+        "pFull": 300
+      },
+      {
+        "id": "J",
+        "quantity": 1,
+        "pNow": 250,
+        "pFull": 250
+      },
+      {
+        "id": "K",
+        "quantity": 1,
+        "pNow": 200,
+        "pFull": 200
+      },
+      {
+        "id": "L",
+        "quantity": 1,
+        "pNow": 150,
+        "pFull": 150
+      }
+    ],
+    "expectedPay": 3800,
+    "expectedSaving": 3300,
+    "scenario2Pay": 3800
+  },
+  {
+    "name": "same2_plus3",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "C",
+        "quantity": 2,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      }
+    ],
+    "expectedPay": 2660,
+    "expectedSaving": 2240,
+    "expectedSingle": "D",
+    "scenario2Pay": 2870
+  },
+  {
+    "name": "same2_plus4",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "C",
+        "quantity": 2,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      },
+      {
+        "id": "E",
+        "quantity": 1,
+        "pNow": 600,
+        "pFull": 600
+      }
+    ],
+    "expectedPay": 2900,
+    "expectedSaving": 2600,
+    "scenario2Pay": 2900
+  },
+  {
+    "name": "same3_plus2",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "C",
+        "quantity": 3,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      }
+    ],
+    "expectedPay": 2730,
+    "expectedSaving": 2270,
+    "expectedSingle": "C",
+    "scenario2Pay": 2870
+  }
+]
