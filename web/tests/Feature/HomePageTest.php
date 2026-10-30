@@ -79,6 +79,15 @@ class HomePageTest extends TestCase
         $this->assertStringContainsString('settings.eligibleTag', $js);
     }
 
+    public function test_app_js_retries_a_failed_get_once_but_never_a_put(): void
+    {
+        $js = (string) file_get_contents(public_path('app.js'));
+
+        $this->assertStringContainsString('const RETRY_DELAY_MS = 800;', $js);
+        $this->assertStringContainsString('const RETRYABLE_STATUSES = [401, 502, 503, 504];', $js);
+        $this->assertStringContainsString("if (method !== 'GET' || !(e instanceof RetryableError))", $js);
+    }
+
     public function test_range_options_default_to_30(): void
     {
         $res = $this->loadAdminPage();

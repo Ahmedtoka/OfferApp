@@ -39,7 +39,25 @@ const formatMoney = (n) => `EGP ${moneyFmt.format(Number(n) || 0)}`;
 
 class ApiError extends Error {}
 
+// A dev-tunnel restart can make the first load fail transiently; GETs get one retry (never PUT: no double save).
+const RETRY_DELAY_MS = 800;
+const RETRYABLE_STATUSES = [401, 502, 503, 504];
+
+class RetryableError extends ApiError {}
+
 async function api(method, path, body) {
+    try {
+        return await apiOnce(method, path, body);
+    } catch (e) {
+        if (method !== 'GET' || !(e instanceof RetryableError)) {
+            throw e;
+        }
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+        return apiOnce(method, path, body); // fresh shopify.idToken() inside
+    }
+}
+
+async function apiOnce(method, path, body) {
     let res;
     try {
         const token = await shopify.idToken();
@@ -53,7 +71,7 @@ async function api(method, path, body) {
             body: body === undefined ? undefined : JSON.stringify(body),
         });
     } catch {
-        throw new ApiError(GENERIC_ERROR);
+        throw new RetryableError(GENERIC_ERROR);
     }
 
     let data = null;
@@ -65,6 +83,9 @@ async function api(method, path, body) {
 
     if (res.status !== 200) {
         const serverError = data && typeof data.error === 'string' && data.error !== '' ? data.error : null;
+        if (serverError === null && RETRYABLE_STATUSES.includes(res.status)) {
+            throw new RetryableError(GENERIC_ERROR);
+        }
         // 422 carries Shopify's / our error string, shown verbatim; anything else without one is generic.
         throw new ApiError(serverError ?? GENERIC_ERROR);
     }
