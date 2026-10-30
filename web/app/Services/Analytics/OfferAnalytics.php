@@ -121,7 +121,9 @@ class OfferAnalytics
                 'quantity' => (int) ($item['quantity'] ?? 0),
                 'pNow' => $pNow,
                 'pFull' => max($pNow, $compare === null ? 0 : BogoCalculator::toPiastres($compare)),
-                'product' => (string) ($item['product']['title'] ?? ''),
+                'product' => ($item['product'] ?? null) === null
+                    ? 'Deleted product'
+                    : (string) ($item['product']['title'] ?? ''),
                 // Same rule as the Function: only products carrying the exact (case-sensitive) tag take part.
                 // Refined per order below: tags are read now, not at order time.
                 'eligible' => in_array($eligibleTag, (array) ($item['product']['tags'] ?? []), true),

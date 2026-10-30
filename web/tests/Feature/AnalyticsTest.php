@@ -134,6 +134,10 @@ class AnalyticsTest extends TestCase
             $this->assertEquals(280.0, $result->scenario2Extra);
             $this->assertSame(4, $result->giftUnits);
             $this->assertSame(3, $result->percentUnits);
+            $this->assertNotEmpty($result->topGifts);
+            foreach ($result->topGifts as $row) {
+                $this->assertSame('Deleted product', $row['title']);
+            }
         }
     }
 
