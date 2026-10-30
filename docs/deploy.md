@@ -281,7 +281,7 @@ shopify app release --version <previous>
 
 ### إيقاف الخصم من Shopify مباشرة
 
-إن تعذّر الوصول إلى الصفحة: Shopify Admin ← **Discounts** ← افتح الخصم الآلي الخاص بالتطبيق (اسمه من `SHOPIFY_FUNCTION_TITLE`) ← **Deactivate**. ملاحظة: أول «حفظ» لاحق من صفحة التطبيق يعيد تفعيل هذا الخصم تلقائياً (ويعرض خطأ أحمر إن رفض Shopify التفعيل).
+إن تعذّر الوصول إلى الصفحة: Shopify Admin ← **Discounts** ← افتح الخصم الآلي الخاص بالتطبيق (اسمه **Buy One Get One**، من `discountTitle` في `shared/offer-constants.json`؛ وتظهر للمتسوق على السطور الرسائل `Gift` و`{pct}% off` (مثل `30% off`)) ← **Deactivate**. ملاحظة: أول «حفظ» لاحق من صفحة التطبيق يعيد تفعيل هذا الخصم تلقائياً (ويعرض خطأ أحمر إن رفض Shopify التفعيل).
 
 ## 8. استكشاف الأخطاء
 
