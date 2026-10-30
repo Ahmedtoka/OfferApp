@@ -107,3 +107,13 @@ Re-check on the embedded page (range 30 يوم), observed from the page:
 
 The stale "مفيش أوردرات" on 30 يوم in Part B was the 10-minute cache holding the earlier empty result; it cleared
 after the TTL. Still not verified: the cache hit itself (timing only), `% من كل الأوردرات` on a store with non-offer orders in range.
+
+## Part C — re-verification after the final review fixes (2026-10-30, controller)
+
+| check | expected | observed | screenshot | result |
+|---|---|---|---|---|
+| One line QA-C × 27 (odd cart, Function rewritten to O(n)) | subtotal 12,330.00 = 13 paid + 1 at 30% (630) + 13 gifts; Function fuel well under 11M | E£12,330.00; rows: 13 × QA-C E£11,700.00, 1 × QA-C E£630.00 «خصم 30%», 13 × QA-C FREE «هدية»; TOTAL SAVINGS E£11,970.00; Function log fuel 758,194 instructions (before the fix: 8.05M) | qty27-checkout-after-fix.jpg | ✅ |
+| Discount deactivated by hand in Shopify (`discountAutomaticDeactivate` → EXPIRED), page reloaded | status line «الخصم موجود في شوبيفاي لكنه مش شغال دلوقتي» | same text shown | admin-discount-deactivated-status.jpg | ✅ |
+| Click «حفظ» with the discount EXPIRED | green banner; discount reactivated; status line back to «شغال» | banner «تم الحفظ وتم تحديث الخصم في شوبيفاي»; status «الخصم موجود وشغال في شوبيفاي»; Admin API read-back `status: ACTIVE` | admin-save-reactivates-discount.jpg | ✅ |
+
+Not verified: a cart above 199 units (fixtures cover 27/51/99/199 units locally only); a 60-day range on a store with more than 250 orders (pagination + throttle retry are unit-tested with fakes only); reactivating a discount whose `endsAt` is in the past (ours has none).
