@@ -11,3 +11,5 @@ extensions/*/dist/
 *.wasm
 .DS_Store
 Thumbs.db
+
+.superpowers/
