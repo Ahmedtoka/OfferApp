@@ -123,6 +123,21 @@ files.percent_40_single_a = fixture(
   buildOutput(A, { A: s(480) }, 40),
 );
 
+// Eligibility (tag FallOffer): untagged lines are ignored completely. abc lines: A 1200, B 1100, C 900.
+const ABC = byName.abc.lines;
+const AB = ABC.filter((l) => l.id !== 'C');
+// A tagged + B untagged: A is alone, so it takes the single (30% of 1200); B is untouched.
+files.untagged_line_ignored = fixture(
+  buildInput(AB, { metafield: meta30, untaggedIds: ['B'] }),
+  buildOutput(AB, { A: s(360) }, 30),
+);
+files.all_untagged = fixture(buildInput(ABC, { metafield: meta30, untaggedIds: ['A', 'B', 'C'] }), EMPTY);
+// A, B tagged + C untagged: two eligible units pair, the cheaper (B) is the gift, no single.
+files.mixed_tags_3_units = fixture(
+  buildInput(ABC, { metafield: meta30, untaggedIds: ['C'] }),
+  buildOutput(ABC, { B: g('B', 1100) }, 30),
+);
+
 // Instruction-budget fixtures (I1): large odd carts. All prices have no markdown (pFull = pNow),
 // so every placement of the single leaves the same gift total and the best single is the
 // first unit of the most expensive line (largest pct% saving, then smallest index).

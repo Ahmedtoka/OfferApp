@@ -11,7 +11,7 @@ const pctMsg = (pct) => constants.percentMessageTemplate.replace('{pct}', String
 
 const money = (v) => ({ amount: toAmountString(toPiastres(v) ).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '.0') });
 
-function inputFor(c, { enabled = true, percent = 30, classes = ['PRODUCT'], metafield, giftCardIds = [] } = {}) {
+function inputFor(c, { enabled = true, percent = 30, classes = ['PRODUCT'], metafield, giftCardIds = [], untaggedIds = [] } = {}) {
   return {
     cart: {
       lines: c.lines.map((l) => ({
@@ -24,7 +24,11 @@ function inputFor(c, { enabled = true, percent = 30, classes = ['PRODUCT'], meta
         merchandise: {
           __typename: 'ProductVariant',
           id: `gid://shopify/ProductVariant/${l.id}`,
-          product: { id: `gid://shopify/Product/${l.id}`, isGiftCard: giftCardIds.includes(l.id) },
+          product: {
+            id: `gid://shopify/Product/${l.id}`,
+            isGiftCard: giftCardIds.includes(l.id),
+            hasAnyTag: !untaggedIds.includes(l.id),
+          },
         },
       })),
     },
@@ -83,6 +87,36 @@ describe('specific shapes', () => {
   });
   it('markdown 650/1000 alone yields no zero-amount candidate', () => {
     expect(run(inputFor(byName('markdown_single_650')))).toEqual({ operations: [] });
+  });
+});
+
+describe('eligibility: only products tagged with the eligible tag', () => {
+  const abc = byName('abc'); // A 1200, B 1100, C 900
+  const ab = { lines: abc.lines.filter((l) => l.id !== 'C') };
+  it('untagged line is ignored: A alone gets the single, B untouched', () => {
+    expect(candidates(run(inputFor(ab, { untaggedIds: ['B'] })))).toEqual([cand('A', 1, pctMsg(30), '360.00')]);
+  });
+  it('all lines untagged: no operations', () => {
+    expect(run(inputFor(abc, { untaggedIds: ['A', 'B', 'C'] }))).toEqual({ operations: [] });
+  });
+  it('A, B tagged + C untagged: A+B pair, B gift, no single', () => {
+    expect(candidates(run(inputFor(abc, { untaggedIds: ['C'] })))).toEqual([cand('B', 1, GIFT, '1100.00')]);
+  });
+  it('untagged line with quantity is never expanded, gifted or paired', () => {
+    const c = { lines: [{ id: 'A', quantity: 1, pNow: 1200, pFull: 1200 }, { id: 'B', quantity: 3, pNow: 2000, pFull: 2000 }] };
+    expect(candidates(run(inputFor(c, { untaggedIds: ['B'] })))).toEqual([cand('A', 1, pctMsg(30), '360.00')]);
+  });
+  it('hasAnyTag missing or not strictly true is not eligible', () => {
+    const input = inputFor(ab);
+    delete input.cart.lines[1].merchandise.product.hasAnyTag;
+    expect(candidates(run(input))).toEqual([cand('A', 1, pctMsg(30), '360.00')]);
+    input.cart.lines[1].merchandise.product.hasAnyTag = 'true';
+    expect(candidates(run(input))).toEqual([cand('A', 1, pctMsg(30), '360.00')]);
+  });
+  it('isGiftCard must be strictly false', () => {
+    const input = inputFor(ab);
+    delete input.cart.lines[1].merchandise.product.isGiftCard;
+    expect(candidates(run(input))).toEqual([cand('A', 1, pctMsg(30), '360.00')]);
   });
 });
 

@@ -1,0 +1,82 @@
+{
+  "payload": {
+    "export": "cart-lines-discounts-generate-run",
+    "target": "cart.lines.discounts.generate.run",
+    "input": {
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/A",
+            "quantity": 1,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "1200.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/A",
+              "product": {
+                "id": "gid://shopify/Product/A",
+                "isGiftCard": false,
+                "hasAnyTag": false
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/B",
+            "quantity": 1,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "1100.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/B",
+              "product": {
+                "id": "gid://shopify/Product/B",
+                "isGiftCard": false,
+                "hasAnyTag": false
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/C",
+            "quantity": 1,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "900.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/C",
+              "product": {
+                "id": "gid://shopify/Product/C",
+                "isGiftCard": false,
+                "hasAnyTag": false
+              }
+            }
+          }
+        ]
+      },
+      "discount": {
+        "discountClasses": [
+          "PRODUCT"
+        ]
+      },
+      "shop": {
+        "metafield": {
+          "value": "{\"enabled\":true,\"percent\":30}"
+        }
+      }
+    },
+    "output": {
+      "operations": []
+    }
+  }
+}

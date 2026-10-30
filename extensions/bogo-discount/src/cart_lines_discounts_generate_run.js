@@ -18,9 +18,16 @@ function readConfig(metafield) {
   return { percent };
 }
 
+// Only real products carrying the eligible tag (queried as product.hasAnyTag) take part in the
+// offer. Every other line is ignored completely: never expanded, gifted, discounted or paired.
+function isEligible(line) {
+  const m = line.merchandise;
+  return m?.__typename === 'ProductVariant' && m.product?.isGiftCard === false && m.product?.hasAnyTag === true;
+}
+
 function discountableLines(cartLines) {
   return cartLines
-    .filter((l) => l.merchandise?.__typename === 'ProductVariant' && !l.merchandise.product?.isGiftCard)
+    .filter(isEligible)
     .map((l) => {
       const pNow = toPiastres(l.cost.amountPerQuantity.amount);
       const compareAt = l.cost.compareAtAmountPerQuantity?.amount;
