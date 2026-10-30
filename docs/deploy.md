@@ -219,6 +219,17 @@ shopify app deploy --version offer-2026-10-30 --message "BOGO launch build"
 shopify app versions list
 ```
 
+### طلب Protected customer data (قبل التثبيت)
+
+بدون هذا الطلب ترفض Shopify قراءة كائن الطلبات (Orders)، وتظهر في كتلة التحليلات رسالة الخطأ «This app is not approved to access the Order object». نُفّذ مرة واحدة لهذا التطبيق بتاريخ 2026-10-30 (الحالة Draft)؛ كرّره فقط إذا أُعيد إنشاء التطبيق.
+
+1. Partner Dashboard ← التطبيق `offer-app` ← **API access requests** ← **Protected customer data access** ← **Request access**. الرابط المباشر لهذا التطبيق: `https://partners.shopify.com/3456935/apps/441694388225/customer_data` (النمط: `https://partners.shopify.com/<partner-id>/apps/<app-id>/customer_data`).
+2. في الخطوة 1 اضغط **Select** بجانب **Protected customer data**.
+3. فعّل السببين **Store management** و**Analytics** ثم **Save**.
+4. **لا تختر أي حقول عملاء محمية** (الاسم/البريد/الهاتف/العنوان)؛ التطبيق لا يقرؤها أبداً.
+
+التطبيق مخصص ومثبّت على متجر المالك نفسه فلا مراجعة مطلوبة: متاجر التطوير تحصل على الوصول فور الخطوة 1، وبند «Data protection details» في الخطوة 2 مطلوب فقط لمراجعة App Store.
+
 ## 5. خطوات ما قبل الإطلاق (قرار المالك بتاريخ 2026-10-30)
 
 يجب ألا يزاحم كود خصم العرض في صفحة الدفع، لذلك:
