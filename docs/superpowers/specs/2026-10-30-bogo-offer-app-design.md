@@ -446,3 +446,9 @@ runs last, against the deployed dev build.
 - Polaris integration approach inside Blade.
 - Test runners and fixture format.
 - Internal naming, folder layout inside `web/`, CI (none required).
+
+---
+
+## Change log
+
+- **2026-10-30** — Eligibility: only products tagged `FallOffer` (`shared/offer-constants.json` → `eligibleTag`, queried as `product.hasAnyTag`) take part in the offer; untagged lines are ignored completely (never expanded, gifted, discounted or paired). Customer-facing and admin strings are English. The single-piece percent is configurable in the admin (1–99, default 30).

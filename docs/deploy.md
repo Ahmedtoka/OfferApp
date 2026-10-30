@@ -241,6 +241,7 @@ shopify app versions list
 5. تأكد أن اختبار متجر التطوير نجح وأن القسم 4 مكتمل (الصلاحيات الثلاث فقط، والنشر تم).
 6. من Shopify Admin ← **Discounts**: عطّل (Deactivate) أو حدّد تاريخ انتهاء لكل **خصم آلي نشط آخر** (basic وBXGY وfree shipping). Shopify يطبّق خصماً آلياً واحداً فقط على المنتجات، وأي خصم آلي آخر قد يزيح العرض.
 7. خصم التطبيق مضبوط بـ `combinesWith` كلها `false`، لذلك تُرفض أكواد الخصم في صفحة الدفع (اختبار QA10).
+8. **Tag every product in the offer with `FallOffer`** (Products → bulk edit → add tag); untagged products sell at normal price and never count as a gift or a pair. (العرض يطبَّق فقط على المنتجات التي تحمل الوسم `FallOffer`، على متجر التطوير والمتجر الحقيقي.)
 
 ## 6. التركيب على المتجر الحقيقي
 
