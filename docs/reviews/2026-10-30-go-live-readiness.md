@@ -64,3 +64,16 @@ Inputs read: spec `docs/superpowers/specs/2026-10-30-bogo-offer-app-design.md` (
 ## Verdict
 
 **NEEDS WORK.** Not certified for `levoilestores.myshopify.com`. The code, tests, build, config, default-off, kill switches and checkout behaviour pass with evidence. Re-run this gate after B1–B3 are closed. Expect one short cycle: hosting, deploy and smoke test, plus a small analytics fix with tests.
+
+## Controller addendum — status after the audit (2026-10-30, later the same day)
+
+| blocker / risk | action taken | status |
+|---|---|---|
+| Analytics counted any discount titled "Gift" / "N% off" | `6d4c17b`: only `AutomaticDiscountApplication` allocations with our titles count; percent bounded 1–99; `\z` anchors; case-insensitive English, exact legacy Arabic; 3 negative/mixed tests (PHP suite 132 passed) | FIXED |
+| Released app version stale (pre-code) | `shopify app deploy --no-release --version 1.0.0` created version **1.0.0** (Function + config, English strings): https://dev.shopify.com/dashboard/129021558/apps/441694388225/versions/1188316938241. Releasing it is a production action — the owner runs `shopify app release --version=1.0.0` (or "Release" in the Dev Dashboard) | READY FOR OWNER |
+| `automatically_update_urls_on_dev = true` could overwrite live URLs | `8f3f01b`: set to `false`; deploy guide §7 "Developing after go-live" explains the separate dev config | FIXED |
+| Other active automatic discounts could displace the offer | deploy guide §5: deactivate/schedule-end them before launch | DOCUMENTED |
+| npm audit (build-time deps), 3-decimal currencies | deploy guide §9 notes | DOCUMENTED (owner accepted npm audit 2026-10-30) |
+| Production hosting `offer.arenahere.com` does not exist | needs the owner's Cloudways access (deploy guide §2–§3) | OPEN — owner |
+| Smoke test of the *released* build on the dev store with `app dev` stopped | blocked until the owner releases 1.0.0 | OPEN — after release |
+| POS / draft orders, Flutter app checkout, analytics vs Shopify's discount report | not testable here | OPEN RISK (accept or verify on live after install, offer still OFF) |
