@@ -178,4 +178,13 @@ class AuthMiddlewareTest extends TestCase
 
         $this->assertSame("frame-ancestors 'none';", $res->headers->get('Content-Security-Policy'));
     }
+
+    /** Security review F2: responses outside the web/api groups (health, 404, 405) must not be frameable either. */
+    public function test_responses_outside_route_groups_get_frame_ancestors_none(): void
+    {
+        foreach ([$this->get('/up'), $this->get('/no-such-page'), $this->get('/api/no-such-endpoint'), $this->post('/')] as $res) {
+            $this->assertSame("frame-ancestors 'none';", $res->headers->get('Content-Security-Policy'));
+            $this->assertFalse($res->headers->has('X-Frame-Options'));
+        }
+    }
 }

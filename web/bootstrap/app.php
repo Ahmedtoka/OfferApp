@@ -23,8 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'shopify.webhook' => VerifyWebhookHmac::class,
         ]);
         $middleware->validateCsrfTokens(except: ['webhooks']);
-        $middleware->appendToGroup('web', EmbeddedCsp::class);
-        $middleware->appendToGroup('api', EmbeddedCsp::class);
+        // Global, so health checks, 404/405 and other error pages are covered too, not just the route groups.
+        $middleware->append(EmbeddedCsp::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
