@@ -5,51 +5,55 @@
   ✓ matches shared fixture with data set "abc"                                                                   0.02s  
   ✓ matches shared fixture with data set "abcd"                                                                  0.02s  
   ✓ matches shared fixture with data set "abcde"                                                                 0.02s  
-  ✓ matches shared fixture with data set "a x2"                                                                  0.02s  
+  ✓ matches shared fixture with data set "a x2"                                                                  0.03s  
   ✓ matches shared fixture with data set "a x3"                                                                  0.02s  
-  ✓ matches shared fixture with data set "markdown single 800"                                                   0.02s  
+  ✓ matches shared fixture with data set "markdown single 800"                                                   0.03s  
   ✓ matches shared fixture with data set "markdown single 650"                                                   0.03s  
   ✓ matches shared fixture with data set "markdown gift 800"                                                     0.03s  
-  ✓ matches shared fixture with data set "sort by pnow"                                                          0.01s  
+  ✓ matches shared fixture with data set "sort by pnow"                                                          0.02s  
   ✓ matches shared fixture with data set "optimality markdowns"                                                  0.02s  
   ✓ matches shared fixture with data set "mixed 2 and 3"                                                         0.02s  
   ✓ matches shared fixture with data set "empty"                                                                 0.02s  
-  ✓ matches shared fixture with data set "n3"                                                                    0.02s  
+  ✓ matches shared fixture with data set "n3"                                                                    0.03s  
   ✓ matches shared fixture with data set "n4"                                                                    0.02s  
-  ✓ matches shared fixture with data set "n5"                                                                    0.01s  
+  ✓ matches shared fixture with data set "n5"                                                                    0.03s  
   ✓ matches shared fixture with data set "n6"                                                                    0.02s  
-  ✓ matches shared fixture with data set "n7"                                                                    0.02s  
+  ✓ matches shared fixture with data set "n7"                                                                    0.03s  
   ✓ matches shared fixture with data set "n8"                                                                    0.02s  
   ✓ matches shared fixture with data set "n9"                                                                    0.02s  
   ✓ matches shared fixture with data set "n10"                                                                   0.02s  
-  ✓ matches shared fixture with data set "n11"                                                                   0.02s  
+  ✓ matches shared fixture with data set "n11"                                                                   0.03s  
   ✓ matches shared fixture with data set "n12"                                                                   0.02s  
-  ✓ matches shared fixture with data set "same2 plus3"                                                           0.02s  
+  ✓ matches shared fixture with data set "same2 plus3"                                                           0.03s  
   ✓ matches shared fixture with data set "same2 plus4"                                                           0.02s  
-  ✓ matches shared fixture with data set "same3 plus2"                                                           0.02s  
-  ✓ single discount rounds half up at boundary                                                                   0.02s  
+  ✓ matches shared fixture with data set "same3 plus2"                                                           0.03s  
+  ✓ single discount rounds half up at boundary                                                                   0.03s  
   ✓ single unit set for odd cart even with zero discount                                                         0.02s  
-  ✓ even cart has no single                                                                                      0.03s  
+  ✓ even cart has no single                                                                                      0.02s  
   ✓ to piastres                                                                                                  0.02s  
   ✓ offer constants                                                                                              0.02s  
 
    PASS  Tests\Unit\ShopTest
-  ✓ allowed shop is accepted case insensitively                                                                  0.17s  
+  ✓ allowed shop is accepted case insensitively                                                                  0.25s  
   ✓ unknown or malformed domains are rejected                                                                    0.02s  
-  ✓ access token is encrypted at rest and round trips                                                            0.05s  
-  ✓ active returns only installed shops                                                                          0.02s  
+  ✓ access token is encrypted at rest and round trips                                                            0.06s  
+  ✓ active returns only installed shops                                                                          0.03s  
 
    PASS  Tests\Unit\Shopify\HttpGraphqlClientTest
+  ✓ throttled twice then success returns data after three calls                                                  0.10s  
+  ✓ throttled four times throws after three retries                                                              0.03s  
+  ✓ http 429 four times throws                                                                                   0.03s  
+  ✓ non throttle error is not retried                                                                            0.03s  
   ✓ container binds interface to http client                                                                     0.03s  
-  ✓ returns data and sends access token                                                                          0.06s  
-  ✓ mutation user errors are returned for the service to check                                                   0.02s  
+  ✓ returns data and sends access token                                                                          0.03s  
+  ✓ mutation user errors are returned for the service to check                                                   0.03s  
   ✓ throws on top level errors with messages                                                                     0.03s  
-  ✓ throws on non 200                                                                                            0.02s  
-  ✓ connection failure is wrapped without token                                                                  0.02s  
+  ✓ throws on non 200                                                                                            0.04s  
+  ✓ connection failure is wrapped without token                                                                  0.03s  
   ✓ throws for shop that is not installed                                                                        0.02s  
 
    PASS  Tests\Unit\Shopify\SessionTokenTest
-  ✓ valid token returns shop and sub
+  ✓ valid token returns shop and sub                                                                             0.01s  
   ✓ shop host is lower cased
   ✓ invalid tokens are rejected with data set "wrong aud"
   ✓ invalid tokens are rejected with data set "expired"
@@ -70,75 +74,81 @@
   ✓ empty secret is rejected
 
    PASS  Tests\Feature\AnalyticsTest
-  ✓ tiles for the worked examples fixture set                                                                    0.09s  
-  ✓ orders query asks for the range window                                                                       0.02s  
+  ✓ tiles for the worked examples fixture set                                                                    0.10s  
+  ✓ cancelled offer order counts nowhere                                                                         0.03s  
+  ✓ orders query excludes cancelled orders                                                                       0.03s  
+  ✓ orders query asks for the range window                                                                       0.03s  
   ✓ default range is 30                                                                                          0.03s  
   ✓ discount title only allocations are classified by recomputing                                                0.03s  
-  ✓ recompute path agrees with message path on the worked examples                                               0.02s  
+  ✓ orders with legacy arabic allocation titles are still counted                                                0.03s  
+  ✓ recompute path agrees with message path on the worked examples                                               0.03s  
   ✓ second call within ttl hits the client once                                                                  0.03s  
-  ✓ cache is per range                                                                                           0.02s  
-  ✓ cap stops pagination and flags capped                                                                        0.02s  
+  ✓ cache is per range                                                                                           0.04s  
+  ✓ cap stops pagination and flags capped                                                                        0.03s  
   ✓ cap equal to total is not capped                                                                             0.02s  
-  ✓ cap reached on the first page does not fetch more                                                            0.02s  
-  ✓ range validation                                                                                             0.04s  
-  ✓ eleventh request in a minute is rate limited                                                                 0.04s  
-  ✓ rate limit is per shop not per ip                                                                            0.05s  
-  ✓ unauthenticated requests do not consume the shop rate limit                                                  0.03s  
-  ✓ requires session token                                                                                       0.02s  
+  ✓ cap reached on the first page does not fetch more                                                            0.03s  
+  ✓ range validation                                                                                             0.06s  
+  ✓ eleventh request in a minute is rate limited                                                                 0.08s  
+  ✓ rate limit is per shop not per ip                                                                            0.09s  
+  ✓ unauthenticated requests do not consume the shop rate limit                                                  0.08s  
+  ✓ requires session token                                                                                       0.04s  
 
    PASS  Tests\Feature\AuthMiddlewareInstallRaceTest
-  ✓ concurrent first install losing unique race still returns 200                                                0.06s  
+  ✓ concurrent first install losing unique race still returns 200                                                0.16s  
 
    PASS  Tests\Feature\AuthMiddlewareTest
-  ✓ missing bearer returns 401 with empty object                                                                 0.04s  
-  ✓ bad bearer returns 401 with empty object                                                                     0.02s  
-  ✓ session cookie does not authenticate api                                                                     0.02s  
-  ✓ valid token for installed shop passes without exchange                                                       0.02s  
-  ✓ valid token for uninstalled allowed shop exchanges once and installs                                         0.02s  
-  ✓ reinstall reactivates previously uninstalled row                                                             0.02s  
-  ✓ failed exchange returns 401 and creates nothing                                                              0.02s  
-  ✓ admin load with bad hmac is 401                                                                              0.04s  
-  ✓ admin load without hmac or id token is 401                                                                   0.03s  
-  ✓ admin load with valid hmac for disallowed shop is 401                                                        0.03s  
-  ✓ admin load with correct hmac is 200 with shop csp                                                            0.05s  
-  ✓ admin load hmac excludes signature param                                                                     0.04s  
+  ✓ missing bearer returns 401 with empty object                                                                 0.09s  
+  ✓ bad bearer returns 401 with empty object                                                                     0.05s  
+  ✓ session cookie does not authenticate api                                                                     0.04s  
+  ✓ valid token for installed shop passes without exchange                                                       0.05s  
+  ✓ valid token for uninstalled allowed shop exchanges once and installs                                         0.06s  
+  ✓ reinstall reactivates previously uninstalled row                                                             0.05s  
+  ✓ failed exchange returns 401 and creates nothing                                                              0.07s  
+  ✓ admin load with bad hmac is 401                                                                              0.06s  
+  ✓ admin load without hmac or id token is 401                                                                   0.04s  
+  ✓ admin load with valid hmac for disallowed shop is 401                                                        0.05s  
+  ✓ admin load with correct hmac is 200 with shop csp                                                            0.08s  
+  ✓ admin load hmac excludes signature param                                                                     0.05s  
   ✓ admin load with valid id token is 200                                                                        0.05s  
-  ✓ admin load with id token for other shop param is 401                                                         0.04s  
-  ✓ admin load with invalid id token is 401                                                                      0.02s  
-  ✓ rejected load gets frame ancestors none                                                                      0.03s  
-  ✓ responses outside route groups get frame ancestors none                                                      0.06s  
+  ✓ admin load with id token for other shop param is 401                                                         0.05s  
+  ✓ admin load with invalid id token is 401                                                                      0.05s  
+  ✓ rejected load gets frame ancestors none                                                                      0.05s  
+  ✓ responses outside route groups get frame ancestors none                                                      0.09s  
 
    PASS  Tests\Feature\HomePageTest
-  ✓ page is arabic rtl with app bridge and api key meta                                                          0.04s  
-  ✓ page renders settings and analytics copy                                                                     0.03s  
-  ✓ range options default to 30                                                                                  0.03s  
-  ✓ page never contains the api secret                                                                           0.03s  
-  ✓ page without hmac is 401                                                                                     0.03s  
+  ✓ page is english ltr with app bridge and api key meta                                                         0.08s  
+  ✓ page renders settings and analytics copy                                                                     0.05s  
+  ✓ range options default to 30                                                                                  0.05s  
+  ✓ page never contains the api secret                                                                           0.05s  
+  ✓ page without hmac is 401                                                                                     0.04s  
 
    PASS  Tests\Feature\SettingsTest
-  ✓ save success writes reads back and ensures discount                                                          0.06s  
-  ✓ second save does not create a duplicate discount                                                             0.05s  
-  ✓ drifted discount title is renamed not duplicated                                                             0.03s  
-  ✓ metafield user error returns 422 and never touches discount                                                  0.03s  
-  ✓ read back mismatch returns 422 and never touches discount                                                    0.03s  
-  ✓ read back enabled mismatch is also rejected                                                                  0.04s  
-  ✓ discount create user error returns 422 with that text                                                        0.03s  
-  ✓ missing function returns 422 instead of success                                                              0.03s  
-  ✓ validation failures                                                                                          0.07s  
-  ✓ non numeric scalar percents are rejected                                                                     0.05s  
-  ✓ boundary percents are accepted                                                                               0.03s  
-  ✓ get returns defaults and null discount without creating                                                      0.03s  
-  ✓ get returns saved settings and existing discount                                                             0.03s  
-  ✓ requires session token                                                                                       0.03s  
+  ✓ save success writes reads back and ensures discount                                                          0.07s  
+  ✓ second save does not create a duplicate discount                                                             0.06s  
+  ✓ drifted discount title is renamed not duplicated                                                             0.05s  
+  ✓ expired discount is reactivated before reporting success                                                     0.05s  
+  ✓ activation user error returns 422 with that text                                                             0.05s  
+  ✓ discount still inactive after activation returns 422                                                         0.05s  
+  ✓ metafield user error returns 422 and never touches discount                                                  0.05s  
+  ✓ read back mismatch returns 422 and never touches discount                                                    0.05s  
+  ✓ read back enabled mismatch is also rejected                                                                  0.05s  
+  ✓ discount create user error returns 422 with that text                                                        0.05s  
+  ✓ missing function returns 422 instead of success                                                              0.05s  
+  ✓ validation failures                                                                                          0.09s  
+  ✓ non numeric scalar percents are rejected                                                                     0.07s  
+  ✓ boundary percents are accepted                                                                               0.06s  
+  ✓ get returns defaults and null discount without creating                                                      0.05s  
+  ✓ get returns saved settings and existing discount                                                             0.05s  
+  ✓ requires session token                                                                                       0.05s  
 
    PASS  Tests\Feature\WebhookTest
-  ✓ bad hmac returns 401 empty object and changes nothing                                                        0.06s  
-  ✓ missing hmac header returns 401                                                                              0.03s  
-  ✓ uninstall marks shop uninstalled and nulls token                                                             0.03s  
-  ✓ uninstall for unknown shop is ok                                                                             0.03s  
-  ✓ compliance topics return 200 and log topic and shop only                                                     0.04s  
-  ✓ unknown topic returns 200                                                                                    0.03s  
+  ✓ bad hmac returns 401 empty object and changes nothing                                                        0.11s  
+  ✓ missing hmac header returns 401                                                                              0.05s  
+  ✓ uninstall marks shop uninstalled and nulls token                                                             0.07s  
+  ✓ uninstall for unknown shop is ok                                                                             0.05s  
+  ✓ compliance topics return 200 and log topic and shop only                                                     0.06s  
+  ✓ unknown topic returns 200                                                                                    0.04s  
 
-  Tests:    120 passed (484 assertions)
-  Duration: 4.15s
+  Tests:    130 passed (531 assertions)
+  Duration: 5.91s
 
