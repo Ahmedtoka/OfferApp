@@ -86,3 +86,24 @@ No tile values could be read. 7 أيام and 60 يوم returned the protected-cu
 - `% من كل الأوردرات` figure.
 - Horizontal scroll at phone width checked visually only (cross-origin iframe, no DOM measurement).
 - Everything listed as not verified in earlier sections remains so, except the three orders (now placed) and admin settings/toggle flow.
+
+## Part B follow-up — analytics after Protected customer data access (2026-10-30, controller)
+
+Root cause of the analytics error in Part B: the app had not yet declared "Protected customer data" use in the
+Partner Dashboard (API access requests → Protected customer data access). Shopify blocks the `Order` object until
+that is selected. Selected reasons: Store management, Analytics; no customer fields (name/email/phone/address) —
+the app never reads them. For a custom app this needs no review; the deploy guide now lists it as a pre-deploy step.
+
+Re-check on the embedded page (range 30 يوم), observed from the page:
+
+| tile | expected (orders #1035, #1036, #1037) | observed | screenshot | result |
+|---|---|---|---|---|
+| أوردرات أخدت العرض | 3 (100% of 3 orders in range) | 3 — 100% من كل الأوردرات | admin-analytics-30d-after-pcd.jpg | ✅ |
+| هدايا | 3 | 3 | same | ✅ |
+| خصم 30% | 2 | 2 | same | ✅ |
+| إجمالي الخصم | 3,830.00 ج.م | 3,830.00 ج.م | same | ✅ |
+| السيناريو التاني كان هيدخل زيادة | 140.00 ج.م | 140.00 ج.م | same | ✅ |
+| أكتر 10 منتجات خرجت هدايا | QA-A 1 / 1,200.00; QA-B 1 / 1,100.00; QA-C 1 / 900.00 | identical | admin-analytics-top-gifts-after-pcd.jpg | ✅ |
+
+The stale "مفيش أوردرات" on 30 يوم in Part B was the 10-minute cache holding the earlier empty result; it cleared
+after the TTL. Still not verified: the cache hit itself (timing only), `% من كل الأوردرات` on a store with non-offer orders in range.
