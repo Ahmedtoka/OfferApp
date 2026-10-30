@@ -22,12 +22,12 @@ class HomePageTest extends TestCase
         return $this->get('/?'.http_build_query($params));
     }
 
-    public function test_page_is_arabic_rtl_with_app_bridge_and_api_key_meta(): void
+    public function test_page_is_english_ltr_with_app_bridge_and_api_key_meta(): void
     {
         $res = $this->loadAdminPage();
 
         $res->assertOk();
-        $res->assertSee('<html lang="ar" dir="rtl">', false);
+        $res->assertSee('<html lang="en" dir="ltr">', false);
         $res->assertSee('<meta name="shopify-api-key" content="'.SessionTokens::API_KEY.'">', false);
         $res->assertSee('<script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>', false);
         $res->assertSee('<script src="https://cdn.shopify.com/shopifycloud/polaris-2.js"></script>', false);
@@ -41,16 +41,16 @@ class HomePageTest extends TestCase
 
         $res->assertOk();
         foreach ([
-            'الإعدادات', 'الأرقام',
-            'العرض شغال', 'متوقف', 'نسبة الخصم على القطعة الفردية', 'حفظ',
-            'الخصم موجود وشغال في شوبيفاي', 'افتح في الخصومات', 'الخصم غير موجود — اضغط حفظ لإنشائه',
-            '7 أيام', '30 يوم', '60 يوم',
-            'أوردرات أخدت العرض', '% من كل الأوردرات', 'هدايا', 'خصم 30%', 'إجمالي الخصم',
-            'السيناريو التاني كان هيدخل زيادة',
-            'إعادة حساب على نفس الأوردرات؛ الأوردرات ذات العدد الزوجي تساهم بصفر؛ السعر الأصلي من سعر المقارنة الحالي؛ الأوردرات الملغية مستبعدة، والمرتجعة محسوبة لأن الخصم اتمنح وقت الشراء',
-            'محسوب على أول 2000 أوردر',
-            'أكتر 10 منتجات خرجت هدايا', 'المنتج', 'قطع', 'القيمة',
-            'جاري التحميل…', 'مفيش أوردرات في الفترة دي',
+            'Settings', 'Numbers',
+            'Offer is ON', 'Offer is OFF', 'Discount on a single piece (%)', 'Save',
+            'Discount exists and is active in Shopify', 'Open in Discounts', 'No discount yet — click Save to create it',
+            '7 days', '30 days', '60 days',
+            'Orders with the offer', '% of all orders', 'Gifts', '30% off pieces', 'Total discount',
+            'Scenario 2 would have earned extra',
+            'Recalculated on the same orders; even-count orders contribute 0; original price = current compare-at price. Refunded orders are counted as granted; cancelled orders are excluded.',
+            'Computed on the first 2,000 orders',
+            'Top 10 gifted products', 'Product', 'Pieces', 'Value',
+            'Loading…', 'No orders in this period',
         ] as $text) {
             $res->assertSee($text, false);
         }

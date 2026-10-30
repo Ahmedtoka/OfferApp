@@ -36,6 +36,6 @@ class SettingsController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
 
-        return response()->json($result + ['message' => 'تم الحفظ وتم تحديث الخصم في شوبيفاي']);
+        return response()->json($result + ['message' => 'Saved. The discount in Shopify is up to date.']);
     }
 }

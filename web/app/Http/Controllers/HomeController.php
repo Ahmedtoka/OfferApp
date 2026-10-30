@@ -19,8 +19,8 @@ class HomeController extends Controller
         return view('home', [
             'apiKey' => (string) config('shopify.api_key'),
             'pageTitle' => (string) OfferConstants::get('discountTitle'),
-            'percentTemplate' => (string) OfferConstants::get('percentMessageTemplate'),
-            'percentLabel' => OfferConstants::percentMessage($defaultPercent),
+            'percentTemplate' => '{pct}% off pieces',
+            'percentLabel' => $defaultPercent.'% off pieces',
             'defaultPercent' => $defaultPercent,
             'minPercent' => (int) OfferConstants::get('minPercent'),
             'maxPercent' => (int) OfferConstants::get('maxPercent'),

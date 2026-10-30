@@ -1,5 +1,5 @@
 {{--
-    Le Voile BOGO — the single embedded admin page (Arabic, RTL).
+    Le Voile BOGO — the single embedded admin page (English, LTR).
 
     Polaris web components, verified 2026-10-30 against
       https://shopify.dev/docs/api/app-home/polaris-web-components
@@ -15,7 +15,7 @@
     with a short-lived App Bridge session token.
 --}}
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -30,27 +30,27 @@
 <s-page heading="{{ $pageTitle }}" inline-size="base">
 
     {{-- Block 1 — settings --}}
-    <s-section heading="الإعدادات">
+    <s-section heading="Settings">
         <div class="stack">
             <div id="settings-banner" class="banner-slot" aria-live="polite"></div>
 
             <div id="settings-loading" class="loading-line" role="status">
-                <s-spinner accessibilityLabel="جاري التحميل…" size="base"></s-spinner>
-                <s-text color="subdued">جاري التحميل…</s-text>
+                <s-spinner accessibilityLabel="Loading…" size="base"></s-spinner>
+                <s-text color="subdued">Loading…</s-text>
             </div>
 
             <form id="settings-form" class="stack" novalidate hidden>
                 <s-switch
                     id="enabled"
-                    label="متوقف"
-                    data-label-on="العرض شغال"
-                    data-label-off="متوقف"
+                    label="Offer is OFF"
+                    data-label-on="Offer is ON"
+                    data-label-off="Offer is OFF"
                 ></s-switch>
 
                 <div class="field-narrow">
                     <s-number-field
                         id="percent"
-                        label="نسبة الخصم على القطعة الفردية"
+                        label="Discount on a single piece (%)"
                         value="{{ $defaultPercent }}"
                         min="{{ $minPercent }}"
                         max="{{ $maxPercent }}"
@@ -59,38 +59,38 @@
                         inputMode="numeric"
                         data-min="{{ $minPercent }}"
                         data-max="{{ $maxPercent }}"
-                        data-range-error="اكتب رقم صحيح من {{ $minPercent }} لـ {{ $maxPercent }}"
+                        data-range-error="Enter a whole number from {{ $minPercent }} to {{ $maxPercent }}"
                     ></s-number-field>
                 </div>
 
                 <div id="discount-status" class="status-line">
                     <div data-status="active" hidden>
-                        <s-text tone="success">الخصم موجود وشغال في شوبيفاي</s-text>
-                        <s-link data-discount-link href="#" target="_top">افتح في الخصومات</s-link>
+                        <s-text tone="success">Discount exists and is active in Shopify</s-text>
+                        <s-link data-discount-link href="#" target="_top">Open in Discounts</s-link>
                     </div>
                     <div data-status="inactive" hidden>
-                        <s-text tone="caution">الخصم موجود في شوبيفاي لكنه مش شغال دلوقتي</s-text>
-                        <s-link data-discount-link href="#" target="_top">افتح في الخصومات</s-link>
+                        <s-text tone="caution">Discount exists in Shopify but is not active right now</s-text>
+                        <s-link data-discount-link href="#" target="_top">Open in Discounts</s-link>
                     </div>
                     <div data-status="missing" hidden>
-                        <s-text tone="caution">الخصم غير موجود — اضغط حفظ لإنشائه</s-text>
+                        <s-text tone="caution">No discount yet — click Save to create it</s-text>
                     </div>
                 </div>
 
                 <div class="actions">
-                    <s-button id="save" variant="primary">حفظ</s-button>
+                    <s-button id="save" variant="primary">Save</s-button>
                 </div>
             </form>
         </div>
     </s-section>
 
     {{-- Block 2 — numbers --}}
-    <s-section heading="الأرقام">
+    <s-section heading="Numbers">
         <div class="stack">
             <div class="field-narrow">
-                <s-select id="range" label="الفترة" value="{{ $defaultRange }}" data-default="{{ $defaultRange }}">
+                <s-select id="range" label="Period" value="{{ $defaultRange }}" data-default="{{ $defaultRange }}">
                     @foreach ($ranges as $days)
-                        <s-option value="{{ $days }}"@if ($days === $defaultRange) selected @endif>{{ $days === 7 ? '7 أيام' : $days.' يوم' }}</s-option>
+                        <s-option value="{{ $days }}"@if ($days === $defaultRange) selected @endif>{{ $days === 7 ? '7 days' : $days.' days' }}</s-option>
                     @endforeach
                 </s-select>
             </div>
@@ -98,23 +98,23 @@
             <div id="analytics-banner" class="banner-slot" aria-live="polite"></div>
 
             <div id="analytics-loading" class="loading-line" role="status">
-                <s-spinner accessibilityLabel="جاري التحميل…" size="base"></s-spinner>
-                <s-text color="subdued">جاري التحميل…</s-text>
+                <s-spinner accessibilityLabel="Loading…" size="base"></s-spinner>
+                <s-text color="subdued">Loading…</s-text>
             </div>
 
             <div id="analytics-empty" class="empty" hidden>
-                <s-text color="subdued">مفيش أوردرات في الفترة دي</s-text>
+                <s-text color="subdued">No orders in this period</s-text>
             </div>
 
             <div id="analytics-body" class="stack" hidden>
                 <div class="tiles" id="tiles" data-percent-template="{{ $percentTemplate }}">
                     <div class="tile">
-                        <div class="tile-label">أوردرات أخدت العرض</div>
+                        <div class="tile-label">Orders with the offer</div>
                         <div class="tile-value" data-field="offerOrders">—</div>
-                        <div class="tile-note"><span data-field="offerOrdersPct">—</span>% من كل الأوردرات</div>
+                        <div class="tile-note"><span data-field="offerOrdersPct">—</span>% of all orders</div>
                     </div>
                     <div class="tile">
-                        <div class="tile-label">هدايا</div>
+                        <div class="tile-label">Gifts</div>
                         <div class="tile-value" data-field="giftUnits">—</div>
                     </div>
                     <div class="tile">
@@ -122,25 +122,25 @@
                         <div class="tile-value" data-field="percentUnits">—</div>
                     </div>
                     <div class="tile">
-                        <div class="tile-label">إجمالي الخصم</div>
+                        <div class="tile-label">Total discount</div>
                         <div class="tile-value" data-field="totalDiscount">—</div>
                     </div>
                     <div class="tile tile-wide">
-                        <div class="tile-label">السيناريو التاني كان هيدخل زيادة</div>
+                        <div class="tile-label">Scenario 2 would have earned extra</div>
                         <div class="tile-value" data-field="scenario2Extra">—</div>
-                        <div class="tile-note">إعادة حساب على نفس الأوردرات؛ الأوردرات ذات العدد الزوجي تساهم بصفر؛ السعر الأصلي من سعر المقارنة الحالي؛ الأوردرات الملغية مستبعدة، والمرتجعة محسوبة لأن الخصم اتمنح وقت الشراء</div>
+                        <div class="tile-note">Recalculated on the same orders; even-count orders contribute 0; original price = current compare-at price. Refunded orders are counted as granted; cancelled orders are excluded.</div>
                     </div>
                 </div>
 
-                <p id="capped-note" class="note note-caution" hidden>محسوب على أول {{ $orderCap }} أوردر</p>
+                <p id="capped-note" class="note note-caution" hidden>Computed on the first {{ number_format($orderCap) }} orders</p>
 
                 <div id="top-gifts" class="stack-tight" hidden>
-                    <h3 class="table-title">أكتر 10 منتجات خرجت هدايا</h3>
+                    <h3 class="table-title">Top 10 gifted products</h3>
                     <s-table variant="auto">
                         <s-table-header-row>
-                            <s-table-header listSlot="primary">المنتج</s-table-header>
-                            <s-table-header listSlot="labeled" format="numeric">قطع</s-table-header>
-                            <s-table-header listSlot="labeled" format="numeric">القيمة</s-table-header>
+                            <s-table-header listSlot="primary">Product</s-table-header>
+                            <s-table-header listSlot="labeled" format="numeric">Pieces</s-table-header>
+                            <s-table-header listSlot="labeled" format="numeric">Value</s-table-header>
                         </s-table-header-row>
                         <s-table-body id="top-gifts-rows"></s-table-body>
                     </s-table>

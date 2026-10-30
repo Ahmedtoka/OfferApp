@@ -13,7 +13,7 @@ class SettingsTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const MESSAGE = 'تم الحفظ وتم تحديث الخصم في شوبيفاي';
+    private const MESSAGE = 'Saved. The discount in Shopify is up to date.';
 
     private FakeGraphqlClient $fake;
 

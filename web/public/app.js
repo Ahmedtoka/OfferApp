@@ -1,7 +1,7 @@
 // Le Voile BOGO admin page. Every /api call carries a fresh App Bridge session token;
 // nothing secret is ever read from or written to the page.
 
-const GENERIC_ERROR = 'حصلت مشكلة في الاتصال بالسيرفر، جرّب تاني';
+const GENERIC_ERROR = 'Could not reach the server, please try again';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -31,7 +31,7 @@ const moneyFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maxi
 
 const formatCount = (n) => intFmt.format(Number(n) || 0);
 const formatPct = (n) => pctFmt.format(Number(n) || 0);
-const formatMoney = (n) => `${moneyFmt.format(Number(n) || 0)} ج.م`;
+const formatMoney = (n) => `EGP ${moneyFmt.format(Number(n) || 0)}`;
 
 // ---------------------------------------------------------------- API
 
