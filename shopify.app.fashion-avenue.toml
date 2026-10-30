@@ -1,0 +1,32 @@
+# Fashion Avenue app (separate custom app; same code). Deploy with: shopify app deploy --config fashion-avenue
+# application_url is a placeholder until the Cloudways subdomain is final.
+# Le Voile BOGO offer app — Shopify app configuration.
+# Ownership/hostname are configuration (design §3): change here and in web/.env only.
+client_id = "a074e0f3951f38244bdd2a006c26e866"
+name = "BOGO Fashion Avenue"
+handle = "bogo-fashion-avenue"
+application_url = "https://offer-fa.arenahere.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = false
+
+[webhooks]
+api_version = "2026-07"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "/webhooks"
+
+[access_scopes]
+# write_discounts: create/update the single automatic discount hosting the Function
+# read_orders: analytics (last 60 days only)
+# read_products: compareAtPrice for the scenario-2 recalculation
+scopes = "write_discounts,read_orders,read_products"
+
+[auth]
+redirect_urls = [ "https://offer-fa.arenahere.com/auth/callback" ]
