@@ -17,6 +17,8 @@ class AutomaticDiscountManager
 
     private const UPDATE = 'mutation UpdateDiscount($id: ID!, $d: DiscountAutomaticAppInput!) { discountAutomaticAppUpdate(id: $id, automaticAppDiscount: $d) { automaticAppDiscount { discountId title status } userErrors { field message } } }';
 
+    private const ACTIVATE = 'mutation ActivateDiscount($id: ID!) { discountAutomaticActivate(id: $id) { automaticDiscountNode { id automaticDiscount { ... on DiscountAutomaticApp { status } } } userErrors { field message } } }';
+
     public function __construct(private GraphqlClient $graphql) {}
 
     /**
@@ -32,7 +34,8 @@ class AutomaticDiscountManager
     }
 
     /**
-     * Find or create the discount; renames it if its title drifted.
+     * Find or create the discount; reactivates it if it is not ACTIVE (expired, scheduled or
+     * deactivated in Shopify admin) and renames it if its title drifted.
      *
      * @return array{id: string, status: string, adminUrl: string, title: string}
      *
@@ -57,6 +60,10 @@ class AutomaticDiscountManager
             return $this->fromMutation($shop, $data['discountAutomaticAppCreate'] ?? null);
         }
 
+        if ($existing['status'] !== 'ACTIVE') {
+            $existing = $this->activate($shop, $functionId, $existing);
+        }
+
         if ($existing['title'] !== $title) {
             $data = $this->graphql->query($shop, self::UPDATE, ['id' => $existing['id'], 'd' => ['title' => $title]]);
 
@@ -64,6 +71,28 @@ class AutomaticDiscountManager
         }
 
         return $existing;
+    }
+
+    /**
+     * Reactivates the discount, then re-reads it; throws unless Shopify now reports it ACTIVE.
+     *
+     * @throws ShopifyGraphqlException
+     */
+    private function activate(string $shop, string $functionId, array $existing): array
+    {
+        $payload = $this->graphql->query($shop, self::ACTIVATE, ['id' => $existing['id']])['discountAutomaticActivate'] ?? null;
+        $errors = $payload['userErrors'] ?? [];
+        if ($errors !== []) {
+            throw new ShopifyGraphqlException(implode('; ', array_map(fn ($e) => (string) ($e['message'] ?? 'Unknown error'), $errors)));
+        }
+
+        $reread = $this->findByFunction($shop, $functionId);
+        if ($reread === null || $reread['status'] !== 'ACTIVE') {
+            $status = $reread['status'] ?? 'missing';
+            throw new ShopifyGraphqlException("The automatic discount is {$status} in Shopify and could not be activated. Check it under Discounts in Shopify admin.");
+        }
+
+        return $reread;
     }
 
     private function functionId(string $shop): ?string

@@ -105,6 +105,44 @@ class SettingsTest extends TestCase
         $this->assertSame('اشتري واحدة وخد واحدة', $fake->calls[array_search('UpdateDiscount', $fake->ops(), true)]['variables']['d']['title']);
     }
 
+    public function test_expired_discount_is_reactivated_before_reporting_success(): void
+    {
+        $this->fake->fixtures['AppDiscounts'] = 'discount-nodes-expired';
+
+        $this->save(['enabled' => true, 'percent' => 30])
+            ->assertOk()
+            ->assertJsonPath('message', self::MESSAGE)
+            ->assertJsonPath('discount.id', 'gid://shopify/DiscountAutomaticNode/777')
+            ->assertJsonPath('discount.status', 'ACTIVE');
+        $this->assertSame(
+            ['ShopId', 'WriteSettings', 'ReadSettings', 'AppFunctions', 'AppDiscounts', 'ActivateDiscount', 'AppDiscounts'],
+            $this->fake->ops()
+        );
+        $this->assertSame('gid://shopify/DiscountAutomaticNode/777', $this->fake->calls[5]['variables']['id']);
+        $this->assertSame(0, $this->fake->count('CreateDiscount'));
+    }
+
+    public function test_activation_user_error_returns_422_with_that_text(): void
+    {
+        $this->fake->fixtures['AppDiscounts'] = 'discount-nodes-expired';
+        $this->fake->fixtures['ActivateDiscount'] = 'discount-activate-error';
+
+        $this->save(['enabled' => true, 'percent' => 30])
+            ->assertStatus(422)
+            ->assertExactJson(['error' => 'Discount could not be activated']);
+    }
+
+    public function test_discount_still_inactive_after_activation_returns_422(): void
+    {
+        $this->fake->fixtures['AppDiscounts'] = 'discount-nodes-scheduled';
+        $this->fake->afterActivate = 'discount-nodes-scheduled';
+
+        $res = $this->save(['enabled' => true, 'percent' => 30])->assertStatus(422);
+
+        $this->assertStringContainsString('SCHEDULED', $res->json('error'));
+        $this->assertSame(1, $this->fake->count('ActivateDiscount'));
+    }
+
     public function test_metafield_user_error_returns_422_and_never_touches_discount(): void
     {
         $this->fake->fixtures['WriteSettings'] = 'metafields-set-error';

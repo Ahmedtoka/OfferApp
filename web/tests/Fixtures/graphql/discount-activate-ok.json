@@ -1,0 +1,1 @@
+{ "discountAutomaticActivate": { "automaticDiscountNode": { "id": "gid://shopify/DiscountAutomaticNode/777", "automaticDiscount": { "status": "ACTIVE" } }, "userErrors": [] } }

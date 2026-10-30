@@ -1,0 +1,4 @@
+{ "discountNodes": { "nodes": [
+  { "id": "gid://shopify/DiscountAutomaticNode/555", "discount": { "__typename": "DiscountAutomaticApp", "title": "Someone else", "status": "ACTIVE", "appDiscountType": { "functionId": "01OTHERFUNCTION" } } },
+  { "id": "gid://shopify/DiscountAutomaticNode/777", "discount": { "__typename": "DiscountAutomaticApp", "title": "اشتري واحدة وخد واحدة", "status": "SCHEDULED", "appDiscountType": { "functionId": "01BOGOFUNCTION" } } }
+] } }

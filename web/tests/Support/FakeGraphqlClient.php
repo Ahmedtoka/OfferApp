@@ -8,7 +8,8 @@ use App\Shopify\GraphqlClient;
  * Records Admin GraphQL calls (operation name taken from the query text) and
  * replays tests/Fixtures/graphql/*.json. Stateful just enough to behave like a
  * shop: the metafield written by WriteSettings is what ReadSettings returns,
- * unless $readBackOverride is set; a created discount is found afterwards.
+ * unless $readBackOverride is set; a created discount is found afterwards, and an
+ * activated one is reported ACTIVE afterwards.
  */
 class FakeGraphqlClient implements GraphqlClient
 {
@@ -23,12 +24,16 @@ class FakeGraphqlClient implements GraphqlClient
         'AppDiscounts' => 'discount-nodes-empty',
         'CreateDiscount' => 'discount-create-ok',
         'UpdateDiscount' => 'discount-update-ok',
+        'ActivateDiscount' => 'discount-activate-ok',
     ];
 
     /** Raw JSON string ReadSettings returns instead of the last write (null = echo the write). */
     public ?string $readBackOverride = null;
 
     public ?string $metafieldValue = null;
+
+    /** AppDiscounts fixture served after a successful ActivateDiscount. */
+    public string $afterActivate = 'discount-nodes-existing';
 
     public function query(string $shop, string $query, array $variables = []): array
     {
@@ -56,6 +61,16 @@ class FakeGraphqlClient implements GraphqlClient
             if (($data['discountAutomaticAppCreate']['userErrors'] ?? []) === []) {
                 // From now on the discount exists (as the real shop would report it).
                 $this->fixtures['AppDiscounts'] = 'discount-nodes-existing';
+            }
+
+            return $data;
+        }
+
+        if ($op === 'ActivateDiscount') {
+            $data = $this->fixture($this->fixtures[$op]);
+            if (($data['discountAutomaticActivate']['userErrors'] ?? []) === []) {
+                // Once activated, the shop reports the discount ACTIVE (unless a test pins it).
+                $this->fixtures['AppDiscounts'] = $this->afterActivate;
             }
 
             return $data;
