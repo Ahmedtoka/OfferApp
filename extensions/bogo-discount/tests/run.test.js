@@ -93,6 +93,16 @@ describe('gating returns no operations', () => {
     ['percent 30.5', inputFor(a, { percent: 30.5 })],
     ['not json', inputFor(a, { metafield: { value: 'not json' } })],
     ['enabled missing', inputFor(a, { metafield: { value: '{"percent":30}' } })],
+    // Security review: malformed or wrongly-typed config always fails closed (no discount, no throw).
+    ['json null', inputFor(a, { metafield: { value: 'null' } })],
+    ['json array', inputFor(a, { metafield: { value: '[]' } })],
+    ['json scalar', inputFor(a, { metafield: { value: '123' } })],
+    ['truncated json', inputFor(a, { metafield: { value: '{' } })],
+    ['empty value', inputFor(a, { metafield: { value: '' } })],
+    ['enabled as string', inputFor(a, { metafield: { value: '{"enabled":"true","percent":30}' } })],
+    ['percent as string', inputFor(a, { metafield: { value: '{"enabled":true,"percent":"30"}' } })],
+    ['percent overflow', inputFor(a, { metafield: { value: '{"enabled":true,"percent":1e400}' } })],
+    ['shop null', { ...inputFor(a), shop: null }],
     ['ORDER class only', inputFor(a, { classes: ['ORDER'] })],
     ['empty cart', inputFor({ lines: [] })],
   ])('%s', (_n, input) => {
