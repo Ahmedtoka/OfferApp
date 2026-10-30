@@ -1,0 +1,14 @@
+
+ RUN  v3.2.7 C:/xampp/htdocs/OfferApp/extensions/bogo-discount
+
+ ✓ tests/bogo.bruteforce.test.js (25 tests) 21ms
+ ✓ tests/bogo.test.js (113 tests | 9 skipped) 20ms
+ ✓ tests/run.test.js (32 tests) 16ms
+ ✓ tests/default.test.js (32 tests) 62408ms
+   ✓ Default Integration Test > runs a.json  1144ms
+
+ Test Files  4 passed (4)
+      Tests  193 passed | 9 skipped (202)
+   Start at  02:23:25
+   Duration  71.16s (transform 171ms, setup 0ms, collect 8.36s, tests 62.47s, environment 1ms, prepare 1.16s)
+

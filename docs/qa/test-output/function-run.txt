@@ -1,0 +1,36 @@
+shopify app function run — 32 fixtures (API 2026-07, CLI 4.9.4)
+
+a.json                                   PASS  instructions=732212
+a_x2.json                                PASS  instructions=725548
+a_x3.json                                PASS  instructions=960362
+abc.json                                 PASS  instructions=1117864
+abcd.json                                PASS  instructions=1070359
+abcde.json                               PASS  instructions=1578550
+ac.json                                  PASS  instructions=800122
+disabled.json                            PASS  instructions=446627
+giftcard.json                            PASS  instructions=776885
+markdown_gift_800.json                   PASS  instructions=823381
+markdown_single_650_alone.json           PASS  instructions=643966
+markdown_single_800.json                 PASS  instructions=755756
+mixed_2_and_3.json                       PASS  instructions=1343030
+n10.json                                 PASS  instructions=1876766
+n11.json                                 PASS  instructions=3322329
+n12.json                                 PASS  instructions=2141813
+n3.json                                  PASS  instructions=1117864
+n4.json                                  PASS  instructions=1070359
+n5.json                                  PASS  instructions=1578550
+n6.json                                  PASS  instructions=1341996
+n7.json                                  PASS  instructions=2090138
+n8.json                                  PASS  instructions=1605273
+n9.json                                  PASS  instructions=2676224
+no_metafield.json                        PASS  instructions=422553
+optimality_markdowns.json                PASS  instructions=1137347
+order_class_only.json                    PASS  instructions=425917
+percent_0.json                           PASS  instructions=449684
+percent_40_single_a.json                 PASS  instructions=732212
+same2_plus3.json                         PASS  instructions=1503391
+same2_plus4.json                         PASS  instructions=1266141
+same3_plus2.json                         PASS  instructions=1415133
+sort_by_pnow.json                        PASS  instructions=823381
+
+32/32 fixtures match
