@@ -69,7 +69,7 @@ class SessionTokenTest extends TestCase
     {
         foreach ([1, 5, 10] as $ahead) {
             $jwt = SessionTokens::mint(['nbf' => self::NOW + $ahead, 'iat' => self::NOW + $ahead], self::NOW);
-            $this->assertSame('levoilest.myshopify.com', $this->verify($jwt)['shop'], "nbf +{$ahead}s");
+            $this->assertSame(SessionTokens::SHOP, $this->verify($jwt)['shop'], "nbf +{$ahead}s");
         }
     }
 
