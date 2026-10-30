@@ -28,6 +28,81 @@ class HttpGraphqlClientTest extends TestCase
         Shop::create(['shop_domain' => SessionTokens::SHOP, 'access_token' => 'shpat_x', 'installed_at' => now()]);
     }
 
+    /** @var list<int> */
+    private array $slept = [];
+
+    private function client(): HttpGraphqlClient
+    {
+        return new HttpGraphqlClient(function (int $us) {
+            $this->slept[] = $us;
+        });
+    }
+
+    private static function throttledBody(): array
+    {
+        return ['errors' => [['message' => 'Throttled', 'extensions' => ['code' => 'THROTTLED']]]];
+    }
+
+    public function test_throttled_twice_then_success_returns_data_after_three_calls(): void
+    {
+        Http::fake([self::URL => Http::sequence()
+            ->push(self::throttledBody())
+            ->push('Too Many Requests', 429)
+            ->push(['data' => ['shop' => ['name' => 'Le Voile']]])]);
+
+        $data = $this->client()->query(SessionTokens::SHOP, '{ shop { name } }');
+
+        $this->assertSame(['shop' => ['name' => 'Le Voile']], $data);
+        Http::assertSentCount(3);
+        $this->assertSame([500_000, 1_000_000], $this->slept);
+    }
+
+    public function test_throttled_four_times_throws_after_three_retries(): void
+    {
+        Http::fake([self::URL => Http::sequence()
+            ->push(self::throttledBody())
+            ->push(self::throttledBody())
+            ->push(self::throttledBody())
+            ->push(self::throttledBody())]);
+
+        try {
+            $this->client()->query(SessionTokens::SHOP, '{ x }');
+            $this->fail('expected exception');
+        } catch (ShopifyGraphqlException $e) {
+            $this->assertStringContainsString('Throttled', $e->getMessage());
+        }
+        Http::assertSentCount(4);
+        $this->assertSame([500_000, 1_000_000, 2_000_000], $this->slept);
+    }
+
+    public function test_http_429_four_times_throws(): void
+    {
+        Http::fake([self::URL => Http::response('Too Many Requests', 429)]);
+
+        $this->expectException(ShopifyGraphqlException::class);
+        try {
+            $this->client()->query(SessionTokens::SHOP, '{ x }');
+        } finally {
+            Http::assertSentCount(4);
+        }
+    }
+
+    public function test_non_throttle_error_is_not_retried(): void
+    {
+        Http::fake([self::URL => Http::sequence()
+            ->push(['errors' => [['message' => 'Field x missing', 'extensions' => ['code' => 'undefinedField']]]])
+            ->push(['data' => ['x' => 1]])]);
+
+        try {
+            $this->client()->query(SessionTokens::SHOP, '{ x }');
+            $this->fail('expected exception');
+        } catch (ShopifyGraphqlException $e) {
+            $this->assertStringContainsString('Field x missing', $e->getMessage());
+        }
+        Http::assertSentCount(1);
+        $this->assertSame([], $this->slept);
+    }
+
     public function test_container_binds_interface_to_http_client(): void
     {
         $this->assertInstanceOf(HttpGraphqlClient::class, app(GraphqlClient::class));
