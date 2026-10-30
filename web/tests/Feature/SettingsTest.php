@@ -165,6 +165,17 @@ class SettingsTest extends TestCase
         $this->assertSame([], $this->fake->calls);
     }
 
+    /** Security review F1: Laravel's loose `integer` rule casts JSON `true` to 1 and would save 1%. */
+    public function test_non_numeric_scalar_percents_are_rejected(): void
+    {
+        foreach ([true, '30.5', '', null] as $percent) {
+            $this->save(['enabled' => true, 'percent' => $percent])
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('percent');
+        }
+        $this->assertSame([], $this->fake->calls);
+    }
+
     public function test_boundary_percents_are_accepted(): void
     {
         $this->save(['enabled' => false, 'percent' => 1])->assertOk()->assertJsonPath('settings.enabled', false);

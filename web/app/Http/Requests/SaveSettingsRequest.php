@@ -12,11 +12,12 @@ class SaveSettingsRequest extends FormRequest
         return true; // authenticated by the shopify.session middleware
     }
 
+    /** `numeric` first: the loose `integer` rule alone accepts JSON `true` (as 1). */
     public function rules(): array
     {
         return [
             'enabled' => ['required', 'boolean'],
-            'percent' => ['required', 'integer', 'min:'.OfferConstants::get('minPercent'), 'max:'.OfferConstants::get('maxPercent')],
+            'percent' => ['required', 'numeric', 'integer', 'min:'.OfferConstants::get('minPercent'), 'max:'.OfferConstants::get('maxPercent')],
         ];
     }
 }
