@@ -4,6 +4,7 @@ namespace App\Services\Analytics;
 
 use App\Offer\BogoCalculator;
 use App\Offer\OfferConstants;
+use App\Services\OfferSettings;
 use App\Shopify\ShopifyGraphqlException;
 use Illuminate\Support\Facades\Cache;
 
@@ -25,7 +26,10 @@ class OfferAnalytics
     /** Current-template percent regex, built once per compute. */
     private ?string $percentRe = null;
 
-    public function __construct(private OrdersFetcher $fetcher) {}
+    /** The merchant's eligible tag (shop config), set per compute. */
+    private string $eligibleTag = '';
+
+    public function __construct(private OrdersFetcher $fetcher, private OfferSettings $settings) {}
 
     /** false = ignore gift/percent titles and always derive unit counts by recomputing the cart. */
     public function classifyFromMessages(bool $on): static
@@ -38,8 +42,10 @@ class OfferAnalytics
     /** @throws ShopifyGraphqlException */
     public function compute(string $shop, int $rangeDays): AnalyticsResult
     {
+        // The tag is part of the cache key: changing it on the settings page recomputes at once.
+        $this->eligibleTag = (string) $this->settings->read($shop)['eligibleTag'];
         $cached = Cache::remember(
-            "analytics:{$shop}:{$rangeDays}",
+            "analytics:{$shop}:{$rangeDays}:".sha1($this->eligibleTag),
             (int) OfferConstants::get('analyticsCacheSeconds'),
             fn () => $this->build($shop, $rangeDays)->toArray()
         );
@@ -105,7 +111,7 @@ class OfferAnalytics
         $ours = [];
         $hasMessages = false;
         $pct = null;
-        $eligibleTag = (string) OfferConstants::get('eligibleTag');
+        $eligibleTag = $this->eligibleTag;
 
         foreach ($order['lineItems']['nodes'] ?? [] as $i => $item) {
             $pNow = BogoCalculator::toPiastres($item['originalUnitPriceSet']['shopMoney']['amount'] ?? 0);
@@ -252,7 +258,7 @@ class OfferAnalytics
     }
 
     /**
-     * The order's lines that take part in the offer (tagged with eligibleTag), keyed as in $order['lines'].
+     * The order's lines that take part in the offer (tagged with the configured tag), keyed as in $order['lines'].
      * Untagged lines contribute nothing to the scenario recompute; the order still counts in ordersTotal.
      */
     private function eligibleLines(array $order): array

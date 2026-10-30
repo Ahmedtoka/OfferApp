@@ -229,7 +229,55 @@ class AnalyticsTest extends TestCase
 
         $this->assertCount(1, $fake->calls);
         $this->assertSame($first, $second);
-        $this->assertTrue(Cache::has('analytics:'.SessionTokens::SHOP.':30'));
+        $this->assertTrue(Cache::has('analytics:'.SessionTokens::SHOP.':30:'.sha1('FallOffer')));
+        $this->assertSame(2, $fake->settingsReads);
+    }
+
+    public function test_changing_the_tag_recomputes_instead_of_serving_the_cache(): void
+    {
+        $fake = $this->fake(['orders_all_rows', 'orders_all_rows']);
+
+        $this->api()->assertOk();
+        $fake->settingsValue = json_encode(['enabled' => true, 'percent' => 30, 'eligibleTag' => 'WinterOffer']);
+        $this->api()->assertOk();
+
+        $this->assertCount(2, $fake->calls);
+    }
+
+    public function test_recompute_uses_the_tag_from_the_shop_config_not_the_constant(): void
+    {
+        // Same order as orders_mixed_untagged with FallOffer -> WinterOffer (and falloffer -> winteroffer).
+        foreach ([true, false] as $fromMessages) {
+            Cache::flush();
+            $fake = $this->fake(['orders_mixed_untagged_winter']);
+            $fake->settingsValue = json_encode(['enabled' => true, 'percent' => 30, 'eligibleTag' => 'WinterOffer']);
+
+            $result = $this->app->make(OfferAnalytics::class)->classifyFromMessages($fromMessages)->compute(SessionTokens::SHOP, 30);
+
+            $this->assertSame(1, $fake->settingsReads);
+            $this->assertSame(1, $result->offerOrders);
+            $this->assertSame(1, $result->giftUnits);
+            $this->assertSame(1, $result->percentUnits);
+            $this->assertEquals(1370.0, $result->totalDiscount);
+            $this->assertEquals(140.0, $result->scenario2Extra);
+            $this->assertEquals([['title' => 'Product B', 'units' => 1, 'value' => 1100.0]], $result->topGifts);
+        }
+    }
+
+    public function test_lines_tagged_only_with_the_default_tag_are_ineligible_under_another_configured_tag(): void
+    {
+        // orders_mixed_untagged (FallOffer lines) while the merchant configured WinterOffer:
+        // the recompute sees no eligible line, so it derives no gift or percent units.
+        Cache::flush();
+        $fake = $this->fake(['orders_mixed_untagged']);
+        $fake->settingsValue = json_encode(['enabled' => true, 'percent' => 30, 'eligibleTag' => 'WinterOffer']);
+
+        $result = $this->app->make(OfferAnalytics::class)->classifyFromMessages(false)->compute(SessionTokens::SHOP, 30);
+
+        $this->assertSame(1, $result->offerOrders);
+        $this->assertSame(0, $result->giftUnits);
+        $this->assertSame(0, $result->percentUnits);
+        $this->assertSame([], $result->topGifts);
     }
 
     public function test_cache_is_per_range(): void
