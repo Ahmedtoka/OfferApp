@@ -118,6 +118,30 @@ files.percent_40_single_a = fixture(
   buildOutput(A, { A: s(480) }, 40),
 );
 
+// Instruction-budget fixtures (I1): large odd carts. All prices have no markdown (pFull = pNow),
+// so every placement of the single leaves the same gift total and the best single is the
+// first unit of the most expensive line (largest pct% saving, then smallest index).
+// One line of quantity q at 600 EGP, 30%: (q-1)/2 gifts of 600 plus one single saving 180.
+for (const q of [27, 51, 99]) {
+  const lines = [{ id: 'A', quantity: q, pNow: 600, pFull: 600 }];
+  const plan = { A: { giftQty: (q - 1) / 2, giftAmount: 600 * (q - 1) / 2, singleQty: 1, singleAmount: 180 } };
+  files[`bulk_qty${q}`] = fixture(buildInput(lines, { metafield: meta30 }), buildOutput(lines, plan, 30));
+}
+// 5 lines, 199 units: 40x100, 40x200, 40x300, 40x400, 39x500 (EGP), 30%. Single = first 500 unit
+// (sorted index 160): units 0..159 pair in place (20 gifts per line), units 161..198 pair as
+// (161,162).. giving 19 gifts of 500. Saving 2000+4000+6000+8000+9500+150 = 29650.
+{
+  const lines = [100, 200, 300, 400, 500].map((p, k) => ({ id: 'ABCDE'[k], quantity: k === 4 ? 39 : 40, pNow: p, pFull: p }));
+  const plan = {
+    A: { giftQty: 20, giftAmount: 2000, singleQty: 0, singleAmount: 0 },
+    B: { giftQty: 20, giftAmount: 4000, singleQty: 0, singleAmount: 0 },
+    C: { giftQty: 20, giftAmount: 6000, singleQty: 0, singleAmount: 0 },
+    D: { giftQty: 20, giftAmount: 8000, singleQty: 0, singleAmount: 0 },
+    E: { giftQty: 19, giftAmount: 9500, singleQty: 1, singleAmount: 150 },
+  };
+  files.bulk_5lines_199 = fixture(buildInput(lines, { metafield: meta30 }), buildOutput(lines, plan, 30));
+}
+
 fs.mkdirSync(outDir, { recursive: true });
 for (const f of fs.readdirSync(outDir)) if (f.endsWith('.json')) fs.unlinkSync(path.join(outDir, f));
 for (const [name, body] of Object.entries(files)) {
