@@ -80,3 +80,17 @@ Products tagged `FallOffer` (12 of 22): Band Collar Extension 1150, Basic Turkis
 | cart | expected | observed (checkout) | screenshot | result |
 |---|---|---|---|---|
 | tagged: Turkish Clips 1500, Band Collar 1150, Aurora Winter Shawl 500 + untagged: Aurora Cotton Scarf 2100, Bubble Gum Scarf 1050 | pair (1500,1150) → Band Collar Gift; Shawl 30% off → 350; untagged at full price; subtotal 1500+350+2100+1050 = **5,000**, savings 1,300 | E£5,000.00, TOTAL SAVINGS E£1,300.00; Shawl 30% OFF −150; untagged scarves full price | tag-mixed-cart-checkout.jpg | ✅ |
+
+## Editable eligible tag — dev store check (2026-10-30, controller)
+The tag is now set on the app page ("Eligible product tag"). Saving writes it to the discount's own settings, which Shopify passes to the Function.
+
+| step | expected | observed | evidence | result |
+|---|---|---|---|---|
+| Tag `FallOffer`; cart: Turkish Clips 1500, Band Collar 1150, Aurora Winter Shawl 500 (all FallOffer) + Aurora Cotton Scarf 2100, Bubble Gum Scarf 1050 (not FallOffer) | 5,000 (Band Collar Gift, Shawl 30% off, scarves full) | 5,000; same labels | cart API read | ✅ |
+| Tag switched to `WinterOffer` (no product has it), same cart | no discount at all: 6,300 | 6,300, no labels | cart API read | ✅ |
+| Tag switched to `PC4` (only Aurora Cotton Scarf 2100 + Animal Print Cotton Scarf 2150); cart: both scarves + Band Collar 1150 + Shawl 500 | scarves pair → Aurora Cotton Scarf Gift; FallOffer items full: 3,800 | 3,800; Aurora Cotton Scarf Gift | cart API read; admin-tag-PC4.jpg | ✅ |
+| Tag set back to `FallOffer` from the page, Save | green banner, note shows "FallOffer" | "Saved. The discount in Shopify is up to date." | admin-tag-saved-FallOffer.jpg | ✅ |
+| Same 5-item cart again | 5,000 | 5,000 | cart API read | ✅ |
+| Analytics, orders whose products were deleted | scenario 2 extra 280 (was wrongly 5,200) | EGP 280.00 | admin-analytics-scenario2-fixed.jpg | ✅ |
+
+Also fixed this round: the session-token check now tolerates 10 s of clock difference (this machine runs ~0.5 s behind Shopify), the page retries a failed load once before showing an error, and gifts of deleted products are labelled "Deleted product".
