@@ -10,5 +10,6 @@
   "analyticsRanges": [7, 30, 60],
   "defaultRange": 30,
   "analyticsOrderCap": 2000,
-  "analyticsCacheSeconds": 600
+  "analyticsCacheSeconds": 600,
+  "eligibleTag": "FallOffer"
 }
