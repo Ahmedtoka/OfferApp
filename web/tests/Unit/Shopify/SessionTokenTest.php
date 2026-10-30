@@ -39,7 +39,7 @@ class SessionTokenTest extends TestCase
             'wrong aud' => [fn () => SessionTokens::mint(['aud' => 'other-app'], $now)],
             'expired' => [fn () => SessionTokens::mint(['exp' => $now - 1], $now)],
             'exp equals now' => [fn () => SessionTokens::mint(['exp' => $now], $now)],
-            'not yet valid' => [fn () => SessionTokens::mint(['nbf' => $now + 10], $now)],
+            'not yet valid beyond clock tolerance' => [fn () => SessionTokens::mint(['nbf' => $now + 11], $now)],
             'missing exp' => [fn () => SessionTokens::mint(['exp' => null], $now)],
             'missing nbf' => [fn () => SessionTokens::mint(['nbf' => null], $now)],
             'wrong signature' => [fn () => SessionTokens::mint([], $now, 'wrong-secret')],
@@ -58,6 +58,19 @@ class SessionTokenTest extends TestCase
             'garbage' => [fn () => 'not-a-jwt'],
             'empty' => [fn () => ''],
         ];
+    }
+
+    /**
+     * A token minted in Shopify's current second must be accepted even when this server's clock
+     * runs slightly behind Shopify's (observed: ~0.5 s on the dev machine), otherwise the first
+     * page load intermittently fails with 401.
+     */
+    public function test_nbf_slightly_ahead_of_local_clock_is_accepted(): void
+    {
+        foreach ([1, 5, 10] as $ahead) {
+            $jwt = SessionTokens::mint(['nbf' => self::NOW + $ahead, 'iat' => self::NOW + $ahead], self::NOW);
+            $this->assertSame('levoilest.myshopify.com', $this->verify($jwt)['shop'], "nbf +{$ahead}s");
+        }
     }
 
     #[DataProvider('invalidTokens')]

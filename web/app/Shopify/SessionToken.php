@@ -10,6 +10,13 @@ use App\Models\Shop;
  */
 final class SessionToken
 {
+    /**
+     * Seconds a token's "not before" may be ahead of this server's clock. Shopify mints tokens with
+     * nbf = the current second on its side; a server clock even a fraction of a second behind would
+     * otherwise reject a fresh token. Expiry stays strict.
+     */
+    public const NBF_CLOCK_TOLERANCE = 10;
+
     /** @return array{shop: string, sub: string} */
     public static function verify(string $jwt, string $apiKey, string $apiSecret, array $allowedShops, int $now): array
     {
@@ -59,7 +66,7 @@ final class SessionToken
         if (! is_int($claims['exp'] ?? null) || $claims['exp'] <= $now) {
             throw new InvalidSessionToken('expired');
         }
-        if (! is_int($claims['nbf'] ?? null) || $claims['nbf'] > $now) {
+        if (! is_int($claims['nbf'] ?? null) || $claims['nbf'] > $now + self::NBF_CLOCK_TOLERANCE) {
             throw new InvalidSessionToken('not yet valid');
         }
     }
