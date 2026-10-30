@@ -73,3 +73,10 @@ Observations: 30-day analytics stale and inconsistent with 7-day; one transient 
 - Cart page screenshots were taken only for abc, a_x3, mixed_2x1200_3x900, qty27 (as in the brief).
 - Cause of the 7-day vs 30-day discrepancy (cache TTL vs query window): no CLI/code access in this run.
 - Cart built via AJAX API rather than `/cart/add?id=` URLs (equivalent cart, not the literal URL path).
+
+## FallOffer tag eligibility — dev store check (2026-10-30, controller)
+Products tagged `FallOffer` (12 of 22): Band Collar Extension 1150, Basic Turkish Clips 1500, Aurora Winter Shawl 500, Bright Winter Shawl 700, Body Sleeveless Round Neck 800, Body Sleeveless Normal Neck 950, Bishop Basic Undershirt 250, Bubbly Kimono 220, Braided Cardigan 1700, Autumn Set 1150, Basic Sleeveless Dress 1400, Belly Blouse 400. The other 10 are untagged.
+
+| cart | expected | observed (checkout) | screenshot | result |
+|---|---|---|---|---|
+| tagged: Turkish Clips 1500, Band Collar 1150, Aurora Winter Shawl 500 + untagged: Aurora Cotton Scarf 2100, Bubble Gum Scarf 1050 | pair (1500,1150) → Band Collar Gift; Shawl 30% off → 350; untagged at full price; subtotal 1500+350+2100+1050 = **5,000**, savings 1,300 | E£5,000.00, TOTAL SAVINGS E£1,300.00; Shawl 30% OFF −150; untagged scarves full price | tag-mixed-cart-checkout.jpg | ✅ |
