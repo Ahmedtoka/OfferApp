@@ -127,6 +127,31 @@ class AnalyticsTest extends TestCase
         $this->assertEquals([['title' => 'Product B', 'units' => 1, 'value' => 1100.0]], $res->json('topGifts'));
     }
 
+    public function test_orders_with_legacy_arabic_allocation_titles_are_still_counted(): void
+    {
+        // Same orders as orders_all_rows / orders_discount_title, but carrying the pre-English titles.
+        $this->fake(['orders_legacy_arabic']);
+
+        $res = $this->api('/api/analytics?range=30')->assertOk();
+
+        $res->assertJsonPath('ordersTotal', 9)
+            ->assertJsonPath('offerOrders', 7)
+            ->assertJsonPath('giftUnits', 8)
+            ->assertJsonPath('percentUnits', 4);
+        $this->assertEquals(9370.0, $res->json('totalDiscount'));
+        $this->assertEquals(390.0, $res->json('scenario2Extra'));
+
+        Cache::flush();
+        $this->fake(['orders_legacy_arabic_title']);
+
+        $res = $this->api()->assertOk();
+
+        $res->assertJsonPath('offerOrders', 1)
+            ->assertJsonPath('giftUnits', 1)
+            ->assertJsonPath('percentUnits', 1);
+        $this->assertEquals(1370.0, $res->json('totalDiscount'));
+    }
+
     public function test_recompute_path_agrees_with_message_path_on_the_worked_examples(): void
     {
         $this->fake(['orders_all_rows']);

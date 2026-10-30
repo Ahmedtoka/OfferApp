@@ -52,7 +52,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "اشتري واحدة وخد واحدة"
+                                        "title": "Buy One Get One"
                                     }
                                 }
                             ]
@@ -81,7 +81,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "اشتري واحدة وخد واحدة"
+                                        "title": "Buy One Get One"
                                     }
                                 }
                             ]

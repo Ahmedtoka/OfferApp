@@ -10,7 +10,15 @@ use Illuminate\Support\Facades\Cache;
 /** Live offer numbers from Admin GraphQL orders. Internally everything is integer piastres. */
 class OfferAnalytics
 {
-    private const PERCENT_TITLE = '/^خصم (\d+)%$/u';
+    /**
+     * Arabic allocation titles the offer used before the English switch (Oct 2026). Orders placed
+     * before then still carry them, so analytics must keep recognising them. Never emitted again.
+     */
+    private const LEGACY_TITLES = [
+        'gift' => 'هدية',
+        'percent' => '/^خصم (\d+)%$/u',
+        'title' => 'اشتري واحدة وخد واحدة',
+    ];
 
     private bool $fromMessages = true;
 
@@ -113,7 +121,7 @@ class OfferAnalytics
                 }
                 $hasMessages = $hasMessages || $kind !== 'title';
                 if ($kind === 'percent') {
-                    $pct ??= (int) preg_replace(self::PERCENT_TITLE, '$1', $title);
+                    $pct ??= $this->percentFrom($title);
                 }
                 $ours[] = [
                     'kind' => $kind,
@@ -131,11 +139,31 @@ class OfferAnalytics
     {
         return match (true) {
             $title === '' => null,
-            $title === OfferConstants::get('giftMessage') => 'gift',
-            preg_match(self::PERCENT_TITLE, $title) === 1 => 'percent',
-            $title === OfferConstants::get('discountTitle') => 'title',
+            $title === OfferConstants::get('giftMessage'), $title === self::LEGACY_TITLES['gift'] => 'gift',
+            $this->percentFrom($title) !== null => 'percent',
+            $title === OfferConstants::get('discountTitle'), $title === self::LEGACY_TITLES['title'] => 'title',
             default => null,
         };
+    }
+
+    /** The percent in a current or legacy percent-message title, else null. */
+    private function percentFrom(string $title): ?int
+    {
+        foreach ([self::percentPattern(), self::LEGACY_TITLES['percent']] as $pattern) {
+            if (preg_match($pattern, $title, $m) === 1) {
+                return (int) $m[1];
+            }
+        }
+
+        return null;
+    }
+
+    /** percentMessageTemplate as an anchored regex, e.g. "{pct}% off" -> /^(\d+)% off$/u. */
+    private static function percentPattern(): string
+    {
+        $parts = explode('{pct}', (string) OfferConstants::get('percentMessageTemplate'));
+
+        return '/^'.implode('(\d+)', array_map(fn (string $p) => preg_quote($p, '/'), $parts)).'$/u';
     }
 
     /** The percent found in any percent-message title across the range, else the default. */

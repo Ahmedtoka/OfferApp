@@ -35,7 +35,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "خصم 30%"
+                                        "title": "30% off"
                                     }
                                 }
                             ]
@@ -90,7 +90,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "هدية"
+                                        "title": "Gift"
                                     }
                                 }
                             ]
@@ -145,7 +145,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "هدية"
+                                        "title": "Gift"
                                     }
                                 }
                             ]
@@ -174,7 +174,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "خصم 30%"
+                                        "title": "30% off"
                                     }
                                 }
                             ]
@@ -229,7 +229,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "هدية"
+                                        "title": "Gift"
                                     }
                                 }
                             ]
@@ -275,7 +275,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "هدية"
+                                        "title": "Gift"
                                     }
                                 }
                             ]
@@ -330,7 +330,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "هدية"
+                                        "title": "Gift"
                                     }
                                 }
                             ]
@@ -376,7 +376,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "هدية"
+                                        "title": "Gift"
                                     }
                                 }
                             ]
@@ -405,7 +405,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "خصم 30%"
+                                        "title": "30% off"
                                     }
                                 }
                             ]
@@ -443,7 +443,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "هدية"
+                                        "title": "Gift"
                                     }
                                 }
                             ]
@@ -481,7 +481,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "هدية"
+                                        "title": "Gift"
                                     }
                                 },
                                 {
@@ -492,7 +492,7 @@
                                     },
                                     "discountApplication": {
                                         "__typename": "AutomaticDiscountApplication",
-                                        "title": "خصم 30%"
+                                        "title": "30% off"
                                     }
                                 }
                             ]
