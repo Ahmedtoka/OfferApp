@@ -120,6 +120,23 @@ class AnalyticsTest extends TestCase
         }
     }
 
+    public function test_orders_whose_products_were_deleted_keep_their_scenario_recompute(): void
+    {
+        // #4001/#4002 = abc (A paid, B gift, C 30% off), #4003 = A x3, #4004 = ac; every line has product: null.
+        foreach ([true, false] as $fromMessages) {
+            Cache::flush();
+            $this->fake(['orders_deleted_products']);
+
+            $result = $this->app->make(OfferAnalytics::class)->classifyFromMessages($fromMessages)->compute(SessionTokens::SHOP, 30);
+
+            $this->assertSame(4, $result->offerOrders);
+            $this->assertEquals(5200.0, $result->totalDiscount);
+            $this->assertEquals(280.0, $result->scenario2Extra);
+            $this->assertSame(4, $result->giftUnits);
+            $this->assertSame(3, $result->percentUnits);
+        }
+    }
+
     public function test_orders_query_asks_for_the_range_window(): void
     {
         $fake = $this->fake(['orders_all_rows']);
@@ -266,8 +283,9 @@ class AnalyticsTest extends TestCase
 
     public function test_lines_tagged_only_with_the_default_tag_are_ineligible_under_another_configured_tag(): void
     {
-        // orders_mixed_untagged (FallOffer lines) while the merchant configured WinterOffer:
-        // the recompute sees no eligible line, so it derives no gift or percent units.
+        // orders_mixed_untagged (FallOffer lines) while the merchant configured WinterOffer: only the two
+        // lines carrying our allocations (B 1100, C 900) stay eligible; paid A and the untagged line drop out,
+        // so the recompute pairs B with C and derives one gift (C) and no percent unit.
         Cache::flush();
         $fake = $this->fake(['orders_mixed_untagged']);
         $fake->settingsValue = json_encode(['enabled' => true, 'percent' => 30, 'eligibleTag' => 'WinterOffer']);
@@ -275,9 +293,9 @@ class AnalyticsTest extends TestCase
         $result = $this->app->make(OfferAnalytics::class)->classifyFromMessages(false)->compute(SessionTokens::SHOP, 30);
 
         $this->assertSame(1, $result->offerOrders);
-        $this->assertSame(0, $result->giftUnits);
+        $this->assertSame(1, $result->giftUnits);
         $this->assertSame(0, $result->percentUnits);
-        $this->assertSame([], $result->topGifts);
+        $this->assertEquals([['title' => 'Product C', 'units' => 1, 'value' => 900.0]], $result->topGifts);
     }
 
     public function test_cache_is_per_range(): void

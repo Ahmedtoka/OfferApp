@@ -1,0 +1,255 @@
+{
+    "orders": {
+        "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": null
+        },
+        "nodes": [
+            {
+                "id": "gid://shopify/Order/4001",
+                "name": "#4001",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": null,
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1100.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/2",
+                                "compareAtPrice": null
+                            },
+                            "product": null,
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "1100.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "Gift"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": null,
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "270.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "30% off"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "gid://shopify/Order/4002",
+                "name": "#4002",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": null,
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1100.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/2",
+                                "compareAtPrice": null
+                            },
+                            "product": null,
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "1100.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "Gift"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": null,
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "270.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "30% off"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "gid://shopify/Order/4003",
+                "name": "#4003",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 3,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": null,
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "1200.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "Gift"
+                                    }
+                                },
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "360.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "30% off"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "gid://shopify/Order/4004",
+                "name": "#4004",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": null,
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": null,
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "900.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "Gift"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

@@ -123,7 +123,9 @@ class OfferAnalytics
                 'pFull' => max($pNow, $compare === null ? 0 : BogoCalculator::toPiastres($compare)),
                 'product' => (string) ($item['product']['title'] ?? ''),
                 // Same rule as the Function: only products carrying the exact (case-sensitive) tag take part.
+                // Refined per order below: tags are read now, not at order time.
                 'eligible' => in_array($eligibleTag, (array) ($item['product']['tags'] ?? []), true),
+                'deleted' => ($item['product'] ?? null) === null,
             ];
 
             foreach ($item['discountAllocations'] ?? [] as $alloc) {
@@ -147,6 +149,14 @@ class OfferAnalytics
                 ];
             }
         }
+
+        // A line that carries one of our allocations took part, whatever its tags say today. A line whose
+        // product was deleted has no tags left; in an offer order it is taken to have taken part too.
+        $withOurs = array_flip(array_column($ours, 'line'));
+        foreach ($lines as $i => &$line) {
+            $line['eligible'] = $line['eligible'] || isset($withOurs[$i]) || ($line['deleted'] && $ours !== []);
+        }
+        unset($line);
 
         return ['lines' => $lines, 'ours' => $ours, 'hasMessages' => $hasMessages, 'pct' => $pct];
     }
@@ -251,15 +261,17 @@ class OfferAnalytics
         foreach ($lines as $line) {
             $gross += $line['pNow'] * $line['quantity'];
         }
-        $charged = $gross - array_sum(array_column($order['ours'], 'amount'));
+        // Charged on those same lines (every line with our allocation is eligible, so this is all of ours).
+        $ours = array_filter($order['ours'], fn (array $a) => isset($lines[$a['line']]));
+        $charged = $gross - array_sum(array_column($ours, 'amount'));
         $alt = BogoCalculator::compute(BogoCalculator::expandUnits($lines), $pct, 'min')->totalPay;
 
         return max(0, $alt - $charged);
     }
 
     /**
-     * The order's lines that take part in the offer (tagged with the configured tag), keyed as in $order['lines'].
-     * Untagged lines contribute nothing to the scenario recompute; the order still counts in ordersTotal.
+     * The order's lines that take part in the offer, keyed as in $order['lines']: tagged now, carrying one of
+     * our allocations, or (in an offer order) of a deleted product. Other lines contribute nothing to the scenario recompute; the order still counts in ordersTotal.
      */
     private function eligibleLines(array $order): array
     {
