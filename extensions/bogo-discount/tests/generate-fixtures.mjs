@@ -41,7 +41,8 @@ const dec = (v) => (Number.isInteger(v) ? `${v}.0` : String(v));
 const amountStr = (v) => v.toFixed(2);
 const lineGid = (id) => `gid://shopify/CartLine/${id}`;
 
-function buildInput(lines, { classes = ['PRODUCT'], metafield, giftCardIds = [] } = {}) {
+// Every line is tagged with the eligible tag unless its id is in untaggedIds.
+function buildInput(lines, { classes = ['PRODUCT'], metafield, giftCardIds = [], untaggedIds = [] } = {}) {
   return {
     cart: {
       lines: lines.map((l) => ({
@@ -54,7 +55,11 @@ function buildInput(lines, { classes = ['PRODUCT'], metafield, giftCardIds = [] 
         merchandise: {
           __typename: 'ProductVariant',
           id: `gid://shopify/ProductVariant/${l.id}`,
-          product: { id: `gid://shopify/Product/${l.id}`, isGiftCard: giftCardIds.includes(l.id) },
+          product: {
+            id: `gid://shopify/Product/${l.id}`,
+            isGiftCard: giftCardIds.includes(l.id),
+            hasAnyTag: !untaggedIds.includes(l.id),
+          },
         },
       })),
     },

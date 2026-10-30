@@ -19,7 +19,8 @@
               "id": "gid://shopify/ProductVariant/X",
               "product": {
                 "id": "gid://shopify/Product/X",
-                "isGiftCard": false
+                "isGiftCard": false,
+                "hasAnyTag": true
               }
             }
           },
@@ -37,7 +38,8 @@
               "id": "gid://shopify/ProductVariant/Y",
               "product": {
                 "id": "gid://shopify/Product/Y",
-                "isGiftCard": false
+                "isGiftCard": false,
+                "hasAnyTag": true
               }
             }
           }

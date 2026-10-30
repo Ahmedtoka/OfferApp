@@ -11,7 +11,7 @@ query Input {
         __typename
         ... on ProductVariant {
           id
-          product { id isGiftCard }
+          product { id isGiftCard hasAnyTag(tags: ["FallOffer"]) }
         }
       }
     }

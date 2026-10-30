@@ -19,7 +19,8 @@
               "id": "gid://shopify/ProductVariant/C",
               "product": {
                 "id": "gid://shopify/Product/C",
-                "isGiftCard": false
+                "isGiftCard": false,
+                "hasAnyTag": true
               }
             }
           },
@@ -37,7 +38,8 @@
               "id": "gid://shopify/ProductVariant/A",
               "product": {
                 "id": "gid://shopify/Product/A",
-                "isGiftCard": false
+                "isGiftCard": false,
+                "hasAnyTag": true
               }
             }
           },
@@ -55,7 +57,8 @@
               "id": "gid://shopify/ProductVariant/B",
               "product": {
                 "id": "gid://shopify/Product/B",
-                "isGiftCard": false
+                "isGiftCard": false,
+                "hasAnyTag": true
               }
             }
           },
@@ -73,7 +76,8 @@
               "id": "gid://shopify/ProductVariant/D",
               "product": {
                 "id": "gid://shopify/Product/D",
-                "isGiftCard": false
+                "isGiftCard": false,
+                "hasAnyTag": true
               }
             }
           }
