@@ -121,7 +121,8 @@ Not verified: a cart above 199 units (fixtures cover 27/51/99/199 units locally 
 ## Final run (English strings) — see [FINAL.md](FINAL.md) and `screenshots/final/` (43 files). Earlier runs above used the Arabic labels.
 
 ## Team testing link (2026-10-30)
-Development stores cannot drop the storefront visitor password (Shopify disables the toggle). For the team, a theme
-preview share link was generated from a draft copy of the live theme ("Copy of test-data"); it opens without the
-password: https://4ktaqylxkejwsk7b-86755410224.shopifypreview.com — catalogue: `/collections/all` on that host.
+Development stores cannot drop the storefront visitor password: Shopify disables the "Private mode" toggle, and a
+theme preview share link (tested: https://4ktaqylxkejwsk7b-86755410224.shopifypreview.com) still lands on the
+password page. The team therefore opens the storefront with the visitor password (Online Store → Preferences),
+entered once per browser. Catalogue: https://levoilest.myshopify.com/collections/all
 All catalogue products were reset to fixed base prices (no compare-at) except QA-M, which stays as the markdown test product.
