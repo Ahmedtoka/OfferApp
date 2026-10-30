@@ -117,3 +117,5 @@ after the TTL. Still not verified: the cache hit itself (timing only), `% من �
 | Click «حفظ» with the discount EXPIRED | green banner; discount reactivated; status line back to «شغال» | banner «تم الحفظ وتم تحديث الخصم في شوبيفاي»; status «الخصم موجود وشغال في شوبيفاي»; Admin API read-back `status: ACTIVE` | admin-save-reactivates-discount.jpg | ✅ |
 
 Not verified: a cart above 199 units (fixtures cover 27/51/99/199 units locally only); a 60-day range on a store with more than 250 orders (pagination + throttle retry are unit-tested with fakes only); reactivating a discount whose `endsAt` is in the past (ours has none).
+
+## Final run (English strings) — see [FINAL.md](FINAL.md) and `screenshots/final/` (43 files). Earlier runs above used the Arabic labels.
