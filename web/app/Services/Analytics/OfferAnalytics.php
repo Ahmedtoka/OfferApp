@@ -105,6 +105,7 @@ class OfferAnalytics
         $ours = [];
         $hasMessages = false;
         $pct = null;
+        $eligibleTag = (string) OfferConstants::get('eligibleTag');
 
         foreach ($order['lineItems']['nodes'] ?? [] as $i => $item) {
             $pNow = BogoCalculator::toPiastres($item['originalUnitPriceSet']['shopMoney']['amount'] ?? 0);
@@ -115,6 +116,8 @@ class OfferAnalytics
                 'pNow' => $pNow,
                 'pFull' => max($pNow, $compare === null ? 0 : BogoCalculator::toPiastres($compare)),
                 'product' => (string) ($item['product']['title'] ?? ''),
+                // Same rule as the Function: only products carrying the exact (case-sensitive) tag take part.
+                'eligible' => in_array($eligibleTag, (array) ($item['product']['tags'] ?? []), true),
             ];
 
             foreach ($item['discountAllocations'] ?? [] as $alloc) {
@@ -216,7 +219,7 @@ class OfferAnalytics
     {
         $giftUnits = $percentUnits = 0;
         $gifts = [];
-        $result = BogoCalculator::compute(BogoCalculator::expandUnits($order['lines']), $pct, 'max');
+        $result = BogoCalculator::compute(BogoCalculator::expandUnits($this->eligibleLines($order)), $pct, 'max');
         foreach ($result->assignments as $a) {
             if ($a['role'] === 'gift' && $a['discount'] > 0) {
                 $product = $order['lines'][(int) $a['unit']->lineId]['product'];
@@ -237,14 +240,24 @@ class OfferAnalytics
      */
     private function scenario2Extra(array $order, int $pct): int
     {
+        $lines = $this->eligibleLines($order);
         $gross = 0;
-        foreach ($order['lines'] as $line) {
+        foreach ($lines as $line) {
             $gross += $line['pNow'] * $line['quantity'];
         }
         $charged = $gross - array_sum(array_column($order['ours'], 'amount'));
-        $alt = BogoCalculator::compute(BogoCalculator::expandUnits($order['lines']), $pct, 'min')->totalPay;
+        $alt = BogoCalculator::compute(BogoCalculator::expandUnits($lines), $pct, 'min')->totalPay;
 
         return max(0, $alt - $charged);
+    }
+
+    /**
+     * The order's lines that take part in the offer (tagged with eligibleTag), keyed as in $order['lines'].
+     * Untagged lines contribute nothing to the scenario recompute; the order still counts in ordersTotal.
+     */
+    private function eligibleLines(array $order): array
+    {
+        return array_filter($order['lines'], fn (array $line) => $line['eligible']);
     }
 
     /**

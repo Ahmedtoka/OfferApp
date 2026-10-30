@@ -24,7 +24,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/1",
-                                "title": "Product A"
+                                "title": "Product A",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -62,7 +65,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/1",
-                                "title": "Product A"
+                                "title": "Product A",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": []
                         },
@@ -79,7 +85,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/3",
-                                "title": "Product C"
+                                "title": "Product C",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -117,7 +126,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/1",
-                                "title": "Product A"
+                                "title": "Product A",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": []
                         },
@@ -134,7 +146,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/2",
-                                "title": "Product B"
+                                "title": "Product B",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -163,7 +178,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/3",
-                                "title": "Product C"
+                                "title": "Product C",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -201,7 +219,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/1",
-                                "title": "Product A"
+                                "title": "Product A",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": []
                         },
@@ -218,7 +239,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/2",
-                                "title": "Product B"
+                                "title": "Product B",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -247,7 +271,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/3",
-                                "title": "Product C"
+                                "title": "Product C",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": []
                         },
@@ -264,7 +291,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/4",
-                                "title": "Product D"
+                                "title": "Product D",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -302,7 +332,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/1",
-                                "title": "Product A"
+                                "title": "Product A",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": []
                         },
@@ -319,7 +352,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/2",
-                                "title": "Product B"
+                                "title": "Product B",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -348,7 +384,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/3",
-                                "title": "Product C"
+                                "title": "Product C",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": []
                         },
@@ -365,7 +404,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/4",
-                                "title": "Product D"
+                                "title": "Product D",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -394,7 +436,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/5",
-                                "title": "Product E"
+                                "title": "Product E",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -432,7 +477,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/1",
-                                "title": "Product A"
+                                "title": "Product A",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -470,7 +518,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/1",
-                                "title": "Product A"
+                                "title": "Product A",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -519,7 +570,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/2",
-                                "title": "Product B"
+                                "title": "Product B",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": [
                                 {
@@ -557,7 +611,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/3",
-                                "title": "Product C"
+                                "title": "Product C",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": []
                         }

@@ -24,7 +24,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/3",
-                                "title": "Product C"
+                                "title": "Product C",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": []
                         }
@@ -50,7 +53,10 @@
                             },
                             "product": {
                                 "id": "gid://shopify/Product/4",
-                                "title": "Product D"
+                                "title": "Product D",
+                                "tags": [
+                                    "FallOffer"
+                                ]
                             },
                             "discountAllocations": []
                         }

@@ -1,0 +1,124 @@
+{
+    "orders": {
+        "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": null
+        },
+        "nodes": [
+            {
+                "id": "gid://shopify/Order/3001",
+                "name": "#3001",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A",
+                                "tags": [
+                                    "FallOffer"
+                                ]
+                            },
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1100.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/2",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/2",
+                                "title": "Product B",
+                                "tags": [
+                                    "FallOffer"
+                                ]
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "1100.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "Gift"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/3",
+                                "title": "Product C",
+                                "tags": [
+                                    "FallOffer"
+                                ]
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "270.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "30% off"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "500.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/9",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/9",
+                                "title": "Untagged Z",
+                                "tags": [
+                                    "Summer",
+                                    "falloffer"
+                                ]
+                            },
+                            "discountAllocations": []
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

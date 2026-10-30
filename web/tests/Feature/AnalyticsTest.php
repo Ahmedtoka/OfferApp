@@ -93,6 +93,33 @@ class AnalyticsTest extends TestCase
         $this->assertStringContainsString('-status:cancelled', $fake->calls[0]['variables']['q']);
     }
 
+    public function test_orders_query_asks_for_product_tags(): void
+    {
+        $query = (new \ReflectionClassConstant(OrdersFetcher::class, 'QUERY'))->getValue();
+
+        $this->assertStringContainsString('product { id title tags }', $query);
+    }
+
+    public function test_untagged_lines_are_left_out_of_the_scenario_recompute(): void
+    {
+        // A 1200 + B 1100 (gift) + C 900 (30% off), all tagged FallOffer, plus an untagged 500 line
+        // whose tags are ["Summer", "falloffer"] (wrong case does not count) and no allocation.
+        foreach ([true, false] as $fromMessages) {
+            Cache::flush();
+            $this->fake(['orders_mixed_untagged']);
+
+            $result = $this->app->make(OfferAnalytics::class)->classifyFromMessages($fromMessages)->compute(SessionTokens::SHOP, 30);
+
+            $this->assertSame(1, $result->ordersTotal);
+            $this->assertSame(1, $result->offerOrders);
+            $this->assertSame(1, $result->giftUnits);
+            $this->assertSame(1, $result->percentUnits);
+            $this->assertEquals(1370.0, $result->totalDiscount);
+            $this->assertEquals(140.0, $result->scenario2Extra);
+            $this->assertEquals([['title' => 'Product B', 'units' => 1, 'value' => 1100.0]], $result->topGifts);
+        }
+    }
+
     public function test_orders_query_asks_for_the_range_window(): void
     {
         $fake = $this->fake(['orders_all_rows']);

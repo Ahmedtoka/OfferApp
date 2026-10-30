@@ -26,7 +26,7 @@ query AnalyticsOrders($cursor: String, $q: String!) {
           quantity
           originalUnitPriceSet { shopMoney { amount } }
           variant { id compareAtPrice }
-          product { id title }
+          product { id title tags }
           discountAllocations {
             allocatedAmountSet { shopMoney { amount } }
             discountApplication {
