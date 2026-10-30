@@ -17,6 +17,11 @@ class AutomaticDiscountManager
 
     private const UPDATE = 'mutation UpdateDiscount($id: ID!, $d: DiscountAutomaticAppInput!) { discountAutomaticAppUpdate(id: $id, automaticAppDiscount: $d) { automaticAppDiscount { discountId title status } userErrors { field message } } }';
 
+    /** Input query variables live on the discount node (Shopify reads them for $eligibleTags). */
+    private const WRITE_CONFIG = 'mutation WriteDiscountConfig($metafields: [MetafieldsSetInput!]!) { metafieldsSet(metafields: $metafields) { metafields { id } userErrors { field message } } }';
+
+    private const READ_CONFIG = 'query ReadDiscountConfig($id: ID!, $namespace: String!, $key: String!) { discountNode(id: $id) { metafield(namespace: $namespace, key: $key) { value } } }';
+
     private const ACTIVATE = 'mutation ActivateDiscount($id: ID!) { discountAutomaticActivate(id: $id) { automaticDiscountNode { id automaticDiscount { ... on DiscountAutomaticApp { status } } } userErrors { field message } } }';
 
     public function __construct(private GraphqlClient $graphql) {}
@@ -35,14 +40,22 @@ class AutomaticDiscountManager
 
     /**
      * Find or create the discount; reactivates it if it is not ACTIVE (expired, scheduled or
-     * deactivated in Shopify admin) and renames it if its title drifted.
+     * deactivated in Shopify admin), renames it if its title drifted, and makes its
+     * $app:bogo/config metafield {"eligibleTags": [$eligibleTag]} (verified by reading it back).
      *
      * @return array{id: string, status: string, adminUrl: string, title: string}
      *
-     * @throws ShopifyGraphqlException
+     * @throws ShopifyGraphqlException|SaveMismatch
      */
-    public function ensure(string $shop): array
+    public function ensure(string $shop, string $eligibleTag): array
     {
+        $metafield = [
+            'namespace' => (string) OfferConstants::get('metafieldNamespace'),
+            'key' => (string) OfferConstants::get('metafieldDiscountKey'),
+            'type' => 'json',
+            'value' => json_encode(['eligibleTags' => [$eligibleTag]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ];
+
         $functionId = $this->functionId($shop)
             ?? throw new ShopifyGraphqlException('BOGO discount function was not found in this shop; deploy the app first.');
         $title = (string) OfferConstants::get('discountTitle');
@@ -55,9 +68,13 @@ class AutomaticDiscountManager
                 'startsAt' => now()->toIso8601String(),
                 'discountClasses' => ['PRODUCT'],
                 'combinesWith' => ['orderDiscounts' => false, 'productDiscounts' => false, 'shippingDiscounts' => false],
+                'metafields' => [$metafield],
             ]]);
 
-            return $this->fromMutation($shop, $data['discountAutomaticAppCreate'] ?? null);
+            $created = $this->fromMutation($shop, $data['discountAutomaticAppCreate'] ?? null);
+            $this->verifyConfig($shop, $created['id'], $eligibleTag);
+
+            return $created;
         }
 
         if ($existing['status'] !== 'ACTIVE') {
@@ -66,11 +83,39 @@ class AutomaticDiscountManager
 
         if ($existing['title'] !== $title) {
             $data = $this->graphql->query($shop, self::UPDATE, ['id' => $existing['id'], 'd' => ['title' => $title]]);
-
-            return $this->fromMutation($shop, $data['discountAutomaticAppUpdate'] ?? null);
+            $existing = $this->fromMutation($shop, $data['discountAutomaticAppUpdate'] ?? null);
         }
 
+        $data = $this->graphql->query($shop, self::WRITE_CONFIG, ['metafields' => [['ownerId' => $existing['id']] + $metafield]]);
+        $errors = $data['metafieldsSet']['userErrors'] ?? [];
+        if ($errors !== []) {
+            throw new ShopifyGraphqlException(implode('; ', array_map(fn ($e) => (string) ($e['message'] ?? 'Unknown error'), $errors)));
+        }
+        $this->verifyConfig($shop, $existing['id'], $eligibleTag);
+
         return $existing;
+    }
+
+    /**
+     * Reads the discount's input-variables metafield back; anything other than exactly
+     * {"eligibleTags": [$eligibleTag]} is a mismatch (the Function would run with the wrong tag,
+     * or fail on a missing required variable).
+     *
+     * @throws SaveMismatch
+     */
+    private function verifyConfig(string $shop, string $discountId, string $eligibleTag): void
+    {
+        $data = $this->graphql->query($shop, self::READ_CONFIG, [
+            'id' => $discountId,
+            'namespace' => (string) OfferConstants::get('metafieldNamespace'),
+            'key' => (string) OfferConstants::get('metafieldDiscountKey'),
+        ]);
+        $raw = $data['discountNode']['metafield']['value'] ?? null;
+        $json = is_string($raw) ? json_decode($raw, true) : null;
+
+        if (! is_array($json) || ($json['eligibleTags'] ?? null) !== [$eligibleTag]) {
+            throw new SaveMismatch('discount tag read-back mismatch');
+        }
     }
 
     /**

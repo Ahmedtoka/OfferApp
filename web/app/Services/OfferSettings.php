@@ -17,7 +17,7 @@ class OfferSettings
 
     public function __construct(private GraphqlClient $graphql, private AutomaticDiscountManager $discounts) {}
 
-    /** @return array{enabled: bool, percent: int, updated_at: ?string} */
+    /** @return array{enabled: bool, percent: int, eligibleTag: string, updated_at: ?string} */
     public function read(string $shop): array
     {
         $data = $this->graphql->query($shop, self::READ, [
@@ -28,27 +28,34 @@ class OfferSettings
         $json = is_string($raw) ? json_decode($raw, true) : null;
 
         if (! is_array($json)) {
-            return ['enabled' => false, 'percent' => (int) OfferConstants::get('defaultPercent'), 'updated_at' => null];
+            return ['enabled' => false, 'percent' => (int) OfferConstants::get('defaultPercent'), 'eligibleTag' => self::defaultTag(), 'updated_at' => null];
         }
+
+        $tag = $json['eligibleTag'] ?? null;
 
         return [
             'enabled' => (bool) ($json['enabled'] ?? false),
             'percent' => (int) ($json['percent'] ?? OfferConstants::get('defaultPercent')),
+            // Configs saved before the tag became editable have no eligibleTag: fall back to the default.
+            'eligibleTag' => is_string($tag) && trim($tag) !== '' ? $tag : self::defaultTag(),
             'updated_at' => isset($json['updated_at']) ? (string) $json['updated_at'] : null,
         ];
     }
 
     /**
-     * @return array{settings: array{enabled: bool, percent: int, updated_at: ?string}, discount: array{id: string, status: string, adminUrl: string, title: string}}
+     * Writes the shop config, reads it back (all three fields must match), then makes sure the
+     * automatic discount exists and carries the tag in its input-variables metafield.
+     *
+     * @return array{settings: array{enabled: bool, percent: int, eligibleTag: string, updated_at: ?string}, discount: array{id: string, status: string, adminUrl: string, title: string}}
      *
      * @throws ShopifyGraphqlException|SaveMismatch
      */
-    public function save(string $shop, bool $enabled, int $percent): array
+    public function save(string $shop, bool $enabled, int $percent, string $eligibleTag): array
     {
         $ownerId = $this->graphql->query($shop, self::SHOP_ID)['shop']['id']
             ?? throw new ShopifyGraphqlException('Could not resolve the shop id.');
 
-        $value = ['enabled' => $enabled, 'percent' => $percent, 'updated_at' => now()->toIso8601String()];
+        $value = ['enabled' => $enabled, 'percent' => $percent, 'eligibleTag' => $eligibleTag, 'updated_at' => now()->toIso8601String()];
         $data = $this->graphql->query($shop, self::WRITE, ['metafields' => [[
             'ownerId' => $ownerId,
             'namespace' => OfferConstants::get('metafieldNamespace'),
@@ -63,10 +70,15 @@ class OfferSettings
         }
 
         $stored = $this->read($shop);
-        if ($stored['enabled'] !== $enabled || $stored['percent'] !== $percent) {
+        if ($stored['enabled'] !== $enabled || $stored['percent'] !== $percent || $stored['eligibleTag'] !== $eligibleTag) {
             throw new SaveMismatch('read-back mismatch');
         }
 
-        return ['settings' => $stored, 'discount' => $this->discounts->ensure($shop)];
+        return ['settings' => $stored, 'discount' => $this->discounts->ensure($shop, $eligibleTag)];
+    }
+
+    public static function defaultTag(): string
+    {
+        return (string) OfferConstants::get('eligibleTag');
     }
 }

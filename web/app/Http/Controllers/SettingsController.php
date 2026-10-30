@@ -31,7 +31,12 @@ class SettingsController extends Controller
         $shop = (string) $request->attributes->get('shop');
 
         try {
-            $result = $settings->save($shop, $request->boolean('enabled'), (int) $request->input('percent'));
+            $result = $settings->save(
+                $shop,
+                $request->boolean('enabled'),
+                (int) $request->input('percent'),
+                (string) $request->validated('eligibleTag'),
+            );
         } catch (ShopifyGraphqlException|SaveMismatch $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }

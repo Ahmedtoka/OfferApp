@@ -9,7 +9,9 @@ use App\Shopify\GraphqlClient;
  * replays tests/Fixtures/graphql/*.json. Stateful just enough to behave like a
  * shop: the metafield written by WriteSettings is what ReadSettings returns,
  * unless $readBackOverride is set; a created discount is found afterwards, and an
- * activated one is reported ACTIVE afterwards.
+ * activated one is reported ACTIVE afterwards. The discount-node config metafield (set by
+ * CreateDiscount's metafields or WriteDiscountConfig) is what ReadDiscountConfig returns,
+ * unless $discountReadBackOverride is set.
  */
 class FakeGraphqlClient implements GraphqlClient
 {
@@ -25,12 +27,18 @@ class FakeGraphqlClient implements GraphqlClient
         'CreateDiscount' => 'discount-create-ok',
         'UpdateDiscount' => 'discount-update-ok',
         'ActivateDiscount' => 'discount-activate-ok',
+        'WriteDiscountConfig' => 'metafields-set-ok',
     ];
 
     /** Raw JSON string ReadSettings returns instead of the last write (null = echo the write). */
     public ?string $readBackOverride = null;
 
     public ?string $metafieldValue = null;
+
+    /** Raw JSON ReadDiscountConfig returns instead of the last discount write (null = echo it). */
+    public ?string $discountReadBackOverride = null;
+
+    public ?string $discountMetafieldValue = null;
 
     /** AppDiscounts fixture served after a successful ActivateDiscount. */
     public string $afterActivate = 'discount-nodes-existing';
@@ -56,9 +64,25 @@ class FakeGraphqlClient implements GraphqlClient
             return ['shop' => ['metafield' => $value === null ? null : ['value' => $value]]];
         }
 
+        if ($op === 'WriteDiscountConfig') {
+            $data = $this->fixture($this->fixtures[$op]);
+            if (($data['metafieldsSet']['userErrors'] ?? []) === []) {
+                $this->discountMetafieldValue = $variables['metafields'][0]['value'];
+            }
+
+            return $data;
+        }
+
+        if ($op === 'ReadDiscountConfig') {
+            $value = $this->discountReadBackOverride ?? $this->discountMetafieldValue;
+
+            return ['discountNode' => ['metafield' => $value === null ? null : ['value' => $value]]];
+        }
+
         if ($op === 'CreateDiscount') {
             $data = $this->fixture($this->fixtures[$op]);
             if (($data['discountAutomaticAppCreate']['userErrors'] ?? []) === []) {
+                $this->discountMetafieldValue = $variables['d']['metafields'][0]['value'] ?? null;
                 // From now on the discount exists (as the real shop would report it).
                 $this->fixtures['AppDiscounts'] = 'discount-nodes-existing';
             }
