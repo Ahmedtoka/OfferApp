@@ -1,4 +1,4 @@
-query Input {
+query Input($eligibleTags: [String!]!) {
   cart {
     lines {
       id
@@ -11,7 +11,7 @@ query Input {
         __typename
         ... on ProductVariant {
           id
-          product { id isGiftCard hasAnyTag(tags: ["FallOffer"]) }
+          product { id isGiftCard hasAnyTag(tags: $eligibleTags) }
         }
       }
     }

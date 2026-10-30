@@ -11,6 +11,9 @@ description = "Buy one get one free, or one piece alone at N% off"
   target = "cart.lines.discounts.generate.run"
   input_query = "src/cart_lines_discounts_generate_run.graphql"
   export = "cart-lines-discounts-generate-run"
+  # Variables come from the JSON metafield $app:bogo/config on the automatic discount node
+  # (written by the Laravel admin, value {"eligibleTags": ["<tag>"]}), not the shop metafield.
+  input_variables = { namespace = "$app:bogo", key = "config" }
 
 
   [extensions.build]

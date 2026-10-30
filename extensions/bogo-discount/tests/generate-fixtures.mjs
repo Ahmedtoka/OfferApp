@@ -89,8 +89,21 @@ function buildOutput(lines, plan, pct) {
   return { operations: [{ productDiscountsAdd: { selectionStrategy: 'ALL', candidates } }] };
 }
 
-const fixture = (input, output) => ({
-  payload: { export: 'cart-lines-discounts-generate-run', target: 'cart.lines.discounts.generate.run', input, output },
+// Input query variables. In production Shopify reads them from the JSON metafield
+// $app:bogo/config on the automatic discount node and evaluates hasAnyTag(tags: $eligibleTags)
+// itself, so the input already carries the resulting boolean. Neither the test helpers'
+// runFunction nor function-runner / `shopify app function run` accept variables, so each
+// fixture records them under payload.inputVariables (ignored by the harness, checked by
+// tests/input-query.test.js against the constants default).
+const DEFAULT_VARIABLES = { eligibleTags: [constants.eligibleTag] };
+const fixture = (input, output, inputVariables = DEFAULT_VARIABLES) => ({
+  payload: {
+    export: 'cart-lines-discounts-generate-run',
+    target: 'cart.lines.discounts.generate.run',
+    inputVariables,
+    input,
+    output,
+  },
 });
 
 const files = {};
@@ -123,7 +136,7 @@ files.percent_40_single_a = fixture(
   buildOutput(A, { A: s(480) }, 40),
 );
 
-// Eligibility (tag FallOffer): untagged lines are ignored completely. abc lines: A 1200, B 1100, C 900.
+// Eligibility (default tag FallOffer): untagged lines are ignored completely. abc lines: A 1200, B 1100, C 900.
 const ABC = byName.abc.lines;
 const AB = ABC.filter((l) => l.id !== 'C');
 // A tagged + B untagged: A is alone, so it takes the single (30% of 1200); B is untouched.
@@ -136,6 +149,14 @@ files.all_untagged = fixture(buildInput(ABC, { metafield: meta30, untaggedIds: [
 files.mixed_tags_3_units = fixture(
   buildInput(ABC, { metafield: meta30, untaggedIds: ['C'] }),
   buildOutput(ABC, { B: g('B', 1100) }, 30),
+);
+
+// Merchant-configured tag: with eligibleTags ["WinterOffer"], Shopify resolves hasAnyTag to true
+// for WinterOffer-tagged products, so the tagged line gets the offer (alone -> 30% single).
+files.custom_tag_name = fixture(
+  buildInput(A, { metafield: meta30 }),
+  buildOutput(A, { A: s(360) }, 30),
+  { eligibleTags: ['WinterOffer'] },
 );
 
 // Instruction-budget fixtures (I1): large odd carts. All prices have no markdown (pFull = pNow),
