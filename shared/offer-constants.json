@@ -4,6 +4,7 @@
   "percentMessageTemplate": "{pct}% off",
   "metafieldNamespace": "$app:bogo",
   "metafieldKey": "config",
+  "metafieldDiscountKey": "config",
   "defaultPercent": 30,
   "minPercent": 1,
   "maxPercent": 99,
