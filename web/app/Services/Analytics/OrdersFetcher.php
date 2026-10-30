@@ -5,7 +5,11 @@ namespace App\Services\Analytics;
 use App\Shopify\GraphqlClient;
 use App\Shopify\ShopifyGraphqlException;
 
-/** Pages through the shop's recent orders (newest first) until the range is exhausted or the cap is hit. */
+/**
+ * Pages through the shop's recent orders (newest first) until the range is exhausted or the cap is hit.
+ * Cancelled orders are excluded twice: in the search query and by `cancelledAt` on each node.
+ * Refunded orders stay counted (the discount was granted at purchase); test orders are not excluded.
+ */
 class OrdersFetcher
 {
     private const QUERY = <<<'GQL'
@@ -16,6 +20,7 @@ query AnalyticsOrders($cursor: String, $q: String!) {
       id
       name
       createdAt
+      cancelledAt
       lineItems(first: 250) {
         nodes {
           quantity
@@ -47,13 +52,16 @@ GQL;
      */
     public function fetch(string $shop, int $rangeDays, int $cap): array
     {
-        $q = 'created_at:>='.now()->subDays($rangeDays)->toIso8601String();
+        $q = 'created_at:>='.now()->subDays($rangeDays)->toIso8601String().' -status:cancelled';
         $orders = [];
         $cursor = null;
 
         do {
             $page = $this->graphql->query($shop, self::QUERY, ['cursor' => $cursor, 'q' => $q])['orders'] ?? [];
             foreach ($page['nodes'] ?? [] as $node) {
+                if (($node['cancelledAt'] ?? null) !== null) {
+                    continue;
+                }
                 $orders[] = $node;
             }
             $more = (bool) ($page['pageInfo']['hasNextPage'] ?? false);

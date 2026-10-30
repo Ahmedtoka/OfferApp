@@ -66,6 +66,33 @@ class AnalyticsTest extends TestCase
         $this->assertNotNull($res->json('computedAt'));
     }
 
+    public function test_cancelled_offer_order_counts_nowhere(): void
+    {
+        // orders_all_rows plus one cancelled offer order (#1999: a 5000 gift and a 300 single).
+        $this->fake(['orders_with_cancelled']);
+
+        $res = $this->api('/api/analytics?range=30')->assertOk();
+
+        $res->assertJsonPath('ordersTotal', 9)
+            ->assertJsonPath('offerOrders', 7)
+            ->assertJsonPath('giftUnits', 8)
+            ->assertJsonPath('percentUnits', 4);
+        $this->assertSame(77.8, $res->json('offerOrdersPct'));
+        $this->assertEquals(9370.0, $res->json('totalDiscount'));
+        $this->assertEquals(390.0, $res->json('scenario2Extra'));
+        $this->assertNotContains('Product Cancelled', array_column($res->json('topGifts'), 'title'));
+        $this->assertSame('Product B', $res->json('topGifts.0.title'));
+    }
+
+    public function test_orders_query_excludes_cancelled_orders(): void
+    {
+        $fake = $this->fake(['orders_all_rows']);
+
+        $this->api('/api/analytics?range=30')->assertOk();
+
+        $this->assertStringContainsString('-status:cancelled', $fake->calls[0]['variables']['q']);
+    }
+
     public function test_orders_query_asks_for_the_range_window(): void
     {
         $fake = $this->fake(['orders_all_rows']);

@@ -1,0 +1,646 @@
+{
+    "orders": {
+        "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": null
+        },
+        "nodes": [
+            {
+                "id": "gid://shopify/Order/1999",
+                "name": "#1999",
+                "createdAt": "2026-10-29T10:00:00+00:00",
+                "cancelledAt": "2026-10-29T12:00:00+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 2,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "5000.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/99",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/99",
+                                "title": "Product Cancelled"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "5000.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "هدية"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1000.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/98",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/98",
+                                "title": "Product Cancelled Single"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "300.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "خصم 30%"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "gid://shopify/Order/1001",
+                "name": "#1001",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "360.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "خصم 30%"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "cancelledAt": null
+            },
+            {
+                "id": "gid://shopify/Order/1002",
+                "name": "#1002",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A"
+                            },
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/3",
+                                "title": "Product C"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "900.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "هدية"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "cancelledAt": null
+            },
+            {
+                "id": "gid://shopify/Order/1003",
+                "name": "#1003",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A"
+                            },
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1100.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/2",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/2",
+                                "title": "Product B"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "1100.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "هدية"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/3",
+                                "title": "Product C"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "270.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "خصم 30%"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "cancelledAt": null
+            },
+            {
+                "id": "gid://shopify/Order/1004",
+                "name": "#1004",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A"
+                            },
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1100.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/2",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/2",
+                                "title": "Product B"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "1100.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "هدية"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/3",
+                                "title": "Product C"
+                            },
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "800.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/4",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/4",
+                                "title": "Product D"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "800.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "هدية"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "cancelledAt": null
+            },
+            {
+                "id": "gid://shopify/Order/1005",
+                "name": "#1005",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A"
+                            },
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1100.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/2",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/2",
+                                "title": "Product B"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "1100.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "هدية"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/3",
+                                "title": "Product C"
+                            },
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "800.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/4",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/4",
+                                "title": "Product D"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "800.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "هدية"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "600.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/5",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/5",
+                                "title": "Product E"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "180.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "خصم 30%"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "cancelledAt": null
+            },
+            {
+                "id": "gid://shopify/Order/1006",
+                "name": "#1006",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 2,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "1200.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "هدية"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "cancelledAt": null
+            },
+            {
+                "id": "gid://shopify/Order/1007",
+                "name": "#1007",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 3,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "1200.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "هدية"
+                                    }
+                                },
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "360.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "خصم 30%"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "cancelledAt": null
+            },
+            {
+                "id": "gid://shopify/Order/1008",
+                "name": "#1008",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1100.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/2",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/2",
+                                "title": "Product B"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "110.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "DiscountCodeApplication",
+                                        "code": "SAVE10"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "cancelledAt": null
+            },
+            {
+                "id": "gid://shopify/Order/1009",
+                "name": "#1009",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/3",
+                                "title": "Product C"
+                            },
+                            "discountAllocations": []
+                        }
+                    ]
+                },
+                "cancelledAt": null
+            }
+        ]
+    }
+}
