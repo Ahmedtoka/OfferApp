@@ -34,3 +34,55 @@ Note: the 30% label shows the discount amount (e.g. -E£270.00 on QA-C), while t
 ## Not verified
 - Only the Function's output at checkout (dev preview) was verified; the production-deployed Function version, checkout on other devices/locales, and order creation/payment were not tested.
 - Cart-page screenshots were taken only for abc, a_x3 and mixed_2x1200_3x900 as specified.
+
+## Part B — orders, admin page, settings (2026-10-30)
+
+Environment: Claude built-in browser pane (~800x671 viewport), dev store levoilest.myshopify.com, Bogus test gateway (card `1`). Observed values below were read from page screenshots only.
+
+### Test orders (all Paid, Online Store, customer "QA Test")
+| scenario | order | confirmation | total observed (thank-you + Orders list) | expected | screenshot |
+|---|---|---|---|---|---|
+| abc (A,B,C) | #1035 | MJVLTLMLI | E£1,830.00 (QA-C 630.00 "خصم 30%", QA-B FREE "هدية", QA-A 1,200.00) | 1,830.00 | order-abc-thankyou.jpg |
+| a_x3 (A x3) | #1036 | MH74V1KUF | E£2,040.00 (1,200 + 840 "خصم 30%" + FREE "هدية") | 2,040.00 | order-a_x3-thankyou.jpg |
+| ac (A,C) | #1037 | 8YWYIGR9N | E£1,200.00 (QA-C FREE "هدية") | 1,200.00 | order-ac-thankyou.jpg |
+
+Orders list evidence: orders-list.jpg (#1035 8:07 pm, #1036 and #1037 8:08 pm).
+
+### Checks
+| check | expected | observed | screenshot | result |
+|---|---|---|---|---|
+| Page load: toggle | on | "العرض شغال" toggle on | admin-page-loaded.jpg | ✅ |
+| Page load: percent | 30 | 30 | admin-page-loaded.jpg | ✅ |
+| Page load: status line | discount exists/active | "الخصم موجود وشغال في شوبيفاي" | admin-page-loaded.jpg | ✅ |
+| Page load: link «افتح في الخصومات» | present | present | admin-page-loaded.jpg | ✅ |
+| Analytics 7 أيام tiles | 3 / 3 / 2 / 3,830.00 / 140.00 + table | no tiles; red banner "Shopify GraphQL errors: This app is not approved to access the Order object. See https://shopify.dev/docs/apps/launch/protected-customer-data for more details." | admin-analytics-7d.jpg | ❌ |
+| Analytics 30 يوم (default on load) | same tiles | empty state "مفيش أوردرات في الفترة دي" (shown although 3 orders exist today) | admin-page-loaded.jpg | ❌ |
+| Analytics 60 يوم | same tiles | same red GraphQL "not approved to access the Order object" banner | admin-analytics-60d.jpg | ❌ |
+| Save 40 | green banner «تم الحفظ وتم تحديث الخصم في شوبيفاي» | green banner with exactly that text, field 40 | admin-save-40.jpg | ✅ |
+| Read-back 40 after reload | 40 | 40 (page reloaded, field showed 40) | (reload screenshot, not saved) | ✅ |
+| Storefront A alone at 40 | 720.00 label «خصم 40%» | Subtotal/Total E£720.00, line "%40 خصم (-E£480.00)" | storefront-a-40pct.jpg | ✅ |
+| Save 30 | green banner | green banner, field 30 | admin-save-30.jpg | ✅ |
+| Storefront A alone at 30 | 840.00 | E£840.00, "%30 خصم (-E£360.00)" | storefront-a-30pct-restored.jpg | ✅ |
+| Validation 150 + save | «اكتب رقم صحيح من 1 لـ 99» | red field border + inline text "اكتب رقم صحيح من 1 لـ 99"; no banner | admin-save-invalid.jpg | ✅ |
+| Toggle off + save | green banner, toggle off | green banner; label changed to «متوقف», toggle off | admin-toggle-off.jpg | ✅ |
+| Off persisted after reload | off | «متوقف» toggle off after reload | (not saved) | ✅ |
+| Storefront A+C while off | 2,100.00 no discount | Subtotal/Total E£2,100.00, QA-C 900.00 and QA-A 1,200.00, no discount line | storefront-offer-off.jpg | ✅ |
+| Toggle on + save | green banner, toggle on | green banner, «العرض شغال» on | admin-toggle-on.jpg | ✅ |
+| Storefront A+C while on | 1,200.00 | E£1,200.00, QA-C FREE "هدية (-E£900.00)" | storefront-offer-on.jpg | ✅ |
+| Phone width 375x812 | single column, no horizontal scroll | single column, cards stacked, no horizontal scroll visible | admin-mobile.jpg | ✅ |
+| Discounts list | one automatic BOGO discount Active | «اشتري واحدة وخد واحدة», Active, Automatic, "BOGO Discount (Le Voile)". Also visible: Active code discount QA10; other automatic discounts are Expired | discounts-list.jpg | ✅ (see note) |
+
+### Raw analytics tile values
+No tile values could be read. 7 أيام and 60 يوم returned the protected-customer-data GraphQL error; 30 يوم returned the empty state. The five tiles and the top-gifts table never rendered, so the expected numbers (3 / 3 / 2 / 3,830.00 / 140.00; QA-B 1 / 1,100.00, QA-A 1 / 1,200.00, QA-C 1 / 900.00) are unverified.
+
+### Findings
+1. BLOCKER for analytics: the app is not approved for protected customer data (Order object), so the Orders query fails on the dev store. Requires protected-customer-data access (Partner Dashboard > API access) or an analytics query that avoids protected fields. Cache not suspected for 7d/60d (explicit error).
+2. The 30 يوم default view shows the "no orders" empty state while the 7d and 60d views error. Inconsistent: either the error is swallowed for that range or a stale cached empty result was served. Not distinguishable from the page.
+3. Minor/observation: after switching the toggle off and saving, the status line still reads "الخصم موجود وشغال في شوبيفاي" (also after reload), although the storefront shows no discount. Wording may only mean "discount object exists", but it can mislead.
+4. Note: the brief expected only one automatic discount; the list also contains an Active code discount QA10 (not ours).
+
+### Not verified
+- Analytics tiles and top-gifts table (blocked by finding 1) and the 10-minute cache behaviour.
+- `% من كل الأوردرات` figure.
+- Horizontal scroll at phone width checked visually only (cross-origin iframe, no DOM measurement).
+- Everything listed as not verified in earlier sections remains so, except the three orders (now placed) and admin settings/toggle flow.
