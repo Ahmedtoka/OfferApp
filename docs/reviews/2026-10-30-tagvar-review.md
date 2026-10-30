@@ -1,0 +1,22 @@
+# Review: merchant-editable eligible tag (1366daa..02b7f03)
+
+Scope: static read of the diff plus greps of OfferAnalytics, SettingsController, the toml. No tests run (suites reported green). Verdict: Ship, with the notes below.
+
+## Probes
+1. Fail-closed / ensure(): OK. ensure() writes the metafield on every save: in the create input on first create, otherwise `metafieldsSet` on the discount gid (after activate and rename), and both paths call verifyConfig, which reads `discountNode.metafield` back and compares `eligibleTags === [tag]` strictly. A mismatch, a missing metafield, bad JSON or a wrong shape throws SaveMismatch, which the controller maps to 422 (tested for create and for existing). A metafieldsSet userError also gives 422.
+   - First install / upgrade before any Save (document only): the discount (new, or created by the previous version) has no `$app:bogo/config` metafield, so the required `$eligibleTags` is null and the Function run fails, so there is no discount at checkout. `GET /api/settings` (`find()`) never repairs or checks it, and the status line would still read "active and exists". deploy.md step 8 now says to Save once per store.
+   - Partial failure: the shop config is written before ensure(), so a 422 from the discount step leaves the shop tag new and the discount tag old. Analytics then uses the new tag while the Function uses the old one until a retry succeeds. The merchant sees the 422 and can retry.
+2. Tag validation: OK. It is trimmed in prepareForValidation, then required, string, 1-100, `not_regex:/,/`. A leading `#`, quotes, unicode, spaces and control characters are accepted, which is fine. Quotes are escaped by json_encode, so there is no JSON injection. `JSON_UNESCAPED_UNICODE|SLASHES` is valid JSON and read-back compares decoded values. Blade escapes the value attribute. Nit: a leading `#` is probably a merchant typo, since Shopify tags do not carry it. Consider a hint or stripping it.
+3. Read-back / cache / defaults: OK. The shop read-back compares enabled, percent and eligibleTag. The analytics cache key is `...:sha1(tag)` and a test covers a tag change recomputing. `OfferSettings::read()` falls back to the default when the tag is missing, not a string, or blank. Cost: analytics now does one extra ReadSettings GraphQL call on every request, including cache hits. History is re-attributed to the current tag when the tag changes (orders placed under the old tag are reclassified).
+4. JS: OK. The tag is read with `.value`, trimmed and validated like the server (required, max, comma), then sent in the PUT body. The note is set with `textContent`, so there is no XSS. Server errors are shown via showBanner. Nit: `template.replace('{tag}', tag)` with a string replacement interprets `$&` and `$'` in the tag, so the note text can render wrongly (display only). Use `() => tag` as the replacer. JS length counts UTF-16 units and PHP max counts characters, which is harmless.
+5. Toml: OK. `input_variables` is on the single target, there is no `[extensions.input]`, and only those 3 lines were added (a comment and the key).
+6. Regressions: none seen in the diff. The calculator is untouched. The `__typename` guard line in the query is intact and only the hasAnyTag argument changed. The legacy-title / message classification path in analytics is untouched, apart from `eligibleTag` now being an instance property. The I1-I5 instruction-budget fixtures are only re-wrapped with `inputVariables`. The I1-I5 text itself was not re-read, so this probe is diff-scoped.
+
+## Findings
+- Critical: none.
+- Important: none blocking.
+- Minor:
+  - web/app/Http/Controllers/SettingsController.php:22 - GET only calls find(), so a discount missing its metafield (first install after deploy) still shows "active" while the Function fails. Consider a cheap metafield check there or a warning in the status line.
+  - web/app/Services/Analytics/OfferAnalytics.php:126 - eligibility is a case-sensitive `in_array` strict match. deploy.md documents "case-sensitive", but if Shopify's hasAnyTag is case-insensitive, analytics and the Function can disagree. Worth a one-line check on the dev store.
+  - extensions/bogo-discount/tests/generate-fixtures.mjs:124 - the harness cannot pass variables, so the `$eligibleTags` query path is only covered by parse/regex tests and the dev-store test. Run the QA save plus a real cart on the dev store before the real one.
+  - web/public/app.js:673 - `replace()` with `$` patterns (above).
