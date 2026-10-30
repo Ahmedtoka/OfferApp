@@ -24,6 +24,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        RateLimiter::for('analytics', fn (Request $request) => Limit::perMinute(10)->by((string) $request->attributes->get('shop')));
+        // Keyed by the verified shop (set by shopify.session, which bootstrap/app.php orders first).
+        // Defensive fallback: never share one empty-key bucket if the shop is somehow missing.
+        RateLimiter::for('analytics', function (Request $request) {
+            $shop = $request->attributes->get('shop');
+
+            return Limit::perMinute(10)->by(is_string($shop) && $shop !== '' ? 'shop:'.$shop : 'ip:'.$request->ip());
+        });
     }
 }

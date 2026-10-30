@@ -188,6 +188,34 @@ class AnalyticsTest extends TestCase
         $this->api()->assertStatus(429);
     }
 
+    /** Security review F3: the limiter is keyed by the verified shop, so one shop cannot exhaust another's budget. */
+    public function test_rate_limit_is_per_shop_not_per_ip(): void
+    {
+        $this->fake(['orders_all_rows', 'orders_all_rows']);
+        $other = 'levoilest.myshopify.com';
+        Shop::create(['shop_domain' => $other, 'access_token' => 'shpat_other', 'scopes' => 'read_orders', 'installed_at' => now()]);
+
+        for ($i = 0; $i < 10; $i++) {
+            $this->api()->assertOk();
+        }
+        $this->api()->assertStatus(429);
+
+        $otherToken = SessionTokens::mint(['iss' => "https://{$other}/admin", 'dest' => "https://{$other}"]);
+        $this->withHeader('Authorization', 'Bearer '.$otherToken)->getJson('/api/analytics')->assertOk();
+    }
+
+    /** Security review F3: unauthenticated calls are rejected before the limiter and cannot lock a shop out. */
+    public function test_unauthenticated_requests_do_not_consume_the_shop_rate_limit(): void
+    {
+        $this->fake(['orders_all_rows']);
+
+        for ($i = 0; $i < 15; $i++) {
+            $this->getJson('/api/analytics')->assertStatus(401);
+        }
+
+        $this->api()->assertOk();
+    }
+
     public function test_requires_session_token(): void
     {
         $this->getJson('/api/analytics')->assertStatus(401);
