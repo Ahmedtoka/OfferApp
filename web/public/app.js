@@ -11,6 +11,8 @@ const els = {
     form: $('#settings-form'),
     enabled: $('#enabled'),
     percent: $('#percent'),
+    tag: $('#eligible-tag'),
+    tagNote: $('#eligible-tag-note'),
     save: $('#save'),
     status: $('#discount-status'),
     range: $('#range'),
@@ -90,6 +92,11 @@ function setSwitchLabel() {
     els.enabled.setAttribute('label', on ? els.enabled.dataset.labelOn : els.enabled.dataset.labelOff);
 }
 
+function renderTagNote() {
+    const tag = String(els.tag.value ?? '').trim();
+    els.tagNote.textContent = els.tagNote.dataset.template.replace('{tag}', tag);
+}
+
 function percentLabel(pct) {
     return els.tiles.dataset.percentTemplate.replace('{pct}', String(pct));
 }
@@ -119,6 +126,11 @@ function renderSettings(data) {
         els.percent.value = String(settings.percent);
         els.percentTileLabel.textContent = percentLabel(settings.percent);
     }
+    if (typeof settings.eligibleTag === 'string' && settings.eligibleTag !== '') {
+        els.tag.value = settings.eligibleTag;
+        els.tag.removeAttribute('error');
+    }
+    renderTagNote();
     renderStatus(data.discount ?? null);
 }
 
@@ -147,19 +159,36 @@ function readPercent() {
     return n;
 }
 
+// Same rules as the server: required after trimming, at most data-max chars, no commas
+// (Shopify splits product tags on commas).
+function readTag() {
+    const tag = String(els.tag.value ?? '').trim();
+    let error = null;
+    if (tag === '') error = els.tag.dataset.requiredError;
+    else if (tag.length > Number(els.tag.dataset.max)) error = els.tag.dataset.lengthError;
+    else if (tag.includes(',')) error = els.tag.dataset.commaError;
+    if (error !== null) {
+        els.tag.setAttribute('error', error);
+        return null;
+    }
+    els.tag.removeAttribute('error');
+    return tag;
+}
+
 let saving = false;
 
 async function save() {
     if (saving) return;
     const percent = readPercent();
-    if (percent === null) return;
+    const eligibleTag = readTag();
+    if (percent === null || eligibleTag === null) return;
 
     saving = true;
     clearBanner(els.settingsBanner);
     els.save.setAttribute('loading', '');
     els.save.setAttribute('disabled', '');
     try {
-        const data = await api('PUT', '/api/settings', { enabled: Boolean(els.enabled.checked), percent });
+        const data = await api('PUT', '/api/settings', { enabled: Boolean(els.enabled.checked), percent, eligibleTag });
         renderSettings(data);
         if (typeof data.message === 'string' && data.message !== '') {
             showBanner(els.settingsBanner, 'success', data.message);
@@ -262,6 +291,11 @@ els.range.value = els.range.dataset.default;
 els.enabled.addEventListener('change', setSwitchLabel);
 els.enabled.addEventListener('input', setSwitchLabel);
 els.percent.addEventListener('input', () => els.percent.removeAttribute('error'));
+els.tag.addEventListener('input', () => {
+    els.tag.removeAttribute('error');
+    renderTagNote();
+});
+els.tag.addEventListener('change', renderTagNote);
 els.save.addEventListener('click', save);
 els.form.addEventListener('submit', (e) => {
     e.preventDefault();

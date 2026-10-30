@@ -6,6 +6,7 @@
       https://shopify.dev/docs/api/app-home/latest/web-components/versioning   (loader: polaris-2.js after app-bridge.js)
     Tags used: s-page (heading), s-section (heading), s-switch (label, checked),
       s-number-field (label, value, min, max, step, suffix, inputMode, error),
+      s-text-field (label, value, maxLength, autocomplete, error),
       s-button (variant, loading, disabled), s-banner (tone, dismissible), s-select / s-option (label, value),
       s-link (href, target), s-spinner, s-box (padding, background, borderRadius), s-text (color, tone, type),
       s-table / s-table-header-row / s-table-header (listSlot, format) / s-table-body / s-table-row / s-table-cell.
@@ -61,7 +62,21 @@
                         data-max="{{ $maxPercent }}"
                         data-range-error="Enter a whole number from {{ $minPercent }} to {{ $maxPercent }}"
                     ></s-number-field>
-                    <s-text color="subdued" id="eligible-tag-note">Applies only to products tagged "{{ $eligibleTag }}".</s-text>
+                </div>
+
+                <div class="field-narrow">
+                    <s-text-field
+                        id="eligible-tag"
+                        label="Eligible product tag"
+                        value="{{ $eligibleTag }}"
+                        maxLength="{{ $tagMaxLength }}"
+                        autocomplete="off"
+                        data-max="{{ $tagMaxLength }}"
+                        data-required-error="Enter the product tag"
+                        data-length-error="The tag can be at most {{ $tagMaxLength }} characters"
+                        data-comma-error="A tag cannot contain commas"
+                    ></s-text-field>
+                    <s-text color="subdued" id="eligible-tag-note" data-template='Applies only to products tagged "{tag}".'>Applies only to products tagged "{{ $eligibleTag }}".</s-text>
                 </div>
 
                 <div id="discount-status" class="status-line">

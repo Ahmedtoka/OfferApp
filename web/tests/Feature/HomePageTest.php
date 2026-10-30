@@ -57,14 +57,26 @@ class HomePageTest extends TestCase
         }
     }
 
-    public function test_percent_field_explains_the_eligible_tag_from_shared_constants(): void
+    public function test_tag_field_defaults_to_the_shared_constant_with_the_note_under_it(): void
     {
         $res = $this->loadAdminPage();
 
         $res->assertOk();
         $this->assertSame('FallOffer', OfferConstants::get('eligibleTag'));
+        $res->assertSee('Eligible product tag', false);
         $res->assertSee('Applies only to products tagged "FallOffer".', false);
-        $res->assertSeeInOrder(['id="percent"', 'Applies only to products tagged'], false);
+        $res->assertSeeInOrder(['id="percent"', 'id="eligible-tag"', 'value="FallOffer"', 'maxLength="100"', 'Applies only to products tagged'], false);
+        // app.js re-renders the note live from this template as the merchant types.
+        $res->assertSee('data-template=\'Applies only to products tagged "{tag}".\'', false);
+    }
+
+    public function test_app_js_sends_and_renders_the_tag(): void
+    {
+        $js = (string) file_get_contents(public_path('app.js'));
+
+        $this->assertStringContainsString("{ enabled: Boolean(els.enabled.checked), percent, eligibleTag }", $js);
+        $this->assertStringContainsString("els.tag.addEventListener('input'", $js);
+        $this->assertStringContainsString('settings.eligibleTag', $js);
     }
 
     public function test_range_options_default_to_30(): void

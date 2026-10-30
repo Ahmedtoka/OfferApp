@@ -24,7 +24,9 @@ class HomeController extends Controller
             'defaultPercent' => $defaultPercent,
             'minPercent' => (int) OfferConstants::get('minPercent'),
             'maxPercent' => (int) OfferConstants::get('maxPercent'),
+            // Default only; app.js replaces it with the shop's saved tag from /api/settings.
             'eligibleTag' => (string) OfferConstants::get('eligibleTag'),
+            'tagMaxLength' => 100,
             'ranges' => array_map('intval', (array) OfferConstants::get('analyticsRanges')),
             'defaultRange' => (int) OfferConstants::get('defaultRange'),
             'orderCap' => (int) OfferConstants::get('analyticsOrderCap'),
