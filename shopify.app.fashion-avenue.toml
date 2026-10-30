@@ -1,11 +1,11 @@
 # Fashion Avenue app (separate custom app; same code). Deploy with: shopify app deploy --config fashion-avenue
-# application_url is a placeholder until the Cloudways subdomain is final.
+# application_url = Cloudways temporary URL until the offer-fa subdomain is mapped.
 # Le Voile BOGO offer app — Shopify app configuration.
 # Ownership/hostname are configuration (design §3): change here and in web/.env only.
 client_id = "a074e0f3951f38244bdd2a006c26e866"
 name = "BOGO Fashion Avenue"
 handle = "bogo-fashion-avenue"
-application_url = "https://offer-fa.arenahere.com"
+application_url = "https://phpstack-1216096-6759921.cloudwaysapps.com"
 embedded = true
 
 [build]
@@ -29,4 +29,4 @@ api_version = "2026-07"
 scopes = "write_discounts,read_orders,read_products"
 
 [auth]
-redirect_urls = [ "https://offer-fa.arenahere.com/auth/callback" ]
+redirect_urls = [ "https://phpstack-1216096-6759921.cloudwaysapps.com/auth/callback" ]
