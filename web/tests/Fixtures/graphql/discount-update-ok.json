@@ -1,1 +1,1 @@
-{ "discountAutomaticAppUpdate": { "automaticAppDiscount": { "discountId": "gid://shopify/DiscountAutomaticNode/777", "title": "اشتري واحدة وخد واحدة", "status": "ACTIVE" }, "userErrors": [] } }
+{ "discountAutomaticAppUpdate": { "automaticAppDiscount": { "discountId": "gid://shopify/DiscountAutomaticNode/777", "title": "Buy One Get One", "status": "ACTIVE" }, "userErrors": [] } }

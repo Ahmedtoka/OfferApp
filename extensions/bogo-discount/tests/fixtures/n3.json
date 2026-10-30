@@ -79,7 +79,7 @@
             "selectionStrategy": "ALL",
             "candidates": [
               {
-                "message": "هدية",
+                "message": "Gift",
                 "targets": [
                   {
                     "cartLine": {
@@ -96,7 +96,7 @@
                 }
               },
               {
-                "message": "خصم 30%",
+                "message": "30% off",
                 "targets": [
                   {
                     "cartLine": {

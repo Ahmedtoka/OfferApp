@@ -102,7 +102,7 @@ class SettingsTest extends TestCase
 
         $this->assertSame(0, $fake->count('CreateDiscount'));
         $this->assertSame(1, $fake->count('UpdateDiscount'));
-        $this->assertSame('اشتري واحدة وخد واحدة', $fake->calls[array_search('UpdateDiscount', $fake->ops(), true)]['variables']['d']['title']);
+        $this->assertSame('Buy One Get One', $fake->calls[array_search('UpdateDiscount', $fake->ops(), true)]['variables']['d']['title']);
     }
 
     public function test_expired_discount_is_reactivated_before_reporting_success(): void

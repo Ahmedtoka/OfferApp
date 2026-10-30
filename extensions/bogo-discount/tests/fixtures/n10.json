@@ -205,7 +205,7 @@
             "selectionStrategy": "ALL",
             "candidates": [
               {
-                "message": "هدية",
+                "message": "Gift",
                 "targets": [
                   {
                     "cartLine": {
@@ -222,7 +222,7 @@
                 }
               },
               {
-                "message": "هدية",
+                "message": "Gift",
                 "targets": [
                   {
                     "cartLine": {
@@ -239,7 +239,7 @@
                 }
               },
               {
-                "message": "هدية",
+                "message": "Gift",
                 "targets": [
                   {
                     "cartLine": {
@@ -256,7 +256,7 @@
                 }
               },
               {
-                "message": "هدية",
+                "message": "Gift",
                 "targets": [
                   {
                     "cartLine": {
@@ -273,7 +273,7 @@
                 }
               },
               {
-                "message": "هدية",
+                "message": "Gift",
                 "targets": [
                   {
                     "cartLine": {

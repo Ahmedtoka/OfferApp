@@ -5,6 +5,9 @@ import { toAmountString, toPiastres } from '../src/money.js';
 
 const cases = JSON.parse(fs.readFileSync(new URL('../../../shared/fixtures/bogo-cases.json', import.meta.url), 'utf8'));
 const byName = (n) => cases.find((c) => c.name === n);
+const constants = JSON.parse(fs.readFileSync(new URL('../../../shared/offer-constants.json', import.meta.url), 'utf8'));
+const GIFT = constants.giftMessage;
+const pctMsg = (pct) => constants.percentMessageTemplate.replace('{pct}', String(pct));
 
 const money = (v) => ({ amount: toAmountString(toPiastres(v) ).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '.0') });
 
@@ -45,8 +48,8 @@ describe('fixture cases with a per-line plan', () => {
     for (const l of c.lines) {
       const p = c.perLine[l.id];
       if (!p) continue;
-      if (p.giftQty) expected.push(cand(l.id, p.giftQty, 'هدية', toAmountString(toPiastres(p.giftAmount))));
-      if (p.singleQty) expected.push(cand(l.id, p.singleQty, 'خصم 30%', toAmountString(toPiastres(p.singleAmount))));
+      if (p.giftQty) expected.push(cand(l.id, p.giftQty, GIFT, toAmountString(toPiastres(p.giftAmount))));
+      if (p.singleQty) expected.push(cand(l.id, p.singleQty, pctMsg(30), toAmountString(toPiastres(p.singleAmount))));
     }
     const out = run(inputFor(c));
     expect(out.operations).toHaveLength(1);
@@ -58,24 +61,24 @@ describe('fixture cases with a per-line plan', () => {
 describe('specific shapes', () => {
   it('abc: gift on B, single on C', () => {
     expect(candidates(run(inputFor(byName('abc'))))).toEqual([
-      cand('B', 1, 'هدية', '1100.00'),
-      cand('C', 1, 'خصم 30%', '270.00'),
+      cand('B', 1, GIFT, '1100.00'),
+      cand('C', 1, pctMsg(30), '270.00'),
     ]);
   });
   it('mixed_2_and_3: Y gift + single, X gift, in input order', () => {
     expect(candidates(run(inputFor(byName('mixed_2_and_3'))))).toEqual([
-      cand('X', 1, 'هدية', '1200.00'),
-      cand('Y', 1, 'هدية', '900.00'),
-      cand('Y', 1, 'خصم 30%', '270.00'),
+      cand('X', 1, GIFT, '1200.00'),
+      cand('Y', 1, GIFT, '900.00'),
+      cand('Y', 1, pctMsg(30), '270.00'),
     ]);
   });
   it('percent 40 changes message and amount', () => {
-    expect(candidates(run(inputFor(byName('a'), { percent: 40 })))).toEqual([cand('A', 1, 'خصم 40%', '480.00')]);
+    expect(candidates(run(inputFor(byName('a'), { percent: 40 })))).toEqual([cand('A', 1, pctMsg(40), '480.00')]);
   });
   it('excludes gift cards', () => {
     const c = byName('ac');
     expect(run(inputFor(c, { giftCardIds: ['C'] })).operations).toEqual([
-      { productDiscountsAdd: { selectionStrategy: 'ALL', candidates: [cand('A', 1, 'خصم 30%', '360.00')] } },
+      { productDiscountsAdd: { selectionStrategy: 'ALL', candidates: [cand('A', 1, pctMsg(30), '360.00')] } },
     ]);
   });
   it('markdown 650/1000 alone yields no zero-amount candidate', () => {

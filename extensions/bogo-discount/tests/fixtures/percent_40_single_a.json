@@ -43,7 +43,7 @@
             "selectionStrategy": "ALL",
             "candidates": [
               {
-                "message": "خصم 40%",
+                "message": "40% off",
                 "targets": [
                   {
                     "cartLine": {
