@@ -244,11 +244,16 @@ shopify app versions list
 
 > لا تنفّذ هذا القسم إلا بعد **موافقة المالك الصريحة**. بدونها توقف عند نهاية القسم 5.
 
-1. افتح Dev Dashboard ← مؤسسة **Arena Here Development** ← التطبيق `offer-app` ← قسم التوزيع/التثبيت (Distribution/Install) وانسخ رابط التثبيت للمتجر `levoilestores.myshopify.com`. يفتح الرابط شاشة موافقة في Shopify Admin؛ يجب أن تعرض الصلاحيات الثلاث فقط (`write_discounts` و`read_orders` و`read_products`).
-2. وافق على التثبيت من حساب مدير المتجر.
-3. افتح التطبيق من Shopify Admin ← **Apps** ← `offer-app`. تظهر الصفحة المدمجة.
-4. **تأكد أن الصفحة تعرض الحالة «متوقف»**. هذه هي الحالة الافتراضية بعد التثبيت، والعرض غير فعّال للمتسوقين.
-5. أخبر المالك أن التطبيق جاهز. **المالك هو من يشغّل العرض** من مفتاح التشغيل في الصفحة. لا تشغّله أنت.
+1. **اختر طريقة التوزيع (خطوة لا رجعة فيها)**: افتح Partner Dashboard ← التطبيق `offer-app` ← **Distribution**
+   (https://partners.shopify.com/3456935/apps/441694388225/distribution) ← اختر **Custom distribution** ← أدخل نطاق المتجر `levoilestores.myshopify.com` ← **Generate link** لتوليد رابط التثبيت.
+   - **هذا الاختيار نهائي ولا يمكن التراجع عنه.** لا تختر **Public distribution** أبداً: اختيارها بالخطأ يعني إعادة إنشاء التطبيق من الصفر بـ `client_id` جديد (ومعه تغيير `.env` و`shopify.app.toml` ومالك الـ metafield).
+   - التوزيع المخصّص (Custom distribution) يمنح صلاحية **Protected customer data** تلقائياً، فلا حاجة لطلب منفصل لهذا المتجر.
+   - متجر التطوير `levoilest.myshopify.com` يظل يعمل كما هو عبر `shopify app dev`.
+2. افتح رابط التثبيت الذي ولّدته في الخطوة 1. يفتح الرابط شاشة موافقة في Shopify Admin للمتجر `levoilestores.myshopify.com`؛ يجب أن تعرض الصلاحيات الثلاث فقط (`write_discounts` و`read_orders` و`read_products`).
+3. وافق على التثبيت من حساب مدير المتجر.
+4. افتح التطبيق من Shopify Admin ← **Apps** ← `offer-app`. تظهر الصفحة المدمجة.
+5. **تأكد أن الصفحة تعرض الحالة «متوقف»**. هذه هي الحالة الافتراضية بعد التثبيت، والعرض غير فعّال للمتسوقين.
+6. أخبر المالك أن التطبيق جاهز. **المالك هو من يشغّل العرض** من مفتاح التشغيل في الصفحة. لا تشغّله أنت.
 
 **ماذا يفعل زر «حفظ»**: يكتب الإعدادات في metafield للمتجر (ومنها `enabled`)، ويضمن وجود **خصم آلي واحد** (Automatic discount) مرتبطاً بالـ Function. الـ Function تقرأ الـ metafield في كل سلة؛ لذلك يتغير سلوك السلة خلال ثوانٍ من الحفظ دون إعادة نشر.
 
@@ -276,7 +281,7 @@ shopify app release --version <previous>
 
 ### إيقاف الخصم من Shopify مباشرة
 
-إن تعذّر الوصول إلى الصفحة: Shopify Admin ← **Discounts** ← افتح الخصم الآلي الخاص بالتطبيق (اسمه من `SHOPIFY_FUNCTION_TITLE`) ← **Deactivate**.
+إن تعذّر الوصول إلى الصفحة: Shopify Admin ← **Discounts** ← افتح الخصم الآلي الخاص بالتطبيق (اسمه من `SHOPIFY_FUNCTION_TITLE`) ← **Deactivate**. ملاحظة: أول «حفظ» لاحق من صفحة التطبيق يعيد تفعيل هذا الخصم تلقائياً (ويعرض خطأ أحمر إن رفض Shopify التفعيل).
 
 ## 8. استكشاف الأخطاء
 
