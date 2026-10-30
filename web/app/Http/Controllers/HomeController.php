@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Offer\OfferConstants;
+use Illuminate\Contracts\View\View;
+
+/**
+ * The single embedded admin page. Renders only public values (the App Bridge api key
+ * and the shared offer constants); all shop data is fetched by app.js over /api with
+ * a session token.
+ */
+class HomeController extends Controller
+{
+    public function __invoke(): View
+    {
+        $defaultPercent = (int) OfferConstants::get('defaultPercent');
+
+        return view('home', [
+            'apiKey' => (string) config('shopify.api_key'),
+            'pageTitle' => (string) OfferConstants::get('discountTitle'),
+            'percentTemplate' => (string) OfferConstants::get('percentMessageTemplate'),
+            'percentLabel' => OfferConstants::percentMessage($defaultPercent),
+            'defaultPercent' => $defaultPercent,
+            'minPercent' => (int) OfferConstants::get('minPercent'),
+            'maxPercent' => (int) OfferConstants::get('maxPercent'),
+            'ranges' => array_map('intval', (array) OfferConstants::get('analyticsRanges')),
+            'defaultRange' => (int) OfferConstants::get('defaultRange'),
+            'orderCap' => (int) OfferConstants::get('analyticsOrderCap'),
+            'assetVersion' => (string) (@filemtime(public_path('app.js')) ?: '1'),
+        ]);
+    }
+}

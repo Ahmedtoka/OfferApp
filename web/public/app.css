@@ -1,0 +1,200 @@
+/*
+ * Le Voile BOGO admin page. Polaris web components draw the controls; this file only
+ * covers the page frame and the plain-HTML parts (stat tiles, notes, loading/empty lines),
+ * using Polaris admin values so they sit natively next to the components.
+ */
+:root {
+    --bg: #f1f2f4;
+    --surface-subdued: #f7f7f7;
+    --text: #303030;
+    --text-subdued: #616161;
+    --border: #e3e3e3;
+    --caution-text: #5e4200;
+    --caution-bg: #fff1e3;
+    --focus: #005bd3;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Segoe UI", Roboto, "Helvetica Neue", Tahoma, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 20px;
+}
+
+::selection {
+    background: #cce0ff;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+/* Vertical rhythm inside a section. */
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.stack-tight {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.field-narrow {
+    max-inline-size: 320px;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.status-line > div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-2);
+}
+
+.banner-slot:empty {
+    display: none;
+}
+
+.loading-line {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: 32px;
+    color: var(--text-subdued);
+}
+
+.empty {
+    padding: var(--space-4);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-subdued);
+    text-align: center;
+}
+
+/* Stat tiles: 1 column on phones, 2 on narrow frames, 3 on desktop admin. */
+.tiles {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+    transition: opacity 150ms ease-out;
+}
+
+.tiles.is-stale,
+#top-gifts.is-stale {
+    opacity: 0.5;
+}
+
+.tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-inline-size: 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-subdued);
+    border-radius: var(--radius-sm);
+}
+
+.tile-label {
+    color: var(--text-subdued);
+    font-weight: 450;
+}
+
+.tile-value {
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.tile-note {
+    color: var(--text-subdued);
+    font-size: 12px;
+    line-height: 16px;
+    font-variant-numeric: tabular-nums;
+}
+
+.tile-wide .tile-note {
+    max-inline-size: 60ch;
+}
+
+@media (min-width: 480px) {
+    .tiles {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tile-wide {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (min-width: 900px) {
+    .tiles {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .tile-wide {
+        grid-column: span 2;
+    }
+}
+
+.note {
+    margin: 0;
+}
+
+.note-caution {
+    align-self: flex-start;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--caution-bg);
+    color: var(--caution-text);
+}
+
+.table-title {
+    margin: var(--space-2) 0 0;
+    font-size: 13px;
+    line-height: 20px;
+    font-weight: 650;
+}
+
+.num {
+    font-variant-numeric: tabular-nums;
+    unicode-bidi: isolate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tiles {
+        transition: none;
+    }
+}
