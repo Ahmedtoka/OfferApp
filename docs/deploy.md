@@ -241,7 +241,8 @@ shopify app versions list
 5. تأكد أن اختبار متجر التطوير نجح وأن القسم 4 مكتمل (الصلاحيات الثلاث فقط، والنشر تم).
 6. من Shopify Admin ← **Discounts**: عطّل (Deactivate) أو حدّد تاريخ انتهاء لكل **خصم آلي نشط آخر** (basic وBXGY وfree shipping). Shopify يطبّق خصماً آلياً واحداً فقط على المنتجات، وأي خصم آلي آخر قد يزيح العرض.
 7. خصم التطبيق مضبوط بـ `combinesWith` كلها `false`، لذلك تُرفض أكواد الخصم في صفحة الدفع (اختبار QA10).
-8. **Tag every product in the offer with `FallOffer`** (Products → bulk edit → add tag); untagged products sell at normal price and never count as a gift or a pair. (العرض يطبَّق فقط على المنتجات التي تحمل الوسم `FallOffer`، على متجر التطوير والمتجر الحقيقي.)
+8. **Set the tag name on the app page** (field **Eligible product tag**, default `FallOffer`) and **Save**; then **tag every product in the offer with exactly that tag** (Products → bulk edit → add tag; case-sensitive, no commas). Untagged products sell at normal price and never count as a gift or a pair. Changing the tag later needs no redeploy: Save writes it to the discount's `$app:bogo/config` metafield, which the Function reads as its `$eligibleTags` input variable. (اكتب اسم الوسم في صفحة التطبيق — الافتراضي `FallOffer` — ثم احفظ، وضع نفس الوسم بالضبط على كل منتجات العرض، على متجر التطوير والمتجر الحقيقي.)
+   - After deploying this version (the extension toml gained `input_variables`), open the app page and click **Save** once on each store: the discount must carry the metafield, otherwise the Function's required `$eligibleTags` variable is null and the run fails (no discount at checkout).
 
 ## 6. التركيب على المتجر الحقيقي
 
