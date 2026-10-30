@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Offer\OfferConstants;
 use Illuminate\Testing\TestResponse;
 use Tests\Support\SessionTokens;
 use Tests\TestCase;
@@ -54,6 +55,16 @@ class HomePageTest extends TestCase
         ] as $text) {
             $res->assertSee($text, false);
         }
+    }
+
+    public function test_percent_field_explains_the_eligible_tag_from_shared_constants(): void
+    {
+        $res = $this->loadAdminPage();
+
+        $res->assertOk();
+        $this->assertSame('FallOffer', OfferConstants::get('eligibleTag'));
+        $res->assertSee('Applies only to products tagged "FallOffer".', false);
+        $res->assertSeeInOrder(['id="percent"', 'Applies only to products tagged'], false);
     }
 
     public function test_range_options_default_to_30(): void

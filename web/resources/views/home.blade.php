@@ -61,6 +61,7 @@
                         data-max="{{ $maxPercent }}"
                         data-range-error="Enter a whole number from {{ $minPercent }} to {{ $maxPercent }}"
                     ></s-number-field>
+                    <s-text color="subdued" id="eligible-tag-note">Applies only to products tagged "{{ $eligibleTag }}".</s-text>
                 </div>
 
                 <div id="discount-status" class="status-line">

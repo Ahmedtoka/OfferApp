@@ -24,6 +24,7 @@ class HomeController extends Controller
             'defaultPercent' => $defaultPercent,
             'minPercent' => (int) OfferConstants::get('minPercent'),
             'maxPercent' => (int) OfferConstants::get('maxPercent'),
+            'eligibleTag' => (string) OfferConstants::get('eligibleTag'),
             'ranges' => array_map('intval', (array) OfferConstants::get('analyticsRanges')),
             'defaultRange' => (int) OfferConstants::get('defaultRange'),
             'orderCap' => (int) OfferConstants::get('analyticsOrderCap'),
