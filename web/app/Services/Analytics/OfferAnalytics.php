@@ -16,11 +16,14 @@ class OfferAnalytics
      */
     private const LEGACY_TITLES = [
         'gift' => 'هدية',
-        'percent' => '/^خصم (\d+)%$/u',
+        'percent' => '/^خصم (\d+)%\z/u',
         'title' => 'اشتري واحدة وخد واحدة',
     ];
 
     private bool $fromMessages = true;
+
+    /** Current-template percent regex, built once per compute. */
+    private ?string $percentRe = null;
 
     public function __construct(private OrdersFetcher $fetcher) {}
 
@@ -46,6 +49,7 @@ class OfferAnalytics
 
     private function build(string $shop, int $rangeDays): AnalyticsResult
     {
+        $this->percentRe = self::percentPattern();
         $fetched = $this->fetcher->fetch($shop, $rangeDays, (int) OfferConstants::get('analyticsOrderCap'));
         $orders = array_map(fn (array $o) => $this->analyseOrder($o), $fetched['orders']);
         $rangePct = $this->rangePercent($orders);
@@ -114,6 +118,10 @@ class OfferAnalytics
             ];
 
             foreach ($item['discountAllocations'] ?? [] as $alloc) {
+                // Only automatic discounts can be ours: manual (staff/POS) and code discounts never are.
+                if (($alloc['discountApplication']['__typename'] ?? null) !== 'AutomaticDiscountApplication') {
+                    continue;
+                }
                 $title = (string) ($alloc['discountApplication']['title'] ?? '');
                 $kind = $this->classify($title);
                 if ($kind === null) {
@@ -139,31 +147,36 @@ class OfferAnalytics
     {
         return match (true) {
             $title === '' => null,
-            $title === OfferConstants::get('giftMessage'), $title === self::LEGACY_TITLES['gift'] => 'gift',
+            strcasecmp($title, (string) OfferConstants::get('giftMessage')) === 0, $title === self::LEGACY_TITLES['gift'] => 'gift',
             $this->percentFrom($title) !== null => 'percent',
-            $title === OfferConstants::get('discountTitle'), $title === self::LEGACY_TITLES['title'] => 'title',
+            strcasecmp($title, (string) OfferConstants::get('discountTitle')) === 0, $title === self::LEGACY_TITLES['title'] => 'title',
             default => null,
         };
     }
 
-    /** The percent in a current or legacy percent-message title, else null. */
+    /** The percent in a current or legacy percent-message title, if within [minPercent, maxPercent], else null. */
     private function percentFrom(string $title): ?int
     {
-        foreach ([self::percentPattern(), self::LEGACY_TITLES['percent']] as $pattern) {
+        foreach ([$this->percentRe ??= self::percentPattern(), self::LEGACY_TITLES['percent']] as $pattern) {
             if (preg_match($pattern, $title, $m) === 1) {
-                return (int) $m[1];
+                $pct = (int) $m[1];
+                $inRange = strlen($m[1]) <= 3
+                    && $pct >= (int) OfferConstants::get('minPercent')
+                    && $pct <= (int) OfferConstants::get('maxPercent');
+
+                return $inRange ? $pct : null;
             }
         }
 
         return null;
     }
 
-    /** percentMessageTemplate as an anchored regex, e.g. "{pct}% off" -> /^(\d+)% off$/u. */
+    /** percentMessageTemplate as an anchored, case-insensitive regex, e.g. "{pct}% off" -> /^(\d+)% off\z/iu. */
     private static function percentPattern(): string
     {
         $parts = explode('{pct}', (string) OfferConstants::get('percentMessageTemplate'));
 
-        return '/^'.implode('(\d+)', array_map(fn (string $p) => preg_quote($p, '/'), $parts)).'$/u';
+        return '/^'.implode('(\d+)', array_map(fn (string $p) => preg_quote($p, '/'), $parts)).'\z/iu';
     }
 
     /** The percent found in any percent-message title across the range, else the default. */

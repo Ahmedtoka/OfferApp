@@ -152,6 +152,34 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(1370.0, $res->json('totalDiscount'));
     }
 
+    public function test_only_automatic_discount_applications_with_our_titles_are_counted(): void
+    {
+        // #3001: manual "Gift" + discount code "30% off". #3002: automatic "150% off" (outside 1-99).
+        // #3003: genuine title-only order; its numbers must use the default 30%, not 150.
+        $this->fake(['orders_foreign_discounts']);
+
+        $res = $this->api()->assertOk();
+
+        $res->assertJsonPath('ordersTotal', 3)
+            ->assertJsonPath('offerOrders', 1)
+            ->assertJsonPath('giftUnits', 1)
+            ->assertJsonPath('percentUnits', 1);
+        $this->assertEquals(1370.0, $res->json('totalDiscount'));
+        $this->assertEquals([['title' => 'Product B', 'units' => 1, 'value' => 1100.0]], $res->json('topGifts'));
+    }
+
+    public function test_a_range_mixing_legacy_arabic_and_english_orders_counts_both(): void
+    {
+        $this->fake(['orders_mixed_legacy_english']);
+
+        $res = $this->api()->assertOk();
+
+        $res->assertJsonPath('offerOrders', 2)
+            ->assertJsonPath('giftUnits', 2)
+            ->assertJsonPath('percentUnits', 2);
+        $this->assertEquals(2740.0, $res->json('totalDiscount'));
+    }
+
     public function test_recompute_path_agrees_with_message_path_on_the_worked_examples(): void
     {
         $this->fake(['orders_all_rows']);

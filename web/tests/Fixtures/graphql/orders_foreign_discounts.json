@@ -1,0 +1,250 @@
+{
+    "orders": {
+        "pageInfo": {
+            "hasNextPage": false,
+            "endCursor": null
+        },
+        "nodes": [
+            {
+                "id": "gid://shopify/Order/3001",
+                "name": "#3001",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A"
+                            },
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1100.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/2",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/2",
+                                "title": "Product B"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "1100.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "ManualDiscountApplication",
+                                        "title": "Gift"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/3",
+                                "title": "Product C"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "270.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "DiscountCodeApplication",
+                                        "code": "30% off"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "gid://shopify/Order/3002",
+                "name": "#3002",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A"
+                            },
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1100.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/2",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/2",
+                                "title": "Product B"
+                            },
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/3",
+                                "title": "Product C"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "270.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "150% off"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "gid://shopify/Order/3003",
+                "name": "#3003",
+                "createdAt": "2026-10-28T23:56:27+00:00",
+                "lineItems": {
+                    "nodes": [
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1200.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/1",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/1",
+                                "title": "Product A"
+                            },
+                            "discountAllocations": []
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "1100.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/2",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/2",
+                                "title": "Product B"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "1100.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "Buy One Get One"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "quantity": 1,
+                            "originalUnitPriceSet": {
+                                "shopMoney": {
+                                    "amount": "900.00"
+                                }
+                            },
+                            "variant": {
+                                "id": "gid://shopify/ProductVariant/3",
+                                "compareAtPrice": null
+                            },
+                            "product": {
+                                "id": "gid://shopify/Product/3",
+                                "title": "Product C"
+                            },
+                            "discountAllocations": [
+                                {
+                                    "allocatedAmountSet": {
+                                        "shopMoney": {
+                                            "amount": "270.00"
+                                        }
+                                    },
+                                    "discountApplication": {
+                                        "__typename": "AutomaticDiscountApplication",
+                                        "title": "Buy One Get One"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}
