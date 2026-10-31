@@ -83,7 +83,7 @@ class OfferSettings
         unset($discount['previous']);
 
         try {
-            $stored = $this->writeShopSettings($shop, $input);
+            $stored = $this->writeShopSettings($shop, $input, null, $discount['startsAt'] ?? $input['startsAt'] ?? null, $discount['endsAt'] ?? $input['endsAt'] ?? null);
         } catch (ShopifyGraphqlException|SaveMismatch $e) {
             // The discount already carries the new rule while the page would read the old settings: put the old rule back.
             try {
@@ -117,7 +117,7 @@ class OfferSettings
     }
 
     /** @throws ShopifyGraphqlException|SaveMismatch */
-    private function writeShopSettings(string $shop, array $input, ?string $disabledReason = null): array
+    private function writeShopSettings(string $shop, array $input, ?string $disabledReason = null, ?string $startsAt = null, ?string $endsAt = null): array
     {
         $ownerId = $this->graphql->query($shop, self::SHOP_ID)['shop']['id']
             ?? throw new ShopifyGraphqlException('Could not resolve the shop id.');
@@ -130,6 +130,9 @@ class OfferSettings
             'eligibleTag' => $input['eligibleTag'],
             'collectionId' => $input['collectionId'],
             'combineWithCoupons' => $input['combineWithCoupons'],
+            // For the storefront (Liquid cannot see the discount); the Function ignores them.
+            'startsAt' => $startsAt,
+            'endsAt' => $endsAt,
             'updated_at' => now()->toIso8601String(),
         ];
         if ($disabledReason !== null) {

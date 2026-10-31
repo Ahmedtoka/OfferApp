@@ -394,6 +394,22 @@ class SettingsTest extends TestCase
         $this->assertNull($update['endsAt']);
     }
 
+    public function test_shop_metafield_carries_the_dates_for_the_storefront(): void
+    {
+        $this->save(['enabled' => true, 'percent' => 30, 'startsAt' => '2026-11-10T08:00:00+02:00', 'endsAt' => '2026-12-01T00:00:00Z'])->assertOk();
+        $value = $this->shopWrite();
+        $this->assertSame('2026-11-10T06:00:00Z', $value['startsAt']);
+        $this->assertSame('2026-12-01T00:00:00Z', $value['endsAt']);
+
+        $this->fake = new FakeGraphqlClient;
+        $this->app->instance(GraphqlClient::class, $this->fake);
+        $this->save(['enabled' => true, 'percent' => 30])->assertOk();
+        $value = $this->shopWrite();
+        $this->assertArrayHasKey('startsAt', $value);
+        $this->assertArrayHasKey('endsAt', $value);
+        $this->assertNull($value['endsAt']);
+    }
+
     private function updatePayload(): array
     {
         return $this->fake->calls[array_search('UpdateDiscount', $this->fake->ops(), true)]['variables']['d'];
