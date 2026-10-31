@@ -116,6 +116,25 @@ class OfferSettings
         return true;
     }
 
+    /**
+     * A shop that installs the app again starts with the offer off: the merchant switches it on when ready.
+     * Only the shop metafield's `enabled` changes; the discount and every other setting stay as they are.
+     * Returns false when there was nothing to switch off (no config, or already off).
+     *
+     * @throws ShopifyGraphqlException|SaveMismatch
+     */
+    public function disableForReinstall(string $shop): bool
+    {
+        $current = $this->read($shop);
+        if (! $current['enabled']) {
+            return false;
+        }
+
+        $this->writeShopSettings($shop, ['enabled' => false] + $current);
+
+        return true;
+    }
+
     /** @throws ShopifyGraphqlException|SaveMismatch */
     private function writeShopSettings(string $shop, array $input, ?string $disabledReason = null, ?string $startsAt = null, ?string $endsAt = null): array
     {

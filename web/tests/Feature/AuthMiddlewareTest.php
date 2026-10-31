@@ -106,6 +106,67 @@ class AuthMiddlewareTest extends TestCase
         $this->assertSame('shpat_again', Shop::active(SessionTokens::SHOP)->access_token);
     }
 
+    private function reinstallWith(?string $config): \Tests\Support\FakeGraphqlClient
+    {
+        $fake = new \Tests\Support\FakeGraphqlClient;
+        $fake->metafieldValue = $config;
+        $this->app->instance(GraphqlClient::class, $fake);
+        $this->installShop()->update(['uninstalled_at' => now(), 'access_token' => null]);
+        Http::fake([self::EXCHANGE_URL => Http::response(['access_token' => 'shpat_again', 'scope' => 'write_discounts'])]);
+
+        $this->withHeader('Authorization', 'Bearer '.SessionTokens::mint())->getJson('/api/ping')->assertOk();
+
+        return $fake;
+    }
+
+    public function test_reinstall_starts_with_the_offer_off_and_touches_nothing_else(): void
+    {
+        $fake = $this->reinstallWith(json_encode(['enabled' => true, 'percent' => 40, 'method' => 'company', 'appliesTo' => 'tag', 'eligibleTag' => 'Fall', 'collectionId' => null, 'combineWithCoupons' => false]));
+
+        $this->assertSame(1, $fake->count('WriteSettings'));
+        $stored = json_decode($fake->metafieldValue, true);
+        $this->assertFalse($stored['enabled']);
+        $this->assertSame(40, $stored['percent']);
+        $this->assertSame('Fall', $stored['eligibleTag']);
+        $this->assertSame([], array_values(array_intersect($fake->ops(), ['CreateDiscount', 'UpdateDiscount', 'ActivateDiscount', 'AppDiscounts', 'WriteDiscountConfig'])));
+    }
+
+    public function test_reinstall_with_the_offer_already_off_or_unset_writes_nothing(): void
+    {
+        $this->assertSame(0, $this->reinstallWith(json_encode(['enabled' => false, 'percent' => 30]))->count('WriteSettings'));
+    }
+
+    public function test_reinstall_with_no_config_writes_nothing(): void
+    {
+        $this->assertSame(0, $this->reinstallWith(null)->count('WriteSettings'));
+    }
+
+    public function test_first_install_does_not_touch_the_offer(): void
+    {
+        $fake = new \Tests\Support\FakeGraphqlClient;
+        $fake->metafieldValue = json_encode(['enabled' => true, 'percent' => 30]);
+        $this->app->instance(GraphqlClient::class, $fake);
+        Http::fake([self::EXCHANGE_URL => Http::response(['access_token' => 'shpat_new', 'scope' => 'write_discounts'])]);
+
+        $this->withHeader('Authorization', 'Bearer '.SessionTokens::mint())->getJson('/api/ping')->assertOk();
+
+        $this->assertSame([], $fake->calls);
+    }
+
+    public function test_a_shopify_failure_while_switching_off_cannot_block_the_reinstall(): void
+    {
+        $fake = new \Tests\Support\FakeGraphqlClient;
+        $fake->metafieldValue = json_encode(['enabled' => true, 'percent' => 30]);
+        $fake->fixtures['WriteSettings'] = 'metafields-set-error';
+        $this->app->instance(GraphqlClient::class, $fake);
+        $this->installShop()->update(['uninstalled_at' => now(), 'access_token' => null]);
+        Http::fake([self::EXCHANGE_URL => Http::response(['access_token' => 'shpat_again', 'scope' => 'write_discounts'])]);
+
+        $this->withHeader('Authorization', 'Bearer '.SessionTokens::mint())->getJson('/api/ping')->assertOk();
+
+        $this->assertNotNull(Shop::active(SessionTokens::SHOP));
+    }
+
     public function test_failed_exchange_returns_401_and_creates_nothing(): void
     {
         Http::fake([self::EXCHANGE_URL => Http::response(['error' => 'invalid_subject_token'], 400)]);
