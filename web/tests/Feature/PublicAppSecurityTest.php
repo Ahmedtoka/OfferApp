@@ -8,6 +8,7 @@ use App\Shopify\GraphqlClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\FakeGraphqlClient;
 use Tests\Support\FakeOrdersClient;
 use Tests\Support\SessionTokens;
 use Tests\TestCase;
@@ -121,5 +122,55 @@ class PublicAppSecurityTest extends TestCase
         exec('git -C '.$root.' grep -n -I -E '.escapeshellarg($pattern).' -- . 2>&1', $hits);
 
         $this->assertSame([], array_values(array_filter($hits, fn ($line) => ! str_contains($line, 'PublicAppSecurityTest.php'))));
+    }
+
+    /** Isolation evidence: every endpoint acts only on the shop of the verified token, whatever else the request says. */
+    public function test_a_request_cannot_name_another_shop(): void
+    {
+        $victim = 'victim-store.myshopify.com';
+        Shop::create(['shop_domain' => $victim, 'access_token' => 'shpat_victim', 'installed_at' => now()]);
+        $attacker = 'attacker-store.myshopify.com';
+
+        $fake = new class extends FakeGraphqlClient
+        {
+            public array $shops = [];
+
+            public function query(string $shop, string $query, array $variables = []): array
+            {
+                $this->shops[$shop] = true;
+
+                return parent::query($shop, $query, $variables);
+            }
+        };
+        $fake->fixtures['TestCartCurrency'] = 'billing-none';
+        $this->app->instance(GraphqlClient::class, $fake);
+
+        $forged = ['shop' => $victim, 'shop_domain' => $victim, 'dest' => "https://{$victim}"];
+        $client = fn () => $this->api($attacker)->withHeader('X-Shopify-Shop-Domain', $victim);
+
+        $client()->getJson('/api/settings?'.http_build_query($forged));
+        $client()->putJson('/api/settings', $forged + ['enabled' => false, 'percent' => 30, 'eligibleTag' => 'x']);
+        $client()->getJson('/api/billing?'.http_build_query($forged));
+        $client()->postJson('/api/billing/subscribe', $forged);
+        $client()->postJson('/api/test-cart', $forged + ['lines' => [['title' => 'x', 'price' => '10', 'quantity' => 1]]]);
+        $client()->getJson('/api/ping?'.http_build_query($forged))->assertJsonPath('shop', $attacker);
+
+        $this->assertSame([$attacker], array_keys($fake->shops));
+    }
+
+    /** A token signed with another app's secret, or whose issuer and destination disagree, reaches no shop. */
+    public function test_forged_tokens_reach_no_shop_even_with_an_open_allow_list(): void
+    {
+        $victim = 'victim-store.myshopify.com';
+        Shop::create(['shop_domain' => $victim, 'access_token' => 'shpat_victim', 'installed_at' => now()]);
+        $claims = ['iss' => "https://{$victim}/admin", 'dest' => "https://{$victim}"];
+
+        foreach ([
+            SessionTokens::mint($claims, null, 'some-other-apps-secret'),
+            SessionTokens::mint($claims + ['aud' => 'some-other-app']),
+            SessionTokens::mint(['iss' => 'https://attacker-store.myshopify.com/admin', 'dest' => "https://{$victim}"]),
+        ] as $token) {
+            $this->withHeader('Authorization', 'Bearer '.$token)->getJson('/api/ping')->assertStatus(401);
+        }
     }
 }
