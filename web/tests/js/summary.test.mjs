@@ -4,8 +4,9 @@ import { summarySentence } from '../../public/js/summary.js';
 
 // Stand-in for the app's t(): templates with {name} placeholders, like lang/en/app.php.
 const strings = {
-    'analytics.summary.with_aov': 'Offer orders average {aov}% {dir} than other orders and the offer cost {discount}% of its sales.',
-    'analytics.summary.without_aov': 'The offer cost {discount}% of its sales.',
+    'analytics.summary.with_aov': 'Offer orders average {aov}% {dir} than other orders, and the discount was {discount}% of value before discount.',
+    'analytics.summary.same_aov': 'Offer orders average about the same as other orders, and the discount was {discount}% of value before discount.',
+    'analytics.summary.without_aov': 'The discount was {discount}% of value before discount.',
     'analytics.summary.more': 'more',
     'analytics.summary.less': 'less',
     'analytics.summary.won': 'On products with a known cost ({covered}% of units) the offer won.',
@@ -39,4 +40,16 @@ test('no comparison clause when aovOther is null (or zero)', () => {
         assert.match(s, /22%/);
     }
     assert.doesNotMatch(summarySentence({ ...base, aovOffer: null }, t), /average/);
+});
+
+test('a rounded difference of zero says about the same', () => {
+    const s = summarySentence({ ...base, aovOffer: 100.02 }, t);
+    assert.match(s, /about the same/);
+    assert.doesNotMatch(s, /more|less/);
+});
+
+test('numbers go through the supplied formatter', () => {
+    const s = summarySentence(base, t, (n) => `<${n}>`);
+    assert.match(s, /<68>%/);
+    assert.match(s, /<22>%/);
 });

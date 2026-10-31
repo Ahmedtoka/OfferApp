@@ -677,7 +677,7 @@ function renderAnalytics(a) {
     }
 
     const currency = typeof a.currency === 'string' ? a.currency : '';
-    els.analyticsSummary.textContent = summarySentence(a, t);
+    els.analyticsSummary.textContent = summarySentence(a, t, formatPct);
 
     setField('sales', formatMoney(a.offerSales, currency));
     setField('sales-note', t('analytics.tile_sales_note', { n: formatCount(a.offerOrders) }));
@@ -823,9 +823,16 @@ async function pickVariants() {
     }
 }
 
+/** Arabic-Indic and Persian digits to ASCII, so a typed price like ١٩٫٩٠ is accepted. */
+function normalizeDigits(text) {
+    return text
+        .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+        .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06F0));
+}
+
 function addTypedLine() {
     const title = String(els.typedTitle.value ?? '').trim();
-    const price = String(els.typedPrice.value ?? '').trim().replace(',', '.');
+    const price = normalizeDigits(String(els.typedPrice.value ?? '').trim()).replace(/[,٫]/, '.');
     if (title === '' || title.length > 255 || !PRICE_RE.test(price) || price.length > 12 || testLines.length >= MAX_TEST_LINES) {
         els.typedPrice.setAttribute('error', t('test.item_error'));
         return;
@@ -948,11 +955,15 @@ async function runTest() {
                 : { title: l.title, price: l.price, quantity: l.quantity })),
         });
         renderTestResult(data);
-        const marks = readStore(MARKS_KEY);
-        marks.test = true;
-        writeStore(MARKS_KEY, marks);
-        renderChecklist();
-        showBanner(els.testBanner, 'success', t('test.done'));
+        // Only a run that priced at least one piece counts as having tried the offer.
+        const priced = [data.customer, data.company].some((r) => Array.isArray(r?.units) && r.units.length > 0);
+        if (priced) {
+            const marks = readStore(MARKS_KEY);
+            marks.test = true;
+            writeStore(MARKS_KEY, marks);
+            renderChecklist();
+        }
+        showBanner(els.testBanner, priced ? 'success' : 'info', priced ? t('test.done') : t('test.none_priced'));
     } catch (e) {
         els.testResult.hidden = true;
         showBanner(els.testBanner, e.status === 403 && e.message === 'needs_read_products' ? 'warning' : 'critical',

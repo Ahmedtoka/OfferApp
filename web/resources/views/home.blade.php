@@ -207,6 +207,7 @@
                     </div>
 
                     <p class="note-subdued">{{ __('app.analytics.basis') }}</p>
+                    <p class="note-subdued">{{ __('app.analytics.limit_60') }}</p>
                     <p id="analytics-updated" class="note-subdued"></p>
                     <p id="capped-note" class="note note-caution" data-count="{{ $orderCap }}" hidden></p>
 
