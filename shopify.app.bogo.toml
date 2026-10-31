@@ -1,0 +1,31 @@
+# Pairly: BOGO Offers public app configuration. Deploy with: shopify app deploy --config bogo
+# application_url is the Cloudways temporary URL until the owner's domain is mapped.
+client_id = "40919f051c4b377ace2d4cb4937a73d4"
+name = "Pairly: BOGO Offers"
+application_url = "https://example.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = false
+
+[webhooks]
+api_version = "2026-07"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled", "app_subscriptions/update" ]
+  uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "/webhooks"
+
+[access_scopes]
+# write_discounts: the single automatic discount hosting the Function
+# read_products: test page lookups and analytics compare-at prices
+# optional read_orders: analytics; optional read_inventory: approximate profit
+scopes = "write_discounts,read_products"
+optional_scopes = [ "read_orders", "read_inventory" ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [ ]
