@@ -11,34 +11,37 @@ const en = load('locales/en.default.json');
 const ar = load('locales/ar.json');
 
 test('0 eligible units: no message', () => {
-  assert.equal(nextStepMessage(0, 100, en), null);
+  assert.equal(nextStepMessage(0, 30, en), null);
 });
 
-test('1 unit at 100%: add one more and get it free', () => {
-  assert.equal(nextStepMessage(1, 100, en), 'Add one more and get it free');
-  assert.equal(nextStepMessage(1, 100, ar), ar.free_next);
+test('1 unit at percent 30: the second unit is free, not discounted', () => {
+  assert.equal(nextStepMessage(1, 30, en), 'Add one more and get it free');
+  assert.equal(nextStepMessage(1, 30, ar), ar.free_next);
+  assert.doesNotMatch(nextStepMessage(1, 30, en), /30/);
 });
 
-test('1 unit below 100%: the percentage is named', () => {
-  assert.equal(nextStepMessage(1, 50, en), 'Add one more and get 50% off it');
-  assert.match(nextStepMessage(1, 50, ar), /50/);
+test('badge text names both the free second piece and the single-piece percent', () => {
+  assert.match(en.badge_percent, /free/);
+  assert.match(en.badge_percent, /\{\{ percent \}\}%/);
+  assert.match(ar.badge_percent, /\{\{ percent \}\}%/);
+  assert.equal(en.discount_next, undefined);
 });
 
 test('2 units: the pair is complete, no message', () => {
-  assert.equal(nextStepMessage(2, 100, en), null);
+  assert.equal(nextStepMessage(2, 30, en), null);
 });
 
 test('3 units: same as 1 unit', () => {
-  assert.equal(nextStepMessage(3, 100, en), nextStepMessage(1, 100, en));
-  assert.equal(nextStepMessage(5, 100, ar), nextStepMessage(1, 100, ar));
+  assert.equal(nextStepMessage(3, 30, en), nextStepMessage(1, 30, en));
+  assert.equal(nextStepMessage(5, 30, ar), nextStepMessage(1, 30, ar));
 });
 
 test('offer off (no usable percentage) or bad input: no message', () => {
   assert.equal(nextStepMessage(1, 0, en), null);
   assert.equal(nextStepMessage(1, null, en), null);
-  assert.equal(nextStepMessage(1, 100, null), null);
-  assert.equal(nextStepMessage(-1, 100, en), null);
-  assert.equal(nextStepMessage(NaN, 100, en), null);
+  assert.equal(nextStepMessage(1, 30, null), null);
+  assert.equal(nextStepMessage(-1, 30, en), null);
+  assert.equal(nextStepMessage(NaN, 30, en), null);
 });
 
 test('Arabic and English define the same keys, Arabic differs', () => {

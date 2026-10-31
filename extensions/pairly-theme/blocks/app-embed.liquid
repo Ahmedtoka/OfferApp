@@ -23,10 +23,6 @@
   if free_text == blank
     assign free_text = 'pairly.free_next' | t
   endif
-  assign discount_text = block.settings.message_discount
-  if discount_text == blank
-    assign discount_text = 'pairly.discount_next' | t: percent: '{percent}'
-  endif
 
   assign on_cart_page = false
   if request.page_type == 'cart'
@@ -46,7 +42,6 @@
     data-units="{{ units }}"
     data-percent="{{ cfg.percent }}"
     data-free="{{ free_text | escape }}"
-    data-discount="{{ discount_text | escape }}"
     data-cart-url="{{ routes.cart_url }}"
     style="--pairly-cart-bg: {{ block.settings.background }}; --pairly-cart-fg: {{ block.settings.color }};"
   ></div>
@@ -60,8 +55,7 @@
   "name": "Offer cart message",
   "target": "body",
   "settings": [
-    { "type": "text", "id": "message_free", "label": "Message when the offer is a free gift", "info": "Empty uses the built-in text in the customer's language." },
-    { "type": "text", "id": "message_discount", "label": "Message when the offer is a percentage", "info": "Use {percent} for the number. Empty uses the built-in text." },
+    { "type": "text", "id": "message_free", "label": "Message when one more piece completes a pair", "info": "Empty uses the built-in text in the customer's language." },
     { "type": "checkbox", "id": "show_everywhere", "label": "Show on every page, not only the cart page", "default": false },
     { "type": "color", "id": "background", "label": "Background", "default": "#1a1a1a" },
     { "type": "color", "id": "color", "label": "Text color", "default": "#ffffff" }

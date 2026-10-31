@@ -1,8 +1,7 @@
 {
   "pairly": {
     "badge": "Buy one, get one free",
-    "badge_percent": "Buy one, get one {{ percent }}% off",
-    "free_next": "Add one more and get it free",
-    "discount_next": "Add one more and get {{ percent }}% off it"
+    "badge_percent": "Buy one, get one free. One piece alone {{ percent }}% off",
+    "free_next": "Add one more and get it free"
   }
 }

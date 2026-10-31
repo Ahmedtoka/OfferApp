@@ -4,23 +4,23 @@
 
   /**
    * The nudge to show for the eligible units in the cart, or null.
-   * Odd units mean one more eligible piece completes a pair; the offer is off when pct is not 1..100.
-   * t: { free_next, discount_next } where discount_next carries a {percent} placeholder.
+   * Odd units mean one more eligible piece completes a pair, and the second piece of a pair is free;
+   * the percentage only applies to a single piece alone, so it never changes this message.
+   * The offer is off when pct is not 1..100. t: { free_next }.
    */
   function nextStepMessage(eligibleUnits, pct, t) {
     var n = Number(eligibleUnits);
     var p = Number(pct);
     if (!t || !isFinite(n) || n < 1 || n % 2 !== 1) return null;
     if (!isFinite(p) || p < 1 || p > 100) return null;
-    if (p === 100) return t.free_next || null;
-    return t.discount_next ? String(t.discount_next).replace(/\{\{\s*percent\s*\}\}|\{percent\}/g, String(Math.round(p))) : null;
+    return t.free_next || null;
   }
 
   function init(doc) {
     var box = doc.getElementById('pairly-cart');
     if (!box || box.getAttribute('data-ready')) return;
     box.setAttribute('data-ready', '1');
-    var t = { free_next: box.getAttribute('data-free'), discount_next: box.getAttribute('data-discount') };
+    var t = { free_next: box.getAttribute('data-free') };
     var pct = Number(box.getAttribute('data-percent'));
     var cartUrl = box.getAttribute('data-cart-url') || '/cart';
     var timer = 0;
