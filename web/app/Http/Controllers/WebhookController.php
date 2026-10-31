@@ -29,18 +29,25 @@ class WebhookController extends Controller
         return response('{}', 200, ['Content-Type' => 'application/json']);
     }
 
-    /** The HMAC covers the raw body, so its myshopify_domain is trusted; it must match the header shop. */
-    private function bodyMatches(?string $normalized, Request $request): bool
+    /**
+     * The HMAC covers the raw body, so the body is trusted: when it names a shop under $field, that shop
+     * must be the header's. An absent field passes unless $required.
+     */
+    private function bodyMatches(string $normalized, Request $request, string $field, bool $required): bool
     {
-        return $normalized !== null
-            && Shop::normalizeDomain((string) $request->json('myshopify_domain')) === $normalized;
+        $value = $request->json($field);
+        if ($value === null) {
+            return ! $required;
+        }
+
+        return Shop::normalizeDomain((string) $value) === $normalized;
     }
 
-    /** shop/redact: the shop's row (and its token) is erased; nothing else about the shop is stored. */
+    /** shop/redact (payload: shop_id, shop_domain): the shop's row and token are erased; nothing else is stored. */
     private function redact(string $domain, Request $request): void
     {
         $normalized = Shop::normalizeDomain($domain);
-        if (! $this->bodyMatches($normalized, $request)) {
+        if ($normalized === null || ! $this->bodyMatches($normalized, $request, 'shop_domain', true)) {
             return;
         }
 
@@ -50,7 +57,7 @@ class WebhookController extends Controller
     private function markUninstalled(string $domain, Request $request): void
     {
         $normalized = Shop::normalizeDomain($domain);
-        if (! $this->bodyMatches($normalized, $request)) {
+        if ($normalized === null || ! $this->bodyMatches($normalized, $request, 'myshopify_domain', false)) {
             return;
         }
 

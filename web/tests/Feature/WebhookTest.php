@@ -12,7 +12,7 @@ class WebhookTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const BODY = '{"myshopify_domain":"levoilestores.myshopify.com","secret_field":"do-not-log"}';
+    private const BODY = '{"shop_id":954889,"myshopify_domain":"levoilestores.myshopify.com","secret_field":"do-not-log"}';
 
     protected function setUp(): void
     {
@@ -119,7 +119,7 @@ class WebhookTest extends TestCase
         $this->installShop();
         Log::spy();
 
-        $res = $this->hook('shop/redact', null, '{"myshopify_domain":"levoilestores.myshopify.com","secret_field":"do-not-log"}');
+        $res = $this->hook('shop/redact', null, '{"shop_id":954889,"shop_domain":"levoilestores.myshopify.com","secret_field":"do-not-log"}');
 
         $res->assertOk();
         $this->assertSame('{}', $res->getContent());
@@ -132,16 +132,36 @@ class WebhookTest extends TestCase
 
     public function test_shop_redact_for_unknown_shop_is_ok(): void
     {
-        $this->hook('shop/redact', null, '{"myshopify_domain":"levoilestores.myshopify.com"}')->assertOk();
+        $this->hook('shop/redact', null, '{"shop_id":954889,"shop_domain":"levoilestores.myshopify.com"}')->assertOk();
     }
 
     public function test_shop_redact_with_mismatched_body_domain_changes_nothing(): void
     {
         $this->installShop();
 
-        $this->hook('shop/redact', null, '{"myshopify_domain":"other-store.myshopify.com"}')->assertOk();
+        $this->hook('shop/redact', null, '{"shop_id":954889,"shop_domain":"other-store.myshopify.com"}')->assertOk();
 
         $this->assertSame(1, Shop::count());
+    }
+
+    public function test_shop_redact_without_body_shop_domain_changes_nothing(): void
+    {
+        $this->installShop();
+
+        $this->hook('shop/redact', null, '{"shop_id":954889}')->assertOk();
+
+        $this->assertSame(1, Shop::count());
+    }
+
+    public function test_uninstall_without_body_domain_field_still_uninstalls(): void
+    {
+        $shop = $this->installShop();
+
+        $this->hook('app/uninstalled', null, '{"id":954889}')->assertOk();
+
+        $shop->refresh();
+        $this->assertNotNull($shop->uninstalled_at);
+        $this->assertNull($shop->access_token);
     }
 
     public function test_uninstall_with_mismatched_body_domain_changes_nothing(): void

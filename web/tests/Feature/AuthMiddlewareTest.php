@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Shop;
+use App\Shopify\GraphqlClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Route;
 use Tests\Support\SessionTokens;
 use Tests\TestCase;
 
@@ -133,6 +135,16 @@ class AuthMiddlewareTest extends TestCase
         $fresh = Shop::active(SessionTokens::SHOP);
         $this->assertSame('shpat_fresh', $fresh->access_token);
         $this->assertSame('write_discounts,read_orders', $fresh->scopes);
+    }
+
+    public function test_revoked_token_escaping_a_controller_is_still_401(): void
+    {
+        $this->installShop();
+        Http::fake(['https://levoilestores.myshopify.com/admin/api/*' => Http::response([], 401)]);
+        Route::middleware('shopify.session')->get('/api/_revoked', fn (GraphqlClient $g) => $g->query(SessionTokens::SHOP, '{ shop { id } }'));
+
+        $this->assertEmpty401($this->withHeader('Authorization', 'Bearer '.SessionTokens::mint())->getJson('/api/_revoked'));
+        $this->assertNull(Shop::active(SessionTokens::SHOP));
     }
 
     public function test_admin_load_with_bad_hmac_is_401(): void
