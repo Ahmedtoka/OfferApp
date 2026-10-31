@@ -27,7 +27,7 @@ class WebhookController extends Controller
             $this->markUninstalled($domain, $request);
         } elseif ($topic === 'app_subscriptions/update') {
             try {
-                $this->subscriptionChanged($domain, (string) $request->json('app_subscription.status'));
+                $this->subscriptionChanged($domain, strtoupper((string) $request->json('app_subscription.status')));
             } catch (ShopifyGraphqlException|SaveMismatch $e) {
                 // Not turned off yet: a non-2xx makes Shopify retry the webhook.
                 Log::warning('Could not turn the offer off after billing ended', ['shop' => $domain, 'error' => $e->getMessage()]);

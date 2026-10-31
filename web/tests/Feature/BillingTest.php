@@ -194,6 +194,17 @@ class BillingTest extends TestCase
         $this->auth()->postJson('/api/billing/subscribe')->assertOk();
     }
 
+    /** F5: the live status decides; the webhook's spelling of the status must not skip the check. */
+    public function test_a_lower_case_ended_status_still_turns_the_offer_off(): void
+    {
+        $this->seedSettings();
+        $this->fake->fixtures['BillingStatus'] = 'billing-none';
+
+        $this->hook('cancelled')->assertOk();
+
+        $this->assertFalse(json_decode($this->fake->metafieldValue, true)['enabled']);
+    }
+
     public function test_a_webhook_with_a_missing_or_empty_status_is_a_no_op(): void
     {
         $this->seedSettings();
