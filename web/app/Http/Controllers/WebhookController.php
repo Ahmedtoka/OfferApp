@@ -47,13 +47,23 @@ class WebhookController extends Controller
 
     /**
      * The HMAC covers the raw body but not the headers, so the shop this destructive topic acts on must be named
-     * by the signed body (every real payload does): a signed body from elsewhere cannot be aimed at another shop.
+     * by the signed body: a signed body from elsewhere cannot be aimed at another shop. A missing key or another
+     * domain is refused (and logged, topic and shop only). With $nullOk a key that is present but null passes:
+     * Shopify's own sample app/uninstalled payload has "myshopify_domain": null.
      */
-    private function bodyMatches(string $normalized, Request $request, string $field): bool
+    private function bodyMatches(string $normalized, Request $request, string $field, string $topic, bool $nullOk = false): bool
     {
-        $value = $request->json($field);
+        $body = $request->json();
+        $ok = false;
+        if ($body->has($field)) {
+            $value = $body->get($field);
+            $ok = ($nullOk && $value === null) || (is_string($value) && Shop::normalizeDomain($value) === $normalized);
+        }
+        if (! $ok) {
+            Log::warning("Webhook refused: {$topic} body does not name the shop", ['shop' => $normalized]);
+        }
 
-        return is_string($value) && Shop::normalizeDomain($value) === $normalized;
+        return $ok;
     }
 
     /**
@@ -81,7 +91,7 @@ class WebhookController extends Controller
     private function redact(string $domain, Request $request): void
     {
         $normalized = Shop::normalizeDomain($domain);
-        if ($normalized === null || ! $this->bodyMatches($normalized, $request, 'shop_domain')) {
+        if ($normalized === null || ! $this->bodyMatches($normalized, $request, 'shop_domain', 'shop/redact')) {
             return;
         }
 
@@ -92,7 +102,7 @@ class WebhookController extends Controller
     private function markUninstalled(string $domain, Request $request): void
     {
         $normalized = Shop::normalizeDomain($domain);
-        if ($normalized === null || ! $this->bodyMatches($normalized, $request, 'myshopify_domain')) {
+        if ($normalized === null || ! $this->bodyMatches($normalized, $request, 'myshopify_domain', 'app/uninstalled', true)) {
             return;
         }
 

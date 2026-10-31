@@ -164,6 +164,34 @@ class WebhookTest extends TestCase
         $this->assertSame('shpat_existing', $shop->access_token);
     }
 
+    public function test_uninstall_with_a_null_body_domain_proceeds(): void
+    {
+        // Shopify's own sample payload for app/uninstalled carries "myshopify_domain": null.
+        $shop = $this->installShop();
+
+        $this->hook('app/uninstalled', null, '{"id":954889,"name":"x","myshopify_domain":null}')->assertOk();
+
+        $shop->refresh();
+        $this->assertNotNull($shop->uninstalled_at);
+        $this->assertNull($shop->access_token);
+    }
+
+    public function test_a_rejected_uninstall_is_logged_with_topic_and_shop_only(): void
+    {
+        $this->installShop();
+        foreach (['{"shop_id":1,"secret_field":"do-not-log"}', '{"myshopify_domain":"other-store.myshopify.com","secret_field":"do-not-log"}'] as $body) {
+            Log::spy();
+
+            $this->hook('app/uninstalled', null, $body)->assertOk();
+
+            Log::shouldHaveReceived('warning')->atLeast()->once()->withArgs(
+                fn ($message, $context = []) => str_contains($message, 'app/uninstalled')
+                    && $context === ['shop' => SessionTokens::SHOP]
+                    && ! str_contains($message.json_encode($context), 'do-not-log')
+            );
+        }
+    }
+
     public function test_unknown_topic_returns_200(): void
     {
         $this->hook('orders/create')->assertOk();
