@@ -5,7 +5,8 @@
     "inputVariables": {
       "eligibleTags": [
         "FallOffer"
-      ]
+      ],
+      "collectionIds": []
     },
     "input": {
       "cart": {
@@ -30,7 +31,8 @@
               "product": {
                 "id": "gid://shopify/Product/X",
                 "isGiftCard": false,
-                "hasAnyTag": true
+                "hasAnyTag": true,
+                "inAnyCollection": false
               }
             }
           },
@@ -49,7 +51,8 @@
               "product": {
                 "id": "gid://shopify/Product/Y",
                 "isGiftCard": false,
-                "hasAnyTag": true
+                "hasAnyTag": true,
+                "inAnyCollection": false
               }
             }
           }
@@ -59,6 +62,11 @@
         "discountClasses": [
           "PRODUCT"
         ]
+      },
+      "localization": {
+        "language": {
+          "isoCode": "EN"
+        }
       },
       "shop": {
         "metafield": {

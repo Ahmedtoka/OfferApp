@@ -5,7 +5,8 @@
     "inputVariables": {
       "eligibleTags": [
         "FallOffer"
-      ]
+      ],
+      "collectionIds": []
     },
     "input": {
       "cart": {
@@ -32,7 +33,8 @@
               "product": {
                 "id": "gid://shopify/Product/a",
                 "isGiftCard": false,
-                "hasAnyTag": true
+                "hasAnyTag": true,
+                "inAnyCollection": false
               }
             }
           },
@@ -53,7 +55,8 @@
               "product": {
                 "id": "gid://shopify/Product/b",
                 "isGiftCard": false,
-                "hasAnyTag": true
+                "hasAnyTag": true,
+                "inAnyCollection": false
               }
             }
           },
@@ -74,7 +77,8 @@
               "product": {
                 "id": "gid://shopify/Product/c",
                 "isGiftCard": false,
-                "hasAnyTag": true
+                "hasAnyTag": true,
+                "inAnyCollection": false
               }
             }
           },
@@ -93,7 +97,8 @@
               "product": {
                 "id": "gid://shopify/Product/d",
                 "isGiftCard": false,
-                "hasAnyTag": true
+                "hasAnyTag": true,
+                "inAnyCollection": false
               }
             }
           }
@@ -103,6 +108,11 @@
         "discountClasses": [
           "PRODUCT"
         ]
+      },
+      "localization": {
+        "language": {
+          "isoCode": "EN"
+        }
       },
       "shop": {
         "metafield": {

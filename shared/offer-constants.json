@@ -2,6 +2,8 @@
   "discountTitle": "Buy One Get One",
   "giftMessage": "Gift",
   "percentMessageTemplate": "{pct}% off",
+  "giftMessages": { "en": "Gift", "ar": "هدية" },
+  "percentMessageTemplates": { "en": "{pct}% off", "ar": "خصم {pct}%" },
   "metafieldNamespace": "$app:bogo",
   "metafieldKey": "config",
   "metafieldDiscountKey": "config",

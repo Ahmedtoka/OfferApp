@@ -5,7 +5,8 @@
     "inputVariables": {
       "eligibleTags": [
         "FallOffer"
-      ]
+      ],
+      "collectionIds": []
     },
     "input": {
       "cart": {
@@ -30,7 +31,8 @@
               "product": {
                 "id": "gid://shopify/Product/A",
                 "isGiftCard": false,
-                "hasAnyTag": true
+                "hasAnyTag": true,
+                "inAnyCollection": false
               }
             }
           },
@@ -49,7 +51,8 @@
               "product": {
                 "id": "gid://shopify/Product/B",
                 "isGiftCard": false,
-                "hasAnyTag": true
+                "hasAnyTag": true,
+                "inAnyCollection": false
               }
             }
           },
@@ -68,7 +71,8 @@
               "product": {
                 "id": "gid://shopify/Product/C",
                 "isGiftCard": false,
-                "hasAnyTag": true
+                "hasAnyTag": true,
+                "inAnyCollection": false
               }
             }
           },
@@ -87,7 +91,8 @@
               "product": {
                 "id": "gid://shopify/Product/D",
                 "isGiftCard": false,
-                "hasAnyTag": true
+                "hasAnyTag": true,
+                "inAnyCollection": false
               }
             }
           }
@@ -98,9 +103,14 @@
           "PRODUCT"
         ]
       },
+      "localization": {
+        "language": {
+          "isoCode": "EN"
+        }
+      },
       "shop": {
         "metafield": {
-          "value": "{\"enabled\":true,\"percent\":30}"
+          "value": "{\"enabled\":true,\"percent\":30,\"method\":\"company\"}"
         }
       }
     },
@@ -115,14 +125,14 @@
                 "targets": [
                   {
                     "cartLine": {
-                      "id": "gid://shopify/CartLine/B",
+                      "id": "gid://shopify/CartLine/C",
                       "quantity": 1
                     }
                   }
                 ],
                 "value": {
                   "fixedAmount": {
-                    "amount": "1100.00",
+                    "amount": "900.00",
                     "appliesToEachItem": false
                   }
                 }

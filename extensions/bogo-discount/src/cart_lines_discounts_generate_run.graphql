@@ -1,4 +1,4 @@
-query Input($eligibleTags: [String!]!) {
+query Input($eligibleTags: [String!]!, $collectionIds: [ID!]!) {
   cart {
     cost { subtotalAmount { currencyCode } }
     lines {
@@ -12,12 +12,13 @@ query Input($eligibleTags: [String!]!) {
         __typename
         ... on ProductVariant {
           id
-          product { id isGiftCard hasAnyTag(tags: $eligibleTags) }
+          product { id isGiftCard hasAnyTag(tags: $eligibleTags) inAnyCollection(ids: $collectionIds) }
         }
       }
     }
   }
   discount { discountClasses }
+  localization { language { isoCode } }
   shop {
     metafield(namespace: "$app:bogo", key: "config") { value }
   }

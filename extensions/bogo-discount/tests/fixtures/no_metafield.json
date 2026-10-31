@@ -5,7 +5,8 @@
     "inputVariables": {
       "eligibleTags": [
         "FallOffer"
-      ]
+      ],
+      "collectionIds": []
     },
     "input": {
       "cart": {
@@ -30,7 +31,8 @@
               "product": {
                 "id": "gid://shopify/Product/A",
                 "isGiftCard": false,
-                "hasAnyTag": true
+                "hasAnyTag": true,
+                "inAnyCollection": false
               }
             }
           }
@@ -40,6 +42,11 @@
         "discountClasses": [
           "PRODUCT"
         ]
+      },
+      "localization": {
+        "language": {
+          "isoCode": "EN"
+        }
       },
       "shop": {
         "metafield": null

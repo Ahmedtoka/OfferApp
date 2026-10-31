@@ -1,50 +1,54 @@
-shopify app function run — 43 fixtures (API 2026-07, CLI 4.9.4)
+shopify app function run — 48 fixtures (API 2026-07, CLI 4.9.4)
 
-a.json                                   PASS  instructions=729190
-a_x2.json                                PASS  instructions=699127
-a_x3.json                                PASS  instructions=797491
-abc.json                                 PASS  instructions=1036883
-abcd.json                                PASS  instructions=1064961
-abcde.json                               PASS  instructions=1350414
-ac.json                                  PASS  instructions=793623
-all_untagged.json                        PASS  instructions=624646
-bulk_5lines_199.json                     PASS  instructions=1580444
-bulk_qty27.json                          PASS  instructions=797261
-bulk_qty51.json                          PASS  instructions=797250
-bulk_qty99.json                          PASS  instructions=797250
-company_abc.json                         PASS  instructions=1036883
-company_abcd.json                        PASS  instructions=1064961
-company_bulk_199.json                    PASS  instructions=1580444
-custom_tag_name.json                     PASS  instructions=729190
-disabled.json                            PASS  instructions=455484
-giftcard.json                            PASS  instructions=777436
-markdown_gift_800.json                   PASS  instructions=818988
-markdown_single_650_alone.json           PASS  instructions=644720
-markdown_single_800.json                 PASS  instructions=751077
-mixed_2_and_3.json                       PASS  instructions=990668
-mixed_tags_3_units.json                  PASS  instructions=843505
-n10.json                                 PASS  instructions=1867380
-n11.json                                 PASS  instructions=2272953
-n12.json                                 PASS  instructions=2138891
-n3.json                                  PASS  instructions=1036883
-n4.json                                  PASS  instructions=1064961
-n5.json                                  PASS  instructions=1350414
-n6.json                                  PASS  instructions=1337013
-n7.json                                  PASS  instructions=1655550
-n8.json                                  PASS  instructions=1601447
-n9.json                                  PASS  instructions=1966962
-no_metafield.json                        PASS  instructions=431639
-optimality_markdowns.json                PASS  instructions=1133502
-order_class_only.json                    PASS  instructions=434705
-percent_0.json                           PASS  instructions=458522
-percent_40_single_a.json                 PASS  instructions=729190
-same2_plus3.json                         PASS  instructions=1233206
-same2_plus4.json                         PASS  instructions=1239171
-same3_plus2.json                         PASS  instructions=1107504
-sort_by_pnow.json                        PASS  instructions=818988
-untagged_line_ignored.json               PASS  instructions=778047
-
-43/43 fixtures match
+a.json                                   PASS  instructions=853627
+a_x2.json                                PASS  instructions=824620
+a_x3.json                                PASS  instructions=923434
+abc.json                                 PASS  instructions=1171246
+abcd.json                                PASS  instructions=1204144
+abcde.json                               PASS  instructions=1495713
+ac.json                                  PASS  instructions=924962
+all_untagged.json                        PASS  instructions=754005
+arabic_gift_and_single.json              PASS  instructions=1175512
+bulk_5lines_199.json                     PASS  instructions=1730051
+bulk_qty27.json                          PASS  instructions=922533
+bulk_qty51.json                          PASS  instructions=922522
+bulk_qty99.json                          PASS  instructions=922522
+collection_eligible.json                 PASS  instructions=854289
+company_abc.json                         PASS  instructions=1173991
+company_abcd.json                        PASS  instructions=1212666
+company_bulk_199.json                    PASS  instructions=1548886
+company_unknown_method.json              PASS  instructions=567016
+custom_tag_name.json                     PASS  instructions=853627
+disabled.json                            PASS  instructions=557122
+giftcard.json                            PASS  instructions=904327
+jpy_gift_1000.json                       PASS  instructions=806142
+kwd_single_1235.json                     PASS  instructions=849991
+markdown_gift_800.json                   PASS  instructions=948314
+markdown_single_650_alone.json           PASS  instructions=769411
+markdown_single_800.json                 PASS  instructions=877622
+mixed_2_and_3.json                       PASS  instructions=1124665
+mixed_tags_3_units.json                  PASS  instructions=977624
+n10.json                                 PASS  instructions=2044490
+n11.json                                 PASS  instructions=2450922
+n12.json                                 PASS  instructions=2319985
+n3.json                                  PASS  instructions=1171246
+n4.json                                  PASS  instructions=1204144
+n5.json                                  PASS  instructions=1495713
+n6.json                                  PASS  instructions=1491004
+n7.json                                  PASS  instructions=1811186
+n8.json                                  PASS  instructions=1759575
+n9.json                                  PASS  instructions=2129412
+no_metafield.json                        PASS  instructions=532788
+optimality_markdowns.json                PASS  instructions=1275764
+order_class_only.json                    PASS  instructions=536072
+percent_0.json                           PASS  instructions=560353
+percent_40_single_a.json                 PASS  instructions=853627
+same2_plus3.json                         PASS  instructions=1374896
+same2_plus4.json                         PASS  instructions=1385345
+same3_plus2.json                         PASS  instructions=1242865
+sort_by_pnow.json                        PASS  instructions=948314
+untagged_line_ignored.json               PASS  instructions=905579
+48/48 fixtures match
 
 Instruction budget (Shopify limit 11M). Regression budget: every fixture < 5M.
 Before the run-based planLineDiscounts / O(n) odd search (final-review I1), measured on the same inputs:
@@ -52,5 +56,5 @@ Before the run-based planLineDiscounts / O(n) odd search (final-review I1), meas
   bulk_qty51      24186259   (over the limit: shopper would get no discount)
   bulk_qty99      83272051
   bulk_5lines_199 323445127
-After: bulk_qty27/51/99 ~0.80M (independent of quantity), bulk_5lines_199 1580444.
-The company_* fixtures run the adapter's default (customer) method until the method is wired in (Task 3); the company engine itself is covered by vitest.
+After: bulk_qty27/51/99 ~0.80M (independent of quantity), bulk_5lines_199 1730051 (< 5M).
+The company_* fixtures run the company method (config method "company") and their expected outputs are the company plans; unknown methods return no operations (company_unknown_method).

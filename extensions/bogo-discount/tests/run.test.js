@@ -11,7 +11,7 @@ const pctMsg = (pct) => constants.percentMessageTemplate.replace('{pct}', String
 
 const money = (v) => ({ amount: toAmountString(toPiastres(v) ).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '.0') });
 
-function inputFor(c, { enabled = true, percent = 30, classes = ['PRODUCT'], metafield, giftCardIds = [], untaggedIds = [] } = {}) {
+function inputFor(c, { enabled = true, percent = 30, classes = ['PRODUCT'], metafield, giftCardIds = [], untaggedIds = [], inCollectionIds = [], method, language } = {}) {
   return {
     cart: {
       lines: c.lines.map((l) => ({
@@ -28,12 +28,18 @@ function inputFor(c, { enabled = true, percent = 30, classes = ['PRODUCT'], meta
             id: `gid://shopify/Product/${l.id}`,
             isGiftCard: giftCardIds.includes(l.id),
             hasAnyTag: !untaggedIds.includes(l.id),
+            inAnyCollection: inCollectionIds.includes(l.id),
           },
         },
       })),
     },
     discount: { discountClasses: classes },
-    shop: { metafield: metafield === undefined ? { value: JSON.stringify({ enabled, percent }) } : metafield },
+    ...(language === undefined ? {} : { localization: { language: { isoCode: language } } }),
+    shop: {
+      metafield: metafield === undefined
+        ? { value: JSON.stringify({ enabled, percent, ...(method === undefined ? {} : { method }) }) }
+        : metafield,
+    },
   };
 }
 
@@ -117,6 +123,67 @@ describe('eligibility: only products tagged with the eligible tag', () => {
     const input = inputFor(ab);
     delete input.cart.lines[1].merchandise.product.isGiftCard;
     expect(candidates(run(input))).toEqual([cand('A', 1, pctMsg(30), '360.00')]);
+  });
+});
+
+describe('eligibility: tag or collection', () => {
+  const ab = { lines: byName('abc').lines.filter((l) => l.id !== 'C') };
+  it('a line passes when only the collection rule matches', () => {
+    expect(candidates(run(inputFor(ab, { untaggedIds: ['A', 'B'], inCollectionIds: ['A', 'B'] })))).toEqual([cand('B', 1, GIFT, '1100.00')]);
+  });
+  it('a line passes when only the tag rule matches', () => {
+    expect(candidates(run(inputFor(ab, { untaggedIds: [], inCollectionIds: [] })))).toEqual([cand('B', 1, GIFT, '1100.00')]);
+  });
+  it('a line fails when both rules are false', () => {
+    expect(run(inputFor(ab, { untaggedIds: ['A', 'B'], inCollectionIds: [] }))).toEqual({ operations: [] });
+  });
+  it('mixed: B by collection, A by neither: B is alone and takes the single', () => {
+    expect(candidates(run(inputFor(ab, { untaggedIds: ['A', 'B'], inCollectionIds: ['B'] })))).toEqual([cand('B', 1, pctMsg(30), '330.00')]);
+  });
+  it('inAnyCollection must be strictly true', () => {
+    const input = inputFor(ab, { untaggedIds: ['A', 'B'] });
+    input.cart.lines[0].merchandise.product.inAnyCollection = 'true';
+    expect(run(input)).toEqual({ operations: [] });
+  });
+});
+
+describe('calculation method', () => {
+  const abcd = byName('company_abcd');
+  const abc = byName('company_abc');
+  it('absent method runs customer', () => {
+    expect(candidates(run(inputFor(abc)))).toEqual([cand('B', 1, GIFT, '1100.00'), cand('C', 1, pctMsg(30), '270.00')]);
+  });
+  it('method customer runs customer', () => {
+    expect(candidates(run(inputFor(abc, { method: 'customer' })))).toEqual([cand('B', 1, GIFT, '1100.00'), cand('C', 1, pctMsg(30), '270.00')]);
+  });
+  it('method company runs the company plan (abc: gift C, B at 30%)', () => {
+    expect(candidates(run(inputFor(abc, { method: 'company' })))).toEqual([cand('B', 1, pctMsg(30), '330.00'), cand('C', 1, GIFT, '900.00')]);
+  });
+  it('method company on abcd gifts D and C', () => {
+    expect(candidates(run(inputFor(abcd, { method: 'company' })))).toEqual([cand('C', 1, GIFT, '900.00'), cand('D', 1, GIFT, '800.00')]);
+  });
+  it.each(['bad', '', 'COMPANY', null, 1, {}])('unknown method %j returns no operations', (method) => {
+    expect(run(inputFor(abc, { method }))).toEqual({ operations: [] });
+  });
+});
+
+describe('localized messages', () => {
+  const a = byName('a');
+  const ac = byName('ac');
+  it('AR gives Arabic percent message', () => {
+    expect(candidates(run(inputFor(a, { language: 'AR' })))).toEqual([cand('A', 1, 'خصم 30%', '360.00')]);
+  });
+  it('AR gives Arabic gift message', () => {
+    expect(candidates(run(inputFor(ac, { language: 'AR' })))).toEqual([cand('C', 1, 'هدية', '900.00')]);
+  });
+  it.each(['EN', 'FR', 'DE', undefined])('language %s gives English', (language) => {
+    expect(candidates(run(inputFor(a, { language })))[0].message).toBe('30% off');
+    expect(candidates(run(inputFor(ac, { language })))[0].message).toBe('Gift');
+  });
+  it('missing localization falls back to English', () => {
+    const input = inputFor(a);
+    delete input.localization;
+    expect(candidates(run(input))[0].message).toBe('30% off');
   });
 });
 

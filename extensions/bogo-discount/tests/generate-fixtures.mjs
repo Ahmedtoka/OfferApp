@@ -42,7 +42,7 @@ const amountStr = (v, d = 2) => v.toFixed(d);
 const lineGid = (id) => `gid://shopify/CartLine/${id}`;
 
 // Every line is tagged with the eligible tag unless its id is in untaggedIds.
-function buildInput(lines, { classes = ['PRODUCT'], metafield, giftCardIds = [], untaggedIds = [], currency = 'EGP' } = {}) {
+function buildInput(lines, { classes = ['PRODUCT'], metafield, giftCardIds = [], untaggedIds = [], currency = 'EGP', language = 'EN' } = {}) {
   return {
     cart: {
       cost: { subtotalAmount: { currencyCode: currency } },
@@ -60,28 +60,30 @@ function buildInput(lines, { classes = ['PRODUCT'], metafield, giftCardIds = [],
             id: `gid://shopify/Product/${l.id}`,
             isGiftCard: giftCardIds.includes(l.id),
             hasAnyTag: !untaggedIds.includes(l.id),
+            inAnyCollection: false,
           },
         },
       })),
     },
     discount: { discountClasses: classes },
+    localization: { language: { isoCode: language } },
     shop: { metafield },
   };
 }
 
 const cfg = (obj) => ({ value: JSON.stringify(obj) });
 
-function buildOutput(lines, plan, pct, decimals = 2) {
+function buildOutput(lines, plan, pct, decimals = 2, language = 'en') {
   const candidates = [];
   const target = (id, quantity) => [{ cartLine: { id: lineGid(id), quantity } }];
   const value = (amount) => ({ fixedAmount: { amount: amountStr(amount, decimals), appliesToEachItem: false } });
   for (const l of lines) {
     const p = plan[l.id];
     if (!p) continue;
-    if (p.giftQty) candidates.push({ message: constants.giftMessage, targets: target(l.id, p.giftQty), value: value(p.giftAmount) });
+    if (p.giftQty) candidates.push({ message: constants.giftMessages[language], targets: target(l.id, p.giftQty), value: value(p.giftAmount) });
     if (p.singleQty) {
       candidates.push({
-        message: constants.percentMessageTemplate.replace('{pct}', String(pct)),
+        message: constants.percentMessageTemplates[language].replace('{pct}', String(pct)),
         targets: target(l.id, p.singleQty),
         value: value(p.singleAmount),
       });
@@ -96,7 +98,7 @@ function buildOutput(lines, plan, pct, decimals = 2) {
 // runFunction nor function-runner / `shopify app function run` accept variables, so each
 // fixture records them under payload.inputVariables (ignored by the harness, checked by
 // tests/input-query.test.js against the constants default).
-const DEFAULT_VARIABLES = { eligibleTags: [constants.eligibleTag] };
+const DEFAULT_VARIABLES = { eligibleTags: [constants.eligibleTag], collectionIds: [] };
 const fixture = (input, output, inputVariables = DEFAULT_VARIABLES) => ({
   payload: {
     export: 'cart-lines-discounts-generate-run',
@@ -113,11 +115,14 @@ const byName = Object.fromEntries(cases.map((c) => [c.name, c]));
 
 for (const c of cases) {
   if (c.lines.length === 0 || c.name === 'markdown_single_650') continue;
-  const plan = c.perLine ?? HAND_PLANS[c.name];
+  // Cases with a `company` block run the company method and expect its plan.
+  const expected = c.company ?? c;
+  const plan = expected.perLine ?? HAND_PLANS[c.name];
   if (!plan) throw new Error(`no expected plan for ${c.name}`);
   const total = Object.values(plan).reduce((sum, p) => sum + p.giftAmount + p.singleAmount, 0);
-  if (total !== c.expectedSaving) throw new Error(`${c.name}: plan saves ${total}, case says ${c.expectedSaving}`);
-  files[c.name] = fixture(buildInput(c.lines, { metafield: cfg({ enabled: true, percent: c.pct }) }), buildOutput(c.lines, plan, c.pct));
+  if (total !== expected.expectedSaving) throw new Error(`${c.name}: plan saves ${total}, case says ${expected.expectedSaving}`);
+  const config = c.company ? { enabled: true, percent: c.pct, method: 'company' } : { enabled: true, percent: c.pct };
+  files[c.name] = fixture(buildInput(c.lines, { metafield: cfg(config) }), buildOutput(c.lines, plan, c.pct));
 }
 
 const A = byName.a.lines;
@@ -157,7 +162,7 @@ files.mixed_tags_3_units = fixture(
 files.custom_tag_name = fixture(
   buildInput(A, { metafield: meta30 }),
   buildOutput(A, { A: s(360) }, 30),
-  { eligibleTags: ['WinterOffer'] },
+  { eligibleTags: ['WinterOffer'], collectionIds: [] },
 );
 
 // Instruction-budget fixtures (I1): large odd carts. All prices have no markdown (pFull = pNow),
@@ -194,6 +199,22 @@ files.jpy_gift_1000 = fixture(
   buildInput([{ id: 'A', quantity: 2, pNow: 1000, pFull: 1000 }], { metafield: meta30, currency: 'JPY' }),
   buildOutput([{ id: 'A' }], { A: { giftQty: 1, giftAmount: 1000, singleQty: 0, singleAmount: 0 } }, 30, 0),
 );
+
+// Localized messages (Arabic storefront) and the collection rule.
+files.arabic_gift_and_single = fixture(
+  buildInput(byName.abc.lines, { metafield: meta30, language: 'AR' }),
+  buildOutput(byName.abc.lines, { B: g('B', 1100), C: s(270) }, 30, 2, 'ar'),
+);
+files.company_unknown_method = fixture(buildInput(A, { metafield: cfg({ enabled: true, percent: 30, method: 'bad' }) }), EMPTY);
+// Collection rule: Shopify resolves inAnyCollection(ids: $collectionIds); the tag rule is false.
+{
+  const input = buildInput(A, { metafield: meta30, untaggedIds: ['A'] });
+  input.cart.lines[0].merchandise.product.inAnyCollection = true;
+  files.collection_eligible = fixture(input, buildOutput(A, { A: s(360) }, 30), {
+    eligibleTags: [constants.eligibleTag],
+    collectionIds: ['gid://shopify/Collection/1'],
+  });
+}
 
 fs.mkdirSync(outDir, { recursive: true });
 for (const f of fs.readdirSync(outDir)) if (f.endsWith('.json')) fs.unlinkSync(path.join(outDir, f));

@@ -20,7 +20,22 @@ describe('input query uses the eligibleTags variable', () => {
     expect(t.type.kind).toBe('ListType');
     expect(t.type.type.kind).toBe('NonNullType');
     expect(t.type.type.type.name.value).toBe('String');
-    expect(op.variableDefinitions).toHaveLength(1);
+    expect(op.variableDefinitions).toHaveLength(2);
+  });
+
+  it('declares $collectionIds: [ID!]!', () => {
+    const v = op.variableDefinitions.find((d) => d.variable.name.value === 'collectionIds');
+    expect(v).toBeDefined();
+    const t = v.type; // NonNull(List(NonNull(ID)))
+    expect(t.kind).toBe('NonNullType');
+    expect(t.type.kind).toBe('ListType');
+    expect(t.type.type.kind).toBe('NonNullType');
+    expect(t.type.type.type.name.value).toBe('ID');
+  });
+
+  it('passes $collectionIds to inAnyCollection and asks for the language', () => {
+    expect(query).toMatch(/inAnyCollection\(ids:\s*\$collectionIds\)/);
+    expect(query).toMatch(/localization\s*\{\s*language\s*\{\s*isoCode\s*\}\s*\}/);
   });
 
   it('passes the variable to hasAnyTag, with no hard-coded tag literal', () => {
@@ -51,6 +66,13 @@ describe('shopify.extension.toml', () => {
   });
 });
 
+describe('message constants', () => {
+  it('has localized gift and percent messages, English and Arabic', () => {
+    expect(constants.giftMessages).toEqual({ en: 'Gift', ar: 'هدية' });
+    expect(constants.percentMessageTemplates).toEqual({ en: '{pct}% off', ar: 'خصم {pct}%' });
+  });
+});
+
 describe('fixtures carry the input variables', () => {
   const files = fs.readdirSync(fixturesDir).filter((f) => f.endsWith('.json'));
   const load = (f) => JSON.parse(fs.readFileSync(new URL(f, fixturesDir), 'utf8')).payload;
@@ -60,11 +82,18 @@ describe('fixtures carry the input variables', () => {
     expect(constants.eligibleTag.length).toBeGreaterThan(0);
   });
 
-  it.each(files.filter((f) => f !== 'custom_tag_name.json'))('%s uses the default eligibleTags', (f) => {
-    expect(load(f).inputVariables).toEqual({ eligibleTags: [constants.eligibleTag] });
+  it.each(files.filter((f) => !['custom_tag_name.json', 'collection_eligible.json'].includes(f)))('%s uses the default eligibleTags', (f) => {
+    expect(load(f).inputVariables).toEqual({ eligibleTags: [constants.eligibleTag], collectionIds: [] });
+  });
+
+  it('collection_eligible carries the collection id', () => {
+    expect(load('collection_eligible.json').inputVariables).toEqual({
+      eligibleTags: [constants.eligibleTag],
+      collectionIds: ['gid://shopify/Collection/1'],
+    });
   });
 
   it('custom_tag_name uses WinterOffer', () => {
-    expect(load('custom_tag_name.json').inputVariables).toEqual({ eligibleTags: ['WinterOffer'] });
+    expect(load('custom_tag_name.json').inputVariables).toEqual({ eligibleTags: ['WinterOffer'], collectionIds: [] });
   });
 });

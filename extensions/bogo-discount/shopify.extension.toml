@@ -12,7 +12,8 @@ description = "Buy one get one free, or one piece alone at N% off"
   input_query = "src/cart_lines_discounts_generate_run.graphql"
   export = "cart-lines-discounts-generate-run"
   # Variables come from the JSON metafield $app:bogo/config on the automatic discount node
-  # (written by the Laravel admin, value {"eligibleTags": ["<tag>"]}), not the shop metafield.
+  # (written by the Laravel admin, value {"eligibleTags": ["<tag>"], "collectionIds": ["gid://shopify/Collection/<id>"]}),
+  # not the shop metafield, which carries enabled / percent / method.
   input_variables = { namespace = "$app:bogo", key = "config" }
 
 
