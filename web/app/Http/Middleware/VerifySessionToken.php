@@ -6,6 +6,7 @@ use App\Models\Shop;
 use App\Shopify\InvalidSessionToken;
 use App\Shopify\SessionToken;
 use App\Shopify\TokenExchange;
+use App\Shopify\TokenRevoked;
 use Closure;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
@@ -42,7 +43,17 @@ class VerifySessionToken
 
         $request->attributes->set('shop', $claims['shop']);
 
-        return $next($request);
+        $response = $next($request);
+
+        // The Admin API rejected the stored token mid-request (see HttpGraphqlClient): answer 401, not the
+        // controller's 422, so the page retries with a fresh session token and the exchange re-installs.
+        if (app()->bound(TokenRevoked::class)) {
+            app()->forgetInstance(TokenRevoked::class);
+
+            return self::unauthorized();
+        }
+
+        return $response;
     }
 
     private function install(string $shop, string $jwt): bool

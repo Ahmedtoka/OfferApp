@@ -112,6 +112,29 @@ class AuthMiddlewareTest extends TestCase
         $this->assertSame(0, Shop::count());
     }
 
+    public function test_revoked_token_returns_401_clears_token_and_next_request_reinstalls(): void
+    {
+        $this->installShop();
+        Http::fake([
+            'https://levoilestores.myshopify.com/admin/api/*' => Http::response(['errors' => 'Invalid API key or access token'], 401),
+            self::EXCHANGE_URL => Http::response(['access_token' => 'shpat_fresh', 'scope' => 'write_discounts,read_orders']),
+        ]);
+        $auth = ['Authorization' => 'Bearer '.SessionTokens::mint()];
+
+        $this->assertEmpty401($this->withHeaders($auth)->getJson('/api/settings'));
+
+        $row = Shop::where('shop_domain', SessionTokens::SHOP)->first();
+        $this->assertNull($row->access_token);
+        $this->assertNull(Shop::active(SessionTokens::SHOP));
+
+        $this->withHeaders($auth)->getJson('/api/ping')->assertOk();
+
+        $this->assertSame(1, Shop::count());
+        $fresh = Shop::active(SessionTokens::SHOP);
+        $this->assertSame('shpat_fresh', $fresh->access_token);
+        $this->assertSame('write_discounts,read_orders', $fresh->scopes);
+    }
+
     public function test_admin_load_with_bad_hmac_is_401(): void
     {
         $this->assertEmpty401($this->get('/?shop=levoilestores.myshopify.com&timestamp=1&hmac=bad'));

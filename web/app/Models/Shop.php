@@ -53,4 +53,15 @@ class Shop extends Model
             ->whereNull('uninstalled_at')
             ->first();
     }
+
+    /** Drop a dead token so `active` is null and the next session-token request re-installs by token exchange. */
+    public static function markTokenRevoked(string $domain): void
+    {
+        $d = self::normalizeDomain($domain);
+        if ($d === null) {
+            return;
+        }
+
+        static::where('shop_domain', $d)->first()?->forceFill(['access_token' => null, 'installed_at' => null])->save();
+    }
 }

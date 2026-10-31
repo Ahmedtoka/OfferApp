@@ -12,7 +12,7 @@ class WebhookTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const BODY = '{"shop_domain":"levoilestores.myshopify.com","secret_field":"do-not-log"}';
+    private const BODY = '{"myshopify_domain":"levoilestores.myshopify.com","secret_field":"do-not-log"}';
 
     protected function setUp(): void
     {
@@ -30,8 +30,9 @@ class WebhookTest extends TestCase
         ]);
     }
 
-    private function hook(string $topic, ?string $hmac = null, string $body = self::BODY)
+    private function hook(string $topic, ?string $hmac = null, ?string $body = null)
     {
+        $body ??= self::BODY;
         $hmac ??= base64_encode(hash_hmac('sha256', $body, SessionTokens::API_SECRET, true));
 
         return $this->call('POST', '/webhooks', [], [], [], [
@@ -88,7 +89,7 @@ class WebhookTest extends TestCase
 
     public function test_compliance_topics_return_200_and_log_topic_and_shop_only(): void
     {
-        foreach (['customers/data_request', 'customers/redact', 'shop/redact'] as $topic) {
+        foreach (['customers/data_request', 'customers/redact'] as $topic) {
             Log::spy();
 
             $res = $this->hook($topic);
@@ -101,6 +102,57 @@ class WebhookTest extends TestCase
                     && ! str_contains(json_encode($context), 'do-not-log')
             );
         }
+    }
+
+    public function test_customers_topics_leave_the_shop_row_alone(): void
+    {
+        $this->installShop();
+
+        $this->hook('customers/redact')->assertOk();
+        $this->hook('customers/data_request')->assertOk();
+
+        $this->assertNotNull(Shop::active(SessionTokens::SHOP));
+    }
+
+    public function test_shop_redact_deletes_the_shop_row_and_logs_without_body(): void
+    {
+        $this->installShop();
+        Log::spy();
+
+        $res = $this->hook('shop/redact', null, '{"myshopify_domain":"levoilestores.myshopify.com","secret_field":"do-not-log"}');
+
+        $res->assertOk();
+        $this->assertSame('{}', $res->getContent());
+        $this->assertSame(0, Shop::count());
+        Log::shouldHaveReceived('info')->atLeast()->once()->withArgs(
+            fn ($message, $context = []) => str_contains($message, 'shop/redact')
+                && ! str_contains(json_encode($context), 'do-not-log')
+        );
+    }
+
+    public function test_shop_redact_for_unknown_shop_is_ok(): void
+    {
+        $this->hook('shop/redact', null, '{"myshopify_domain":"levoilestores.myshopify.com"}')->assertOk();
+    }
+
+    public function test_shop_redact_with_mismatched_body_domain_changes_nothing(): void
+    {
+        $this->installShop();
+
+        $this->hook('shop/redact', null, '{"myshopify_domain":"other-store.myshopify.com"}')->assertOk();
+
+        $this->assertSame(1, Shop::count());
+    }
+
+    public function test_uninstall_with_mismatched_body_domain_changes_nothing(): void
+    {
+        $shop = $this->installShop();
+
+        $this->hook('app/uninstalled', null, '{"myshopify_domain":"other-store.myshopify.com"}')->assertOk();
+
+        $shop->refresh();
+        $this->assertNull($shop->uninstalled_at);
+        $this->assertSame('shpat_existing', $shop->access_token);
     }
 
     public function test_unknown_topic_returns_200(): void

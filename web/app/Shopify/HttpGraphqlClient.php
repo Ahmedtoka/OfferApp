@@ -45,7 +45,7 @@ class HttpGraphqlClient implements GraphqlClient
             ($this->sleep)($backoff);
         }
 
-        return $this->dataFrom($response);
+        return $this->dataFrom($response, $installed->shop_domain);
     }
 
     private function post(string $url, string $token, array $payload): Response
@@ -78,8 +78,15 @@ class HttpGraphqlClient implements GraphqlClient
         return false;
     }
 
-    private function dataFrom(Response $response): array
+    private function dataFrom(Response $response, string $shop): array
     {
+        if ($response->status() === 401) {
+            Shop::markTokenRevoked($shop);
+            // Flag for VerifySessionToken: controllers catch ShopifyGraphqlException and answer 422,
+            // but a revoked token must reach the page as 401 so it retries with a fresh session token.
+            app()->instance(TokenRevoked::class, $shop);
+            throw new TokenRevoked('Shopify access token was revoked');
+        }
         if ($response->status() !== 200) {
             throw new ShopifyGraphqlException("Shopify GraphQL HTTP {$response->status()}");
         }
