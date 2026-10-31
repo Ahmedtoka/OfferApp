@@ -37,7 +37,7 @@ class BogoCalculatorTest extends TestCase
     {
         $lines = self::pLines($case['lines']);
         $units = BogoCalculator::expandUnits($lines);
-        $result = BogoCalculator::compute($units, $case['pct']);
+        $result = BogoCalculator::compute($units, $case['pct'], 'customer');
 
         $this->assertSame(BogoCalculator::toPiastres($case['expectedPay']), $result->totalPay);
         $this->assertSame(BogoCalculator::toPiastres($case['expectedSaving']), $result->totalDiscount);
@@ -64,6 +64,20 @@ class BogoCalculatorTest extends TestCase
             $this->assertSame(BogoCalculator::toPiastres($case['scenario2Pay']), $min->totalPay);
         }
 
+        if (isset($case['company'])) {
+            $company = $case['company'];
+            $result = BogoCalculator::compute($units, $case['pct'], 'company');
+            $this->assertSame(BogoCalculator::toPiastres($company['expectedPay']), $result->totalPay);
+            $this->assertSame(BogoCalculator::toPiastres($company['expectedSaving']), $result->totalDiscount);
+            if (array_key_exists('expectedSingle', $company)) {
+                $this->assertSame($company['expectedSingle'], $result->singleUnit?->lineId);
+            }
+            $this->assertSame(
+                self::expectedPlan($company['perLine']),
+                self::byLineId(BogoCalculator::planLineDiscounts($lines, $case['pct'], 'company')),
+            );
+        }
+
         if (array_key_exists('perLine', $case)) {
             $expected = [];
             foreach ($case['perLine'] as $id => $p) {
@@ -81,6 +95,137 @@ class BogoCalculatorTest extends TestCase
             usort($actual, fn ($a, $b) => strcmp($key($a), $key($b)));
             $this->assertSame($expected, $actual);
         }
+    }
+
+    #[DataProvider('fixtureCases')]
+    public function test_company_is_minimal_against_brute_force(array $case): void
+    {
+        $units = BogoCalculator::expandUnits(self::pLines($case['lines']));
+        $result = BogoCalculator::compute($units, $case['pct'], 'company');
+
+        $this->assertSame(self::bruteForceCompanyDiscount($units, $case['pct']), $result->totalDiscount);
+        $this->assertSame(array_sum(array_map(fn (Unit $u) => $u->pNow, $units)) - $result->totalDiscount, $result->totalPay);
+    }
+
+    #[DataProvider('fixtureCases')]
+    public function test_candidates_mark_exactly_one_chosen_equal_to_compute(array $case): void
+    {
+        $units = BogoCalculator::expandUnits(self::pLines($case['lines']));
+        $sumNow = array_sum(array_map(fn (Unit $u) => $u->pNow, $units));
+        foreach (['customer', 'company'] as $method) {
+            $result = BogoCalculator::compute($units, $case['pct'], $method);
+            $candidates = BogoCalculator::candidates($units, $case['pct'], $method);
+            $chosen = array_values(array_filter($candidates, fn ($c) => $c['chosen']));
+
+            $this->assertCount(1, $chosen);
+            $this->assertSame($result->totalDiscount, $chosen[0]['totalDiscount']);
+            $this->assertSame($result->totalPay, $chosen[0]['totalPay']);
+            $this->assertSame($result->singleUnit, $chosen[0]['single']);
+            foreach ($candidates as $c) {
+                $this->assertSame($sumNow - $c['totalDiscount'], $c['totalPay']);
+                $better = $method === 'company'
+                    ? $c['totalDiscount'] < $chosen[0]['totalDiscount']
+                    : $c['totalDiscount'] > $chosen[0]['totalDiscount'];
+                $this->assertFalse($better);
+            }
+        }
+    }
+
+    public function test_candidates_for_even_cart_is_one_candidate_without_single(): void
+    {
+        $units = [new Unit('A', 100, 100), new Unit('B', 200, 200)];
+        $candidates = BogoCalculator::candidates($units, 30, 'customer');
+
+        $this->assertCount(1, $candidates);
+        $this->assertNull($candidates[0]['single']);
+        $this->assertSame(['A'], array_map(fn (Unit $u) => $u->lineId, $candidates[0]['gifts']));
+        $this->assertSame(100, $candidates[0]['totalDiscount']);
+        $this->assertSame(200, $candidates[0]['totalPay']);
+        $this->assertTrue($candidates[0]['chosen']);
+    }
+
+    public function test_odd_cart_has_one_candidate_per_unit(): void
+    {
+        $units = [new Unit('A', 100, 100), new Unit('B', 200, 200), new Unit('C', 300, 300)];
+
+        $this->assertCount(3, BogoCalculator::candidates($units, 30, 'company'));
+    }
+
+    public function test_method_names_and_legacy_aliases(): void
+    {
+        $units = [new Unit('A', 1200, 1200), new Unit('B', 1100, 1100), new Unit('C', 900, 900)];
+
+        $this->assertSame(1830, BogoCalculator::compute($units, 30, 'customer')->totalPay);
+        $this->assertSame(BogoCalculator::compute($units, 30, 'max')->totalPay, BogoCalculator::compute($units, 30, 'customer')->totalPay);
+        $this->assertSame(BogoCalculator::compute($units, 30)->totalPay, BogoCalculator::compute($units, 30, 'customer')->totalPay);
+        $this->assertSame(1970, BogoCalculator::compute($units, 30, 'company')->totalPay);
+        $this->assertSame(1970, BogoCalculator::compute($units, 30, 'min')->totalPay);
+    }
+
+    /**
+     * Independent of the implementation: for every choice of single, the cheapest valid gift set found
+     * by DP over the rest scanned from the dearest down (a gift needs an earlier paid unit to pair with).
+     *
+     * @param  array<int, Unit>  $units
+     */
+    private static function bruteForceCompanyDiscount(array $units, int $pct): int
+    {
+        usort($units, fn (Unit $a, Unit $b) => $b->pNow <=> $a->pNow);
+        $n = count($units);
+        $best = null;
+        foreach ($n % 2 === 1 ? range(0, $n - 1) : [null] as $single) {
+            $rest = [];
+            $singleDiscount = 0;
+            foreach ($units as $k => $u) {
+                if ($k === $single) {
+                    $singleDiscount = max(0, $u->pNow - intdiv($u->pFull * (100 - $pct) * 2 + 100, 200));
+                } else {
+                    $rest[] = $u->pNow;
+                }
+            }
+            $gifts = intdiv(count($rest), 2);
+            // $state[g] = cheapest gift sum with g gifts so far; each gift needs a distinct earlier paid unit.
+            $state = [0 => 0];
+            foreach ($rest as $processed => $price) {
+                $next = [];
+                foreach ($state as $g => $sum) {
+                    $next[$g] = min($next[$g] ?? PHP_INT_MAX, $sum);
+                    if ($processed - $g >= $g + 1 && $g + 1 <= $gifts) {
+                        $next[$g + 1] = min($next[$g + 1] ?? PHP_INT_MAX, $sum + $price);
+                    }
+                }
+                $state = $next;
+            }
+            $total = $state[$gifts] + $singleDiscount;
+            $best = $best === null ? $total : min($best, $total);
+        }
+
+        return $best;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private static function expectedPlan(array $perLine): array
+    {
+        $expected = [];
+        foreach ($perLine as $id => $p) {
+            $expected[] = [
+                'lineId' => (string) $id,
+                'giftQty' => $p['giftQty'],
+                'giftAmount' => BogoCalculator::toPiastres($p['giftAmount']),
+                'singleQty' => $p['singleQty'],
+                'singleAmount' => BogoCalculator::toPiastres($p['singleAmount']),
+            ];
+        }
+
+        return self::byLineId($expected);
+    }
+
+    /** @param  array<int, array<string, mixed>>  $plan */
+    private static function byLineId(array $plan): array
+    {
+        usort($plan, fn ($a, $b) => strcmp($a['lineId'], $b['lineId']));
+
+        return $plan;
     }
 
     public function test_single_discount_rounds_half_up_at_boundary(): void

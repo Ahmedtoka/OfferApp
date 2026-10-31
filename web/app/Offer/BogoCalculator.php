@@ -65,13 +65,36 @@ final class BogoCalculator
         return $discount;
     }
 
-    /** @param  array<int, Unit>  $sorted */
-    private static function build(array $sorted, ?int $singleIndex, int $pct): OfferResult
+    /**
+     * Company: the cheapest floor(n/2) units are the gifts, the dearer half pay.
+     *
+     * @param  array<int, Unit>  $sorted
+     * @param  array<int, array{unit: Unit, role: string, discount: int}>  $assignments
+     */
+    private static function giftCheapest(array $sorted, array &$assignments): int
     {
+        $giftCount = intdiv(count($sorted), 2);
+        $discount = 0;
+        foreach ($sorted as $k => $unit) {
+            if ($k < $giftCount) {
+                $assignments[] = ['unit' => $unit, 'role' => 'gift', 'discount' => $unit->pNow];
+                $discount += $unit->pNow;
+            } else {
+                $assignments[] = ['unit' => $unit, 'role' => 'paid', 'discount' => 0];
+            }
+        }
+
+        return $discount;
+    }
+
+    /** @param  array<int, Unit>  $sorted */
+    private static function build(array $sorted, ?int $singleIndex, int $pct, string $method): OfferResult
+    {
+        $group = $method === 'company' ? self::giftCheapest(...) : self::pairUp(...);
         $assignments = [];
         $singleUnit = null;
         if ($singleIndex === null) {
-            $totalDiscount = self::pairUp($sorted, $assignments);
+            $totalDiscount = $group($sorted, $assignments);
         } else {
             $singleUnit = $sorted[$singleIndex];
             $rest = [];
@@ -81,7 +104,7 @@ final class BogoCalculator
                 }
             }
             $pairs = [];
-            $pairDiscount = self::pairUp($rest, $pairs);
+            $pairDiscount = $group($rest, $pairs);
             $sd = self::singleDiscount($singleUnit, $pct);
             $assignments = [...$pairs, ['unit' => $singleUnit, 'role' => 'single', 'discount' => $sd]];
             $totalDiscount = $pairDiscount + $sd;
@@ -92,20 +115,21 @@ final class BogoCalculator
     }
 
     /**
-     * @param  array<int, Unit>  $units
-     * @param  string  $mode  'max' (best saving) or 'min' (smallest saving)
+     * Index of the lone piece in the sorted units (null for an even cart).
+     *
+     * @param  array<int, Unit>  $sorted
      */
-    public static function compute(array $units, int $pct, string $mode = 'max'): OfferResult
+    private static function chooseSingleIndex(array $sorted, int $pct, string $method): ?int
     {
-        $sorted = self::sortUnits($units);
         if (count($sorted) % 2 === 0) {
-            return self::build($sorted, null, $pct);
+            return null;
         }
 
+        $smallest = in_array($method, ['company', 'min'], true);
         $best = null;
         $bestIndex = -1;
         foreach (array_keys($sorted) as $i) {
-            $candidate = self::build($sorted, $i, $pct);
+            $candidate = self::build($sorted, $i, $pct, $method);
             if ($best === null) {
                 $best = $candidate;
                 $bestIndex = $i;
@@ -113,7 +137,7 @@ final class BogoCalculator
                 continue;
             }
             $d = $candidate->totalDiscount - $best->totalDiscount;
-            $better = $mode === 'min' ? $d < 0 : $d > 0;
+            $better = $smallest ? $d < 0 : $d > 0;
             // Ties: smaller pFull wins, then smaller sorted index (the earlier candidate).
             $tieWin = $d === 0 && $sorted[$i]->pFull < $sorted[$bestIndex]->pFull;
             if ($better || $tieWin) {
@@ -122,18 +146,63 @@ final class BogoCalculator
             }
         }
 
-        return $best;
+        return $bestIndex;
     }
 
     /**
-     * Per-line discount plan for the 'max' result; lines with nothing to discount are omitted.
+     * @param  array<int, Unit>  $units
+     * @param  string  $method  'customer' (largest saving) or 'company' (smallest valid saving).
+     *                          'max' (= customer) and 'min' (neighbour pairs, smallest saving) stay until Task 9 moves OfferAnalytics.
+     */
+    public static function compute(array $units, int $pct, string $method = 'customer'): OfferResult
+    {
+        $sorted = self::sortUnits($units);
+
+        return self::build($sorted, self::chooseSingleIndex($sorted, $pct, $method), $pct, $method);
+    }
+
+    /**
+     * Every choice of lone piece (a single candidate for an even cart), for the Test page.
+     * Exactly one is chosen: the one compute() returns.
+     *
+     * @param  array<int, Unit>  $units
+     * @return list<array{single: ?Unit, gifts: list<Unit>, totalDiscount: int, totalPay: int, chosen: bool}>
+     */
+    public static function candidates(array $units, int $pct, string $method): array
+    {
+        $sorted = self::sortUnits($units);
+        $chosenIndex = self::chooseSingleIndex($sorted, $pct, $method);
+
+        $out = [];
+        foreach ($chosenIndex === null ? [null] : array_keys($sorted) as $i) {
+            $result = self::build($sorted, $i, $pct, $method);
+            $gifts = [];
+            foreach ($result->assignments as $a) {
+                if ($a['role'] === 'gift') {
+                    $gifts[] = $a['unit'];
+                }
+            }
+            $out[] = [
+                'single' => $result->singleUnit,
+                'gifts' => $gifts,
+                'totalDiscount' => $result->totalDiscount,
+                'totalPay' => $result->totalPay,
+                'chosen' => $i === $chosenIndex,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Per-line discount plan for the chosen result; lines with nothing to discount are omitted.
      *
      * @param  array<int, array{id: string|int, quantity: int, pNow: int, pFull: int}>  $lines
      * @return array<int, array{lineId: string, giftQty: int, giftAmount: int, singleQty: int, singleAmount: int}>
      */
-    public static function planLineDiscounts(array $lines, int $pct): array
+    public static function planLineDiscounts(array $lines, int $pct, string $method = 'customer'): array
     {
-        $result = self::compute(self::expandUnits($lines), $pct, 'max');
+        $result = self::compute(self::expandUnits($lines), $pct, $method);
         $byLine = [];
         foreach ($result->assignments as $a) {
             $unit = $a['unit'];
