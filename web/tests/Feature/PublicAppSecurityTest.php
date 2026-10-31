@@ -107,4 +107,19 @@ class PublicAppSecurityTest extends TestCase
         $this->assertNull($shop->uninstalled_at);
         $this->assertSame('shpat_victim', $shop->access_token);
     }
+
+    /** F6: the repo is public. Real Shopify token shapes and written-down store passwords stay out of it. */
+    public function test_no_credentials_are_tracked_in_the_repo(): void
+    {
+        $pattern = 'shp(at|ss|ca|pa|ua)_[a-fA-F0-9]{32}|visitor password [`"\'][^`"\']+[`"\']';
+        $root = escapeshellarg(base_path('..'));
+        exec("git -C {$root} rev-parse --is-inside-work-tree 2>&1", $inside, $code);
+        if ($code !== 0) {
+            $this->markTestSkipped('Not a git checkout.');
+        }
+
+        exec('git -C '.$root.' grep -n -I -E '.escapeshellarg($pattern).' -- . 2>&1', $hits);
+
+        $this->assertSame([], array_values(array_filter($hits, fn ($line) => ! str_contains($line, 'PublicAppSecurityTest.php'))));
+    }
 }

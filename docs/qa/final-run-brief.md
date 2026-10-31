@@ -1,6 +1,6 @@
 # Final QA run — English strings (dev store)
 
-Built-in browser pane (`mcp__Claude_Browser__*`), signed in to the dev store admin; storefront visitor password `tushau` if `/password` appears. Store `https://levoilest.myshopify.com` (EGP, `E£` at checkout). Function + Laravel are served live by `shopify app dev` (do not touch the CLI).
+Built-in browser pane (`mcp__Claude_Browser__*`), signed in to the dev store admin; storefront visitor password (Online Store → Preferences; never written here) if `/password` appears. Store `https://levoilest.myshopify.com` (EGP, `E£` at checkout). Function + Laravel are served live by `shopify app dev` (do not touch the CLI).
 
 Customer-facing strings are now English: discount title **Buy One Get One**, gift label **Gift**, single-unit label **30% off** (or `{pct}% off`). The admin page is English/LTR.
 
