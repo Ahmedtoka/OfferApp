@@ -32,6 +32,24 @@ class ShopTest extends TestCase
         $this->assertFalse(Shop::isAllowed('levoilestores.myshopify.com.evil.com'));
     }
 
+    public function test_empty_allow_list_accepts_any_valid_domain(): void
+    {
+        config(['shopify.allowed_shops' => []]);
+
+        $this->assertTrue(Shop::isAllowed('any-store.myshopify.com'));
+        $this->assertTrue(Shop::isAllowed('  Any-Store.MyShopify.com '));
+    }
+
+    public function test_empty_allow_list_still_rejects_malformed_domains(): void
+    {
+        config(['shopify.allowed_shops' => []]);
+
+        $this->assertFalse(Shop::isAllowed(''));
+        $this->assertFalse(Shop::isAllowed('x.myshopify.com.evil.com'));
+        $this->assertFalse(Shop::isAllowed('https://x.myshopify.com'));
+        $this->assertFalse(Shop::isAllowed('x.example.com'));
+    }
+
     public function test_access_token_is_encrypted_at_rest_and_round_trips(): void
     {
         Shop::create([

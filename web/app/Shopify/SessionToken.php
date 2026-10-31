@@ -81,7 +81,7 @@ final class SessionToken
         }
 
         $shop = Shop::normalizeDomain($dest);
-        if ($shop === null || ! in_array($shop, $allowedShops, true)) {
+        if ($shop === null || ! Shop::inAllowList($shop, $allowedShops)) {
             throw new InvalidSessionToken('shop not allowed');
         }
 

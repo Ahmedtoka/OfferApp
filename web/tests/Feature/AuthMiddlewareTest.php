@@ -130,6 +130,22 @@ class AuthMiddlewareTest extends TestCase
         $this->assertEmpty401($this->get('/?'.http_build_query($params)));
     }
 
+    public function test_admin_load_with_valid_hmac_for_any_shop_is_200_when_allow_list_is_empty(): void
+    {
+        config(['shopify.allowed_shops' => []]);
+        $params = ['shop' => 'any-store.myshopify.com', 'timestamp' => '1700000000'];
+        $params['hmac'] = SessionTokens::signQuery($params);
+
+        $this->get('/?'.http_build_query($params))->assertOk();
+    }
+
+    public function test_admin_load_with_bad_hmac_is_401_when_allow_list_is_empty(): void
+    {
+        config(['shopify.allowed_shops' => []]);
+
+        $this->assertEmpty401($this->get('/?shop=any-store.myshopify.com&timestamp=1&hmac=bad'));
+    }
+
     public function test_admin_load_with_correct_hmac_is_200_with_shop_csp(): void
     {
         $params = ['embedded' => '1', 'host' => 'YWRtaW4uc2hvcGlmeS5jb20vc3RvcmUvbGV2b2lsZXN0b3Jlcw', 'locale' => 'en', 'shop' => SessionTokens::SHOP, 'timestamp' => '1700000000'];

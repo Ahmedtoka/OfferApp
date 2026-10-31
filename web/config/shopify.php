@@ -13,14 +13,19 @@ return [
     // Public base URL of this app (used for redirects and webhook addresses).
     'app_url' => env('APP_URL'),
 
+    // Public app name and marketing/support site (shown in the admin page and links).
+    'app_name' => env('APP_NAME', 'Pairly: BOGO Offers'),
+    'site_url' => env('SITE_URL'),
+
     // Shops allowed to install/use the app (lower-cased bare *.myshopify.com hosts).
+    // Empty means open: any valid *.myshopify.com store (public app). Set it to restrict.
     'allowed_shops' => array_values(array_filter(array_map(
         fn ($d) => strtolower(trim($d)),
         explode(',', (string) env('SHOPIFY_ALLOWED_SHOPS', ''))
     ))),
 
     // Title of our Discount Function as Shopify reports it (extension name).
-    'function_title' => env('SHOPIFY_FUNCTION_TITLE', 'BOGO Discount (Le Voile)'),
+    'function_title' => env('SHOPIFY_FUNCTION_TITLE', 'Pairly Discount'),
 
     // Absolute, or relative to base_path().
     'shared_constants_path' => env('SHOPIFY_SHARED_CONSTANTS_PATH', base_path('../shared/offer-constants.json')),

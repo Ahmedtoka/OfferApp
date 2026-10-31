@@ -80,6 +80,29 @@ class SessionTokenTest extends TestCase
         $this->verify($make());
     }
 
+    public function test_empty_allow_list_accepts_any_valid_shop(): void
+    {
+        $jwt = SessionTokens::mint(['iss' => 'https://any-store.myshopify.com/admin', 'dest' => 'https://any-store.myshopify.com'], self::NOW);
+
+        $result = SessionToken::verify($jwt, SessionTokens::API_KEY, SessionTokens::API_SECRET, [], self::NOW);
+
+        $this->assertSame('any-store.myshopify.com', $result['shop']);
+    }
+
+    public function test_empty_allow_list_still_rejects_lookalike_hosts(): void
+    {
+        $jwt = SessionTokens::mint(['iss' => 'https://x.myshopify.com.evil.com/admin', 'dest' => 'https://x.myshopify.com.evil.com'], self::NOW);
+
+        $this->expectException(InvalidSessionToken::class);
+        SessionToken::verify($jwt, SessionTokens::API_KEY, SessionTokens::API_SECRET, [], self::NOW);
+    }
+
+    public function test_empty_secret_is_rejected_even_with_open_allow_list(): void
+    {
+        $this->expectException(InvalidSessionToken::class);
+        SessionToken::verify(SessionTokens::mint([], self::NOW, ''), SessionTokens::API_KEY, '', [], self::NOW);
+    }
+
     public function test_empty_secret_is_rejected(): void
     {
         $this->expectException(InvalidSessionToken::class);

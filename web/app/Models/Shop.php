@@ -27,11 +27,18 @@ class Shop extends Model
         return preg_match('/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/', $d) ? $d : null;
     }
 
+    /** An empty allow-list means any valid *.myshopify.com store may use the app. */
     public static function isAllowed(string $domain): bool
     {
         $d = self::normalizeDomain($domain);
 
-        return $d !== null && in_array($d, (array) config('shopify.allowed_shops'), true);
+        return $d !== null && self::inAllowList($d, (array) config('shopify.allowed_shops'));
+    }
+
+    /** True when the (already normalized) domain is listed, or when the list is empty (open app). */
+    public static function inAllowList(string $domain, array $allowedShops): bool
+    {
+        return $allowedShops === [] || in_array($domain, $allowedShops, true);
     }
 
     public static function active(string $domain): ?self

@@ -21,7 +21,7 @@ class SettingsTest extends TestCase
     {
         parent::setUp();
         SessionTokens::configure();
-        config(['shopify.function_title' => 'BOGO Discount (Le Voile)']);
+        config(['shopify.function_title' => 'Pairly Discount']);
         Shop::create([
             'shop_domain' => SessionTokens::SHOP,
             'access_token' => 'shpat_existing',

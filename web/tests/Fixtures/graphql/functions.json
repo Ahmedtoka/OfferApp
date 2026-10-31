@@ -1,4 +1,4 @@
 { "shopifyFunctions": { "nodes": [
   { "id": "01OTHERFUNCTION", "title": "Other Function", "apiType": "discount", "app": { "title": "Other App" } },
-  { "id": "01BOGOFUNCTION", "title": "BOGO Discount (Le Voile)", "apiType": "discount", "app": { "title": "BOGO" } }
+  { "id": "01BOGOFUNCTION", "title": "Pairly Discount", "apiType": "discount", "app": { "title": "BOGO" } }
 ] } }
