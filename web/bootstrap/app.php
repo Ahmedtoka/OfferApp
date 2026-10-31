@@ -8,7 +8,12 @@ use App\Http\Middleware\VerifyWebhookHmac;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -28,7 +33,15 @@ return Application::configure(basePath: dirname(__DIR__))
         // Laravel's priority list would otherwise run ThrottleRequests before our auth, keying the
         // per-shop limiter by an empty shop (one bucket shared by every caller, unauthenticated included).
         $middleware->prependToPriorityList(before: ThrottleRequests::class, prepend: VerifySessionToken::class);
-        $middleware->validateCsrfTokens(except: ['webhooks']);
+        // The web routes are public pages, the signed admin shell and the HMAC-checked webhook: no cookie, session
+        // or form anywhere. Anonymous hits must not write a session row, and the iframe must not set a cookie.
+        $middleware->web(remove: [
+            EncryptCookies::class,
+            AddQueuedCookiesToResponse::class,
+            StartSession::class,
+            ShareErrorsFromSession::class,
+            ValidateCsrfToken::class,
+        ]);
         // Global, so health checks, 404/405 and other error pages are covered too, not just the route groups.
         $middleware->append(EmbeddedCsp::class);
     })
