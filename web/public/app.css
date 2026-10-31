@@ -161,7 +161,7 @@ body {
 
 @media (min-width: 900px) {
     .tiles {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     .tile-wide {
@@ -297,4 +297,149 @@ body {
 /* Right-to-left: logical properties above do the layout; Arabic gets a font stack that includes Arabic faces. */
 [dir="rtl"] body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif;
+}
+
+/* ---- Analytics layout A and Test page ---- */
+.summary {
+    margin: 0;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 650;
+}
+
+.note-subdued {
+    margin: 0;
+    color: var(--text-subdued);
+}
+
+.more {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-subdued);
+}
+
+.more > summary {
+    padding: var(--space-3);
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.more-body {
+    padding: 0 var(--space-3) var(--space-3);
+}
+
+.facts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.facts li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.test-lines {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.test-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: #fff;
+}
+
+.test-line-title {
+    flex: 1 1 200px;
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+}
+
+.methods {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+}
+
+@media (min-width: 900px) {
+    .methods {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.method-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-inline-size: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #fff;
+}
+
+.method-card h3 {
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    background: #cdfee1;
+    color: #0c5132;
+    font-weight: 650;
+}
+
+.grid-table {
+    inline-size: 100%;
+    border-collapse: collapse;
+}
+
+.grid-table th,
+.grid-table td {
+    padding: var(--space-1) var(--space-2);
+    text-align: start;
+    vertical-align: top;
+}
+
+.grid-table td.num,
+.grid-table th.num {
+    text-align: end;
+}
+
+.splits {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.split {
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+.split.is-chosen {
+    background: #cdfee1;
+    color: #0c5132;
 }

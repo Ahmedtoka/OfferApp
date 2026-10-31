@@ -151,7 +151,7 @@
         </s-section>
     </div>
 
-    {{-- Analytics (Task 12 rebuilds this section) --}}
+    {{-- Analytics: layout A (one sentence, four numbers, details collapsed) --}}
     <div id="page-analytics" data-page="analytics" hidden>
         <s-section heading="{{ __('app.analytics.heading') }}">
             <div class="stack">
@@ -165,6 +165,12 @@
 
                 <div id="analytics-banner" class="banner-slot" aria-live="polite"></div>
 
+                <div id="analytics-scope" class="stack-tight" hidden>
+                    <s-text>{{ __('app.analytics.orders_unlocks') }}</s-text>
+                    <s-text color="subdued">{{ __('app.analytics.limit_60') }}</s-text>
+                    <div><s-button id="orders-grant" variant="primary">{{ __('app.analytics.orders_button') }}</s-button></div>
+                </div>
+
                 <div id="analytics-loading" class="loading-line" role="status" hidden>
                     <s-spinner accessibilityLabel="{{ __('app.common.loading') }}" size="base"></s-spinner>
                     <s-text color="subdued">{{ __('app.common.loading') }}</s-text>
@@ -175,48 +181,109 @@
                 </div>
 
                 <div id="analytics-body" class="stack" hidden>
+                    <p id="analytics-summary" class="summary"></p>
+
                     <div class="tiles" id="tiles">
                         <div class="tile">
-                            <div class="tile-label">{{ __('app.analytics.offer_orders') }}</div>
-                            <div class="tile-value" data-field="offerOrders">—</div>
-                            <div class="tile-note" id="offer-orders-pct"></div>
+                            <div class="tile-label">{{ __('app.analytics.tile_sales') }}</div>
+                            <div class="tile-value" data-field="sales">—</div>
+                            <div class="tile-note" data-field="sales-note"></div>
                         </div>
                         <div class="tile">
-                            <div class="tile-label">{{ __('app.analytics.gifts') }}</div>
-                            <div class="tile-value" data-field="giftUnits">—</div>
+                            <div class="tile-label">{{ __('app.analytics.tile_discount') }}</div>
+                            <div class="tile-value" data-field="discount">—</div>
+                            <div class="tile-note" data-field="discount-note"></div>
                         </div>
                         <div class="tile">
-                            <div class="tile-label" id="percent-tile-label"></div>
-                            <div class="tile-value" data-field="percentUnits">—</div>
+                            <div class="tile-label">{{ __('app.analytics.tile_aov') }}</div>
+                            <div class="tile-value" data-field="aov">—</div>
+                            <div class="tile-note" data-field="aov-note"></div>
                         </div>
                         <div class="tile">
-                            <div class="tile-label">{{ __('app.analytics.total_discount') }}</div>
-                            <div class="tile-value" data-field="totalDiscount">—</div>
+                            <div class="tile-label">{{ __('app.analytics.tile_units') }}</div>
+                            <div class="tile-value" data-field="units">—</div>
+                            <div class="tile-note" data-field="units-note"></div>
                         </div>
                     </div>
 
+                    <p class="note-subdued">{{ __('app.analytics.basis') }}</p>
+                    <p id="analytics-updated" class="note-subdued"></p>
                     <p id="capped-note" class="note note-caution" data-count="{{ $orderCap }}" hidden></p>
 
-                    <div id="top-gifts" class="stack-tight" hidden>
-                        <h3 class="table-title">{{ __('app.analytics.top_gifts') }}</h3>
-                        <s-table variant="auto">
-                            <s-table-header-row>
-                                <s-table-header listSlot="primary">{{ __('app.analytics.product') }}</s-table-header>
-                                <s-table-header listSlot="labeled" format="numeric">{{ __('app.analytics.pieces') }}</s-table-header>
-                                <s-table-header listSlot="labeled" format="numeric">{{ __('app.analytics.value') }}</s-table-header>
-                            </s-table-header-row>
-                            <s-table-body id="top-gifts-rows"></s-table-body>
-                        </s-table>
-                    </div>
+                    <details class="more">
+                        <summary>{{ __('app.analytics.details_gifts') }}</summary>
+                        <div class="more-body stack-tight">
+                            <ul class="facts">
+                                <li><span>{{ __('app.analytics.gift_units') }}</span> <strong class="num" data-field="giftUnits"></strong></li>
+                                <li><span id="percent-units-label"></span> <strong class="num" data-field="percentUnits"></strong></li>
+                                <li><span>{{ __('app.analytics.share') }}</span> <strong class="num" data-field="share"></strong></li>
+                            </ul>
+                            <div id="top-gifts" class="stack-tight">
+                                <h3 class="table-title">{{ __('app.analytics.top_gifts') }}</h3>
+                                <s-table variant="auto">
+                                    <s-table-header-row>
+                                        <s-table-header listSlot="primary">{{ __('app.analytics.product') }}</s-table-header>
+                                        <s-table-header listSlot="labeled" format="numeric">{{ __('app.analytics.pieces') }}</s-table-header>
+                                        <s-table-header listSlot="labeled" format="numeric">{{ __('app.analytics.value') }}</s-table-header>
+                                    </s-table-header-row>
+                                    <s-table-body id="top-gifts-rows"></s-table-body>
+                                </s-table>
+                            </div>
+                            <s-text id="no-gifts" color="subdued" hidden>{{ __('app.analytics.no_gifts') }}</s-text>
+                        </div>
+                    </details>
+
+                    <details class="more">
+                        <summary>{{ __('app.analytics.details_other') }}</summary>
+                        <div class="more-body"><s-text id="other-method"></s-text></div>
+                    </details>
+
+                    <details class="more">
+                        <summary>{{ __('app.analytics.details_profit') }}</summary>
+                        <div class="more-body stack-tight">
+                            <s-text id="profit-text"></s-text>
+                            <s-text id="profit-covered" color="subdued" hidden></s-text>
+                            <div id="profit-grant" class="stack-tight" hidden>
+                                <s-text color="subdued">{{ __('app.analytics.profit_unlocks') }}</s-text>
+                                <div><s-button id="inventory-grant" variant="secondary">{{ __('app.analytics.profit_button') }}</s-button></div>
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </div>
         </s-section>
     </div>
 
-    {{-- Test (Task 12 fills this section) --}}
+    {{-- Test: sample cart, both methods side by side --}}
     <div id="page-test" data-page="test" hidden>
         <s-section heading="{{ __('app.test.heading') }}">
-            <s-text color="subdued">{{ __('app.test.coming') }}</s-text>
+            <div class="stack">
+                <s-text color="subdued">{{ __('app.test.intro') }}</s-text>
+                <s-text id="test-saved" color="subdued"></s-text>
+                <div id="test-banner" class="banner-slot" aria-live="polite"></div>
+
+                <div class="inline">
+                    <s-button id="test-pick" variant="secondary">{{ __('app.test.pick') }}</s-button>
+                </div>
+
+                <div class="stack-tight">
+                    <div class="field-label">{{ __('app.test.typed') }}</div>
+                    <div class="dates">
+                        <s-text-field id="typed-title" label="{{ __('app.test.title') }}" value="" maxLength="255" autocomplete="off"></s-text-field>
+                        <s-text-field id="typed-price" label="{{ __('app.test.price') }}" value="" inputMode="decimal" autocomplete="off"></s-text-field>
+                        <s-button id="typed-add" variant="secondary">{{ __('app.test.add') }}</s-button>
+                    </div>
+                </div>
+
+                <s-text color="subdued" id="test-empty">{{ __('app.test.empty') }}</s-text>
+                <ul id="test-lines" class="test-lines" hidden></ul>
+
+                <div class="actions">
+                    <s-button id="test-run" variant="primary" disabled>{{ __('app.test.run') }}</s-button>
+                </div>
+
+                <div id="test-result" class="stack" hidden></div>
+            </div>
         </s-section>
     </div>
 

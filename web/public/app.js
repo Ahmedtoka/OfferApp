@@ -2,6 +2,7 @@
 // read from or written to the page. All user-facing text comes from the server (the #i18n JSON block).
 
 import { toIso, fromIso, stateKey, checklist, themeEditorUrl, isShopHost } from './js/lib.js';
+import { summarySentence } from './js/summary.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -77,12 +78,31 @@ const els = {
     analyticsLoading: $('#analytics-loading'),
     analyticsEmpty: $('#analytics-empty'),
     analyticsBody: $('#analytics-body'),
+    analyticsScope: $('#analytics-scope'),
+    ordersGrant: $('#orders-grant'),
+    inventoryGrant: $('#inventory-grant'),
+    analyticsSummary: $('#analytics-summary'),
+    analyticsUpdated: $('#analytics-updated'),
     tiles: $('#tiles'),
-    offerOrdersPct: $('#offer-orders-pct'),
-    percentTileLabel: $('#percent-tile-label'),
+    percentUnitsLabel: $('#percent-units-label'),
     capped: $('#capped-note'),
     topGifts: $('#top-gifts'),
     topGiftsRows: $('#top-gifts-rows'),
+    noGifts: $('#no-gifts'),
+    otherMethod: $('#other-method'),
+    profitText: $('#profit-text'),
+    profitCovered: $('#profit-covered'),
+    profitGrant: $('#profit-grant'),
+    testSaved: $('#test-saved'),
+    testBanner: $('#test-banner'),
+    testPick: $('#test-pick'),
+    typedTitle: $('#typed-title'),
+    typedPrice: $('#typed-price'),
+    typedAdd: $('#typed-add'),
+    testEmpty: $('#test-empty'),
+    testLines: $('#test-lines'),
+    testRun: $('#test-run'),
+    testResult: $('#test-result'),
 };
 
 // ---------------------------------------------------------------- formatting
@@ -352,6 +372,8 @@ function renderSettings(data) {
     els.coupons.checked = Boolean(settings.combineWithCoupons);
     renderState(data);
     renderChecklist();
+    renderPercentLabel();
+    renderTestSaved();
 }
 
 async function loadSettings() {
@@ -553,10 +575,11 @@ function renderChecklist() {
     );
 }
 
-// ---------------------------------------------------------------- Analytics (Task 12 rebuilds this section)
+// ---------------------------------------------------------------- Analytics (layout A)
 
 let analyticsSeq = 0;
 let hasAnalytics = false;
+let lastAnalytics = null;
 
 function setField(name, text) {
     for (const el of els.analyticsBody.querySelectorAll(`[data-field="${name}"]`)) {
@@ -577,7 +600,76 @@ function cell(text, numeric = false) {
     return c;
 }
 
+/** The current percent label comes from the saved settings; it is filled again when they arrive after the analytics. */
+function renderPercentLabel() {
+    if (loaded && Number.isInteger(loaded.settings?.percent)) {
+        els.percentUnitsLabel.textContent = t('analytics.percent_units', { pct: loaded.settings.percent });
+    } else {
+        els.percentUnitsLabel.textContent = t('analytics.percent_units_plain');
+    }
+}
+
+function renderAverages(a, currency) {
+    const units = (n, orders) => (orders > 0 ? n / orders : null);
+    const unitsFmt = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 });
+    const offerUnits = units(a.unitsOffer, a.offerOrders);
+    const otherOrders = a.ordersTotal - a.offerOrders;
+    const otherUnits = units(a.unitsOther, otherOrders);
+
+    setField('aov', a.aovOffer === null ? '—' : formatMoney(a.aovOffer, currency));
+    setField('aov-note', a.aovOther === null ? t('analytics.tile_aov_none') : t('analytics.tile_aov_note', { other: formatMoney(a.aovOther, currency) }));
+    setField('units', offerUnits === null ? '—' : unitsFmt.format(offerUnits));
+    setField('units-note', otherUnits === null ? t('analytics.tile_units_none') : t('analytics.tile_units_note', { other: unitsFmt.format(otherUnits) }));
+}
+
+function renderOtherMethod(a, currency) {
+    const other = a.otherMethod ?? {};
+    const method = ['customer', 'company'].includes(other.method) ? other.method : 'customer';
+    const vars = { method: t(`settings.method_${method}`), amount: formatMoney(other.difference, currency) };
+    els.otherMethod.textContent = Number(other.difference) > 0 ? t(`analytics.other_${method}`, vars) : t('analytics.other_none', vars);
+}
+
+function renderProfit(a, currency) {
+    const profit = a.profit ?? null;
+    if (profit) {
+        els.profitText.textContent = t('analytics.profit_amount', { amount: formatMoney(profit.amount, currency) });
+        els.profitCovered.textContent = t('analytics.profit_covered', { pct: formatPct(profit.coveredPct) });
+        els.profitCovered.hidden = false;
+        els.profitGrant.hidden = true;
+        return;
+    }
+    els.profitText.textContent = t('analytics.profit_none');
+    els.profitCovered.hidden = true;
+    els.profitGrant.hidden = false; // hidden again below if the scope turns out to be granted already
+    grantedScopes().then((granted) => {
+        if (granted.includes('read_inventory') && lastAnalytics === a) els.profitGrant.hidden = true;
+    });
+}
+
+async function grantedScopes() {
+    try {
+        const detail = await shopify.scopes.query();
+        return Array.isArray(detail?.granted) ? detail.granted : [];
+    } catch {
+        return [];
+    }
+}
+
+/** Optional scopes are asked for with App Bridge (shopify.dev: App Bridge scopes API); the merchant sees Shopify's own dialog. */
+async function requestScope(scope, slot) {
+    try {
+        const response = await shopify.scopes.request([scope]);
+        if (response?.result === 'granted-all') return true;
+        showBanner(slot, 'warning', t('analytics.scope_declined'));
+    } catch {
+        showBanner(slot, 'critical', t('analytics.scope_error'));
+    }
+    return false;
+}
+
 function renderAnalytics(a) {
+    lastAnalytics = a;
+    els.analyticsScope.hidden = true;
     if ((Number(a.ordersTotal) || 0) === 0) {
         els.analyticsBody.hidden = true;
         els.analyticsEmpty.hidden = false;
@@ -585,18 +677,25 @@ function renderAnalytics(a) {
     }
 
     const currency = typeof a.currency === 'string' ? a.currency : '';
-    setField('offerOrders', formatCount(a.offerOrders));
-    els.offerOrdersPct.textContent = t('analytics.of_all_orders', { pct: formatPct(a.offerOrdersPct) });
-    setField('giftUnits', formatCount(a.giftUnits));
-    setField('percentUnits', formatCount(a.percentUnits));
-    setField('totalDiscount', formatMoney(a.totalDiscount, currency));
-    if (loaded && Number.isInteger(loaded.settings?.percent)) {
-        els.percentTileLabel.textContent = t('analytics.percent_pieces', { pct: loaded.settings.percent });
-    }
+    els.analyticsSummary.textContent = summarySentence(a, t);
+
+    setField('sales', formatMoney(a.offerSales, currency));
+    setField('sales-note', t('analytics.tile_sales_note', { n: formatCount(a.offerOrders) }));
+    setField('discount', formatMoney(a.totalDiscount, currency));
+    setField('discount-note', t('analytics.tile_discount_note', { pct: formatPct(a.discountPctOfSales) }));
+    renderAverages(a, currency);
+
+    const computed = formatDate(a.computedAt);
+    els.analyticsUpdated.textContent = computed === '' ? '' : t('analytics.updated', { when: computed });
     els.capped.textContent = t('analytics.capped', { n: formatCount(els.capped.dataset.count) });
     els.capped.hidden = !a.capped;
 
-    const gifts = Array.isArray(a.topGifts) ? a.topGifts : [];
+    setField('giftUnits', formatCount(a.giftUnits));
+    setField('percentUnits', formatCount(a.percentUnits));
+    setField('share', t('analytics.of_all_orders', { pct: formatPct(a.offerOrdersPct) }));
+    renderPercentLabel();
+
+    const gifts = Array.isArray(a.topGifts) ? a.topGifts.slice(0, 10) : [];
     els.topGiftsRows.replaceChildren(
         ...gifts.map((g) => {
             const row = document.createElement('s-table-row');
@@ -605,6 +704,10 @@ function renderAnalytics(a) {
         }),
     );
     els.topGifts.hidden = gifts.length === 0;
+    els.noGifts.hidden = gifts.length !== 0;
+
+    renderOtherMethod(a, currency);
+    renderProfit(a, currency);
 
     els.analyticsEmpty.hidden = true;
     els.analyticsBody.hidden = false;
@@ -614,7 +717,6 @@ function renderAnalytics(a) {
 function setAnalyticsLoading(on) {
     els.analyticsLoading.hidden = !on;
     els.tiles.classList.toggle('is-stale', on && hasAnalytics);
-    els.topGifts.classList.toggle('is-stale', on && hasAnalytics);
     els.analyticsBody.setAttribute('aria-busy', on ? 'true' : 'false');
 }
 
@@ -632,9 +734,233 @@ async function loadAnalytics() {
         els.analyticsBody.hidden = true;
         els.analyticsEmpty.hidden = true;
         hasAnalytics = false;
-        showBanner(els.analyticsBanner, 'critical', e.message === 'needs_read_orders' ? t('analytics.needs_orders') : e.message);
+        if (e.status === 403 && e.message === 'needs_read_orders') {
+            els.analyticsScope.hidden = false;
+            showBanner(els.analyticsBanner, 'info', t('analytics.needs_orders'));
+        } else {
+            els.analyticsScope.hidden = true;
+            showBanner(els.analyticsBanner, 'critical', e.message);
+        }
     } finally {
         if (seq === analyticsSeq) setAnalyticsLoading(false);
+    }
+}
+
+async function grantOrders() {
+    if (await requestScope('read_orders', els.analyticsBanner)) loadAnalytics();
+}
+
+async function grantInventory() {
+    if (await requestScope('read_inventory', els.analyticsBanner)) loadAnalytics();
+}
+
+// ---------------------------------------------------------------- Test page
+
+const testLines = []; // { variantId: ?string, title: string, price: ?string, quantity: number }
+const PRICE_RE = /^\d+(\.\d+)?$/;
+const MAX_TEST_LINES = 50;
+
+function renderTestSaved() {
+    const settings = loaded?.settings;
+    els.testSaved.textContent = settings && Number.isInteger(settings.percent)
+        ? t('test.saved', { percent: settings.percent, method: t(`settings.method_${settings.method === 'company' ? 'company' : 'customer'}`) })
+        : '';
+}
+
+function renderTestLines() {
+    els.testEmpty.hidden = testLines.length > 0;
+    els.testLines.hidden = testLines.length === 0;
+    els.testRun.toggleAttribute('disabled', testLines.length === 0);
+    els.testLines.replaceChildren(
+        ...testLines.map((line, index) => {
+            const li = document.createElement('li');
+            li.className = 'test-line';
+
+            const title = document.createElement('div');
+            title.className = 'test-line-title';
+            title.textContent = line.price === null ? line.title : `${line.title} (${line.price})`;
+
+            const qty = document.createElement('s-number-field');
+            qty.setAttribute('label', t('test.quantity'));
+            qty.setAttribute('min', '1');
+            qty.setAttribute('max', '200');
+            qty.setAttribute('step', '1');
+            qty.setAttribute('value', String(line.quantity));
+            const onQty = () => {
+                const n = Math.floor(Number(qty.value));
+                line.quantity = Number.isFinite(n) && n >= 1 ? Math.min(n, 200) : 1;
+            };
+            qty.addEventListener('input', onQty);
+            qty.addEventListener('change', onQty);
+
+            const remove = document.createElement('s-button');
+            remove.setAttribute('variant', 'tertiary');
+            remove.textContent = t('test.remove');
+            remove.addEventListener('click', () => {
+                testLines.splice(index, 1);
+                renderTestLines();
+            });
+
+            li.append(title, qty, remove);
+            return li;
+        }),
+    );
+}
+
+async function pickVariants() {
+    try {
+        const picked = await shopify.resourcePicker({ type: 'variant', multiple: true });
+        if (!Array.isArray(picked)) return; // cancelled
+        for (const v of picked) {
+            if (!v || typeof v.id !== 'string' || testLines.length >= MAX_TEST_LINES) continue;
+            if (testLines.some((l) => l.variantId === v.id)) continue;
+            const name = typeof v.displayName === 'string' && v.displayName !== '' ? v.displayName : `${v.product?.title ?? ''} ${v.title ?? ''}`.trim();
+            testLines.push({ variantId: v.id, title: name || v.id, price: null, quantity: 1 });
+        }
+        renderTestLines();
+    } catch {
+        // the picker was closed or could not open; nothing to change
+    }
+}
+
+function addTypedLine() {
+    const title = String(els.typedTitle.value ?? '').trim();
+    const price = String(els.typedPrice.value ?? '').trim().replace(',', '.');
+    if (title === '' || title.length > 255 || !PRICE_RE.test(price) || price.length > 12 || testLines.length >= MAX_TEST_LINES) {
+        els.typedPrice.setAttribute('error', t('test.item_error'));
+        return;
+    }
+    els.typedPrice.removeAttribute('error');
+    testLines.push({ variantId: null, title, price, quantity: 1 });
+    els.typedTitle.value = '';
+    els.typedPrice.value = '';
+    renderTestLines();
+}
+
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+}
+
+function roleText(role, percent) {
+    if (role === 'gift') return t('test.role_gift');
+    if (role === 'single') return t('test.role_single', { pct: percent });
+    return t('test.role_paid');
+}
+
+function unitsTable(units, currency, percent) {
+    const table = el('table', 'grid-table');
+    const head = el('tr');
+    for (const [key, numeric] of [['piece', false], ['role', false], ['price_col', true], ['discount_col', true], ['pays_col', true]]) {
+        head.append(el('th', numeric ? 'num' : '', t(`test.${key}`)));
+    }
+    const thead = el('thead');
+    thead.append(head);
+    const tbody = el('tbody');
+    for (const u of units) {
+        const row = el('tr');
+        row.append(
+            el('td', '', String(u.title ?? '')),
+            el('td', '', roleText(u.role, percent)),
+            el('td', 'num', formatMoney(u.price, currency)),
+            el('td', 'num', formatMoney(u.discount, currency)),
+            el('td', 'num', formatMoney(u.pays, currency)),
+        );
+        tbody.append(row);
+    }
+    table.append(thead, tbody);
+    return table;
+}
+
+function splitsList(candidates, currency, percent) {
+    const list = el('ul', 'splits');
+    for (const c of candidates) {
+        const li = el('li', `split${c.chosen ? ' is-chosen' : ''}`);
+        const single = c.single === null ? t('test.cand_no_single') : t('test.cand_single', { pct: percent, title: c.single });
+        const gifts = Array.isArray(c.gifts) && c.gifts.length > 0 ? t('test.cand_gifts', { titles: c.gifts.join(', ') }) : t('test.cand_none');
+        const money = `${t('test.discount', { amount: formatMoney(c.totalDiscount, currency) })} · ${t('test.shopper_pays', { amount: formatMoney(c.totalPay, currency) })}`;
+        li.append(el('div', '', `${single}. ${gifts}`), el('div', 'num', money));
+        if (c.chosen) {
+            li.prepend(el('strong', '', `${t('test.chosen')} `));
+        }
+        list.append(li);
+    }
+    return list;
+}
+
+function methodCard(method, res, data) {
+    const card = el('section', 'method-card');
+    const heading = el('h3', '', t(`test.${method}`));
+    if (data.savedMethod === method) {
+        heading.append(' ', el('span', 'badge', t('test.saved_badge')));
+    }
+    const currency = data.currency;
+    card.append(
+        heading,
+        el('div', '', t('test.shopper_pays', { amount: formatMoney(res.totalPay, currency) })),
+        el('div', '', t('test.discount', { amount: formatMoney(res.totalDiscount, currency) })),
+        el('h3', '', t('test.units')),
+        unitsTable(Array.isArray(res.units) ? res.units : [], currency, data.percent),
+        el('h3', '', t('test.candidates')),
+        splitsList(Array.isArray(res.candidates) ? res.candidates : [], currency, data.percent),
+    );
+    if (res.candidatesCapped) {
+        card.append(el('div', 'note-subdued', t('test.capped', { n: formatCount(res.candidates.length), total: formatCount(res.candidatesTotal) })));
+    }
+    return card;
+}
+
+function renderTestResult(data) {
+    const cards = el('div', 'methods');
+    cards.append(methodCard('customer', data.customer, data), methodCard('company', data.company, data));
+    const parts = [cards];
+
+    const ineligible = Array.isArray(data.ineligible) ? data.ineligible : [];
+    if (ineligible.length > 0) {
+        const box = el('div', 'stack-tight');
+        box.append(el('h3', 'table-title', t('test.ineligible')));
+        const list = el('ul', 'splits');
+        for (const item of ineligible) {
+            const reason = t(`test.reason.${item.reason}`);
+            list.append(el('li', '', `${item.title}: ${reason === `test.reason.${item.reason}` ? item.reason : reason}`));
+        }
+        box.append(list);
+        parts.push(box);
+    }
+    els.testResult.replaceChildren(...parts);
+    els.testResult.hidden = false;
+}
+
+let testing = false;
+
+async function runTest() {
+    if (testing || testLines.length === 0) return;
+    testing = true;
+    clearBanner(els.testBanner);
+    els.testRun.setAttribute('loading', '');
+    els.testRun.setAttribute('disabled', '');
+    try {
+        const data = await api('POST', '/api/test-cart', {
+            lines: testLines.map((l) => (l.variantId !== null
+                ? { variantId: l.variantId, quantity: l.quantity }
+                : { title: l.title, price: l.price, quantity: l.quantity })),
+        });
+        renderTestResult(data);
+        const marks = readStore(MARKS_KEY);
+        marks.test = true;
+        writeStore(MARKS_KEY, marks);
+        renderChecklist();
+        showBanner(els.testBanner, 'success', t('test.done'));
+    } catch (e) {
+        els.testResult.hidden = true;
+        showBanner(els.testBanner, e.status === 403 && e.message === 'needs_read_products' ? 'warning' : 'critical',
+            e.status === 403 && e.message === 'needs_read_products' ? t('test.needs_products') : e.message);
+    } finally {
+        testing = false;
+        els.testRun.removeAttribute('loading');
+        els.testRun.toggleAttribute('disabled', testLines.length === 0);
     }
 }
 
@@ -671,6 +997,13 @@ els.form.addEventListener('submit', (e) => {
     save();
 });
 els.range.addEventListener('change', loadAnalytics);
+els.ordersGrant.addEventListener('click', grantOrders);
+els.inventoryGrant.addEventListener('click', grantInventory);
+els.testPick.addEventListener('click', pickVariants);
+els.typedAdd.addEventListener('click', addTypedLine);
+els.typedPrice.addEventListener('input', () => els.typedPrice.removeAttribute('error'));
+els.testRun.addEventListener('click', runTest);
+renderTestLines();
 
 showPage(pageFromPath(location.pathname));
 loadSettings();
