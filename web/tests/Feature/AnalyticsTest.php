@@ -291,7 +291,7 @@ class AnalyticsTest extends TestCase
 
         $this->assertCount(1, $fake->calls);
         $this->assertSame($first, $second);
-        $this->assertTrue(Cache::has('analytics:'.SessionTokens::SHOP.':30:'.sha1('customer|tag|FallOffer')));
+        $this->assertTrue(Cache::get('analytics:'.SessionTokens::SHOP.':30')['fingerprint'] === sha1('customer|tag|FallOffer'));
         $this->assertSame(2, $fake->settingsReads);
     }
 
@@ -317,7 +317,7 @@ class AnalyticsTest extends TestCase
         $this->api()->assertOk();
 
         $this->assertCount(3, $fake->calls);
-        $this->assertTrue(Cache::has('analytics:'.SessionTokens::SHOP.':30:'.sha1('company|collection|gid://shopify/Collection/9')));
+        $this->assertTrue(Cache::get('analytics:'.SessionTokens::SHOP.':30')['fingerprint'] === sha1('company|collection|gid://shopify/Collection/9'));
     }
 
     public function test_recompute_uses_the_tag_from_the_shop_config_not_the_constant(): void

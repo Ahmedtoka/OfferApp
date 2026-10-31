@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Shop;
+use App\Services\Analytics\OfferAnalytics;
 use App\Services\Billing;
 use App\Services\OfferSettings;
 use App\Services\SaveMismatch;
@@ -79,7 +80,7 @@ class WebhookController extends Controller
         app(OfferSettings::class)->disableForBilling($normalized);
     }
 
-    /** shop/redact (payload: shop_id, shop_domain): the shop's row and token are erased; nothing else is stored. */
+    /** shop/redact (payload: shop_id, shop_domain): the shop's row, token and cached analytics are erased; nothing else is stored. */
     private function redact(string $domain, Request $request): void
     {
         $normalized = Shop::normalizeDomain($domain);
@@ -88,6 +89,7 @@ class WebhookController extends Controller
         }
 
         Shop::where('shop_domain', $normalized)->delete();
+        OfferAnalytics::forgetShop($normalized);
     }
 
     private function markUninstalled(string $domain, Request $request): void

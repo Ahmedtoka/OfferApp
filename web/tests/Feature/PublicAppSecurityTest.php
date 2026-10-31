@@ -3,8 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Shop;
+use App\Services\Analytics\OfferAnalytics;
+use App\Shopify\GraphqlClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\FakeOrdersClient;
 use Tests\Support\SessionTokens;
 use Tests\TestCase;
 
@@ -61,5 +65,33 @@ class PublicAppSecurityTest extends TestCase
 
         $this->api()->getJson('/api/ping')->assertStatus(429);
         $this->api('another-store.myshopify.com')->getJson('/api/ping')->assertOk();
+    }
+
+    private function webhook(string $topic, string $body, string $shop = SessionTokens::SHOP)
+    {
+        return $this->call('POST', self::SITE.'/webhooks', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_SHOPIFY_HMAC_SHA256' => base64_encode(hash_hmac('sha256', $body, SessionTokens::API_SECRET, true)),
+            'HTTP_X_SHOPIFY_TOPIC' => $topic,
+            'HTTP_X_SHOPIFY_SHOP_DOMAIN' => $shop,
+        ], $body);
+    }
+
+    /** F3: the erase request covers the shop's sales figures in the analytics cache, not only its row. */
+    public function test_shop_redact_erases_the_shops_cached_analytics_only(): void
+    {
+        $other = 'another-store.myshopify.com';
+        foreach ([SessionTokens::SHOP, $other] as $shop) {
+            $fake = new FakeOrdersClient(['orders_all_rows']);
+            $fake->settingsValue = json_encode(['enabled' => true, 'percent' => 30, 'method' => 'customer', 'appliesTo' => 'tag', 'eligibleTag' => 'FallOffer', 'collectionId' => null]);
+            $this->app->instance(GraphqlClient::class, $fake);
+            $this->api($shop)->getJson('/api/analytics?range=30')->assertOk();
+        }
+        $this->assertTrue(Cache::has(OfferAnalytics::cacheKey(SessionTokens::SHOP, 30)));
+
+        $this->webhook('shop/redact', json_encode(['shop_id' => 1, 'shop_domain' => SessionTokens::SHOP]))->assertOk();
+
+        $this->assertFalse(Cache::has(OfferAnalytics::cacheKey(SessionTokens::SHOP, 30)));
+        $this->assertTrue(Cache::has(OfferAnalytics::cacheKey($other, 30)));
     }
 }

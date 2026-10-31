@@ -48,20 +48,35 @@ class OfferAnalytics
      */
     public function compute(string $shop, int $rangeDays): AnalyticsResult
     {
-        // Method and rule are part of the cache key: changing them on the settings page recomputes at once.
+        // One entry per shop and range, so erasing a shop can name every key. Changing the method or rule recomputes at once.
         $config = $this->settings->read($shop);
         $this->method = $config['method'];
         $this->appliesTo = $config['appliesTo'];
         $this->eligibleTag = $config['eligibleTag'];
         $rule = $this->appliesTo === 'collection' ? (string) $config['collectionId'] : $this->eligibleTag;
+        $fingerprint = sha1("{$this->method}|{$this->appliesTo}|{$rule}");
 
-        $cached = Cache::remember(
-            "analytics:{$shop}:{$rangeDays}:".sha1("{$this->method}|{$this->appliesTo}|{$rule}"),
-            (int) OfferConstants::get('analyticsCacheSeconds'),
-            fn () => $this->build($shop, $rangeDays, $this->appliesTo === 'collection' ? $config['collectionId'] : null)->toArray()
-        );
+        $entry = Cache::get(self::cacheKey($shop, $rangeDays));
+        if (! is_array($entry) || ($entry['fingerprint'] ?? null) !== $fingerprint) {
+            $result = $this->build($shop, $rangeDays, $this->appliesTo === 'collection' ? $config['collectionId'] : null)->toArray();
+            $entry = ['fingerprint' => $fingerprint, 'result' => $result];
+            Cache::put(self::cacheKey($shop, $rangeDays), $entry, (int) OfferConstants::get('analyticsCacheSeconds'));
+        }
 
-        return AnalyticsResult::fromArray($cached);
+        return AnalyticsResult::fromArray($entry['result']);
+    }
+
+    public static function cacheKey(string $shop, int $rangeDays): string
+    {
+        return "analytics:{$shop}:{$rangeDays}";
+    }
+
+    /** Removes everything cached for the shop (the expired rows of the database cache included). */
+    public static function forgetShop(string $shop): void
+    {
+        foreach ((array) OfferConstants::get('analyticsRanges') as $range) {
+            Cache::forget(self::cacheKey($shop, (int) $range));
+        }
     }
 
     private function build(string $shop, int $rangeDays, ?string $collectionId): AnalyticsResult
