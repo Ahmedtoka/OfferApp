@@ -1,0 +1,34 @@
+.pairly-badge {
+  display: inline-block;
+  padding-block: 0.25em;
+  padding-inline: 0.75em;
+  border-radius: 999px;
+  background: var(--pairly-badge-bg, #1a1a1a);
+  color: var(--pairly-badge-fg, #fff);
+  font-size: 0.875em;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-block: 0.5em;
+}
+
+.pairly-cart {
+  position: fixed;
+  inset-block-end: 1rem;
+  inset-inline: 1rem;
+  z-index: 40;
+  max-inline-size: 28rem;
+  margin-inline: auto;
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+  border-radius: 0.5rem;
+  background: var(--pairly-cart-bg, #1a1a1a);
+  color: var(--pairly-cart-fg, #fff);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.2);
+  text-align: center;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.pairly-cart[hidden] {
+  display: none;
+}

@@ -1,0 +1,70 @@
+{%- liquid
+  assign cfg = shop.metafields['$app:bogo'].config.value
+  if cfg == blank
+    assign cfg = app.metafields.bogo.config.value
+  endif
+
+  assign units = 0
+  for item in cart.items
+    unless item.gift_card
+      capture eligible
+        render 'pairly-eligible', product: item.product, cfg: cfg
+      endcapture
+      if eligible contains '1'
+        assign units = units | plus: item.quantity
+      endif
+    endunless
+  endfor
+  if request.design_mode and units == 0 and cfg.percent > 0
+    assign units = 1
+  endif
+
+  assign free_text = block.settings.message_free
+  if free_text == blank
+    assign free_text = 'pairly.free_next' | t
+  endif
+  assign discount_text = block.settings.message_discount
+  if discount_text == blank
+    assign discount_text = 'pairly.discount_next' | t: percent: '{percent}'
+  endif
+
+  assign on_cart_page = false
+  if request.page_type == 'cart'
+    assign on_cart_page = true
+  endif
+-%}
+{%- if cfg.percent > 0 and cfg.enabled == true -%}
+  <link rel="stylesheet" href="{{ 'pairly.css' | asset_url }}" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="{{ 'pairly.css' | asset_url }}"></noscript>
+  <script src="{{ 'pairly.js' | asset_url }}" defer="defer"></script>
+  <div
+    id="pairly-cart"
+    class="pairly-cart"
+    role="status"
+    aria-live="polite"
+    hidden
+    data-units="{{ units }}"
+    data-percent="{{ cfg.percent }}"
+    data-free="{{ free_text | escape }}"
+    data-discount="{{ discount_text | escape }}"
+    data-cart-url="{{ routes.cart_url }}"
+    style="--pairly-cart-bg: {{ block.settings.background }}; --pairly-cart-fg: {{ block.settings.color }};"
+  ></div>
+  {%- unless block.settings.show_everywhere or on_cart_page or request.design_mode -%}
+    <style>#pairly-cart{display:none!important}</style>
+  {%- endunless -%}
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Offer cart message",
+  "target": "body",
+  "settings": [
+    { "type": "text", "id": "message_free", "label": "Message when the offer is a free gift", "info": "Empty uses the built-in text in the customer's language." },
+    { "type": "text", "id": "message_discount", "label": "Message when the offer is a percentage", "info": "Use {percent} for the number. Empty uses the built-in text." },
+    { "type": "checkbox", "id": "show_everywhere", "label": "Show on every page, not only the cart page", "default": false },
+    { "type": "color", "id": "background", "label": "Background", "default": "#1a1a1a" },
+    { "type": "color", "id": "color", "label": "Text color", "default": "#ffffff" }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,39 @@
+{%- liquid
+  assign cfg = shop.metafields['$app:bogo'].config.value
+  if cfg == blank
+    assign cfg = app.metafields.bogo.config.value
+  endif
+  capture eligible
+    render 'pairly-eligible', product: product, cfg: cfg
+  endcapture
+  assign show = false
+  if eligible contains '1' or request.design_mode
+    assign show = true
+  endif
+  assign text = block.settings.text
+  if text == blank
+    if cfg.percent > 0 and cfg.percent < 100
+      assign text = 'pairly.badge_percent' | t: percent: cfg.percent
+    else
+      assign text = 'pairly.badge' | t
+    endif
+  endif
+-%}
+{%- if show -%}
+  <link rel="stylesheet" href="{{ 'pairly.css' | asset_url }}" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="{{ 'pairly.css' | asset_url }}"></noscript>
+  <div class="pairly-badge" {{ block.shopify_attributes }} style="--pairly-badge-bg: {{ block.settings.background }}; --pairly-badge-fg: {{ block.settings.color }};">{{ text | escape }}</div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Offer badge",
+  "target": "section",
+  "enabled_on": { "templates": ["product"] },
+  "settings": [
+    { "type": "text", "id": "text", "label": "Badge text", "info": "Leave empty to use the built-in text in the customer's language." },
+    { "type": "color", "id": "background", "label": "Background", "default": "#1a1a1a" },
+    { "type": "color", "id": "color", "label": "Text color", "default": "#ffffff" }
+  ]
+}
+{% endschema %}

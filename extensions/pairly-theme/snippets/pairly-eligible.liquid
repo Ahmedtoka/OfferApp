@@ -1,0 +1,51 @@
+{%- comment -%}
+  Prints 1 when the offer is running and the product takes part in it, nothing otherwise.
+  Params: product, cfg (the shop metafield $app:bogo/config value).
+  Running = enabled, a percent, and today inside the dates saved with the shop settings.
+{%- endcomment -%}
+{%- liquid
+  assign ok = false
+  if cfg.enabled == true and cfg.percent > 0 and product.gift_card? != true
+    assign ok = true
+    assign now = 'now' | date: '%s' | plus: 0
+    if cfg.startsAt != blank
+      assign from = cfg.startsAt | date: '%s' | plus: 0
+      if from > now
+        assign ok = false
+      endif
+    endif
+    if cfg.endsAt != blank
+      assign until = cfg.endsAt | date: '%s' | plus: 0
+      if until <= now
+        assign ok = false
+      endif
+    endif
+  endif
+
+  if ok
+    assign ok = false
+    if cfg.appliesTo == 'collection'
+      assign wanted = cfg.collectionId | split: '/' | last | plus: 0
+      if wanted > 0
+        for c in product.collections
+          if c.id == wanted
+            assign ok = true
+            break
+          endif
+        endfor
+      endif
+    else
+      assign wanted = cfg.eligibleTag | strip | downcase
+      if wanted != blank
+        for tag in product.tags
+          assign lowered = tag | downcase
+          if lowered == wanted
+            assign ok = true
+            break
+          endif
+        endfor
+      endif
+    endif
+  endif
+-%}
+{%- if ok -%}1{%- endif -%}
