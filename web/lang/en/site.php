@@ -242,6 +242,7 @@ return [
                 'The store\'s Shopify access token, encrypted at rest.',
                 'Offer settings, kept in the store\'s own Shopify data.',
                 'Computed analytics totals, in a short-lived cache. Order details are not stored in a database.',
+                'Server logs: the store\'s Shopify domain, the webhook topic, and request details such as time, address and status code. They hold no customer data and are used to run the app and fix errors.',
             ]],
             ['title' => 'Deletion', 'items' => [
                 'When a merchant uninstalls the app, the access token is erased straight away.',

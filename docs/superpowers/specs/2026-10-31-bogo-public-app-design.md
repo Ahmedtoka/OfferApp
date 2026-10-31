@@ -104,7 +104,7 @@ Note that today's "scenario 2" (only the odd single differs; even carts identica
 - Implemented in the JS engine and the PHP `BogoCalculator`, with shared-case parity tests.
 - A new brute-force test proves `company` is minimal, as the existing one proves `customer` is maximal.
 - Per-line planning stays independent of unit quantity; instruction counts recorded for fixtures up to 199 units in both modes.
-- Function configuration carries the method. Missing or invalid value fails safe to `customer` for configs saved before this field existed, while other malformed config continues to mean no discount.
+- Function configuration carries the method. A missing method (configs saved before this field existed) means `customer`; a present but invalid method, like any other malformed config, means no discount.
 - Multi-currency: amounts are in the cart's presentment currency. Rounding must respect each currency's decimals, including zero- and three-decimal currencies, replacing the two-decimal assumption in `money.js` and `toPiastres`. Tested with non-EGP carts.
 
 ---

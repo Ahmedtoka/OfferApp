@@ -159,6 +159,12 @@ class SiteTest extends TestCase
         $this->assertStringContainsString('shop/redact', $this->page('/ar/privacy'));
     }
 
+    public function test_privacy_mentions_server_logs_in_both_languages(): void
+    {
+        $this->assertStringContainsStringIgnoringCase('server logs', $this->page('/privacy'));
+        $this->assertStringContainsString('سجلات الخادم', $this->page('/ar/privacy'));
+    }
+
     public function test_legal_pages_show_a_visible_placeholder_until_the_owner_supplies_the_identity(): void
     {
         config(['shopify.legal_name' => null, 'shopify.support_email' => null]);
