@@ -22,6 +22,8 @@ class TestCartController extends Controller
     /** hasTag / inCollection are only asked for when the saved rule needs them. */
     private const LOOKUP = 'query TestCartVariants($ids: [ID!]!%s) { shop { currencyCode } nodes(ids: $ids) { ... on ProductVariant { id title price compareAtPrice product { title isGiftCard %s } } } }';
 
+    private const CURRENCY = 'query TestCartCurrency { shop { currencyCode } }';
+
     public function __construct(private GraphqlClient $graphql, private OfferSettings $offerSettings) {}
 
     public function store(TestCartRequest $request): JsonResponse
@@ -37,7 +39,7 @@ class TestCartController extends Controller
         } catch (ShopifyGraphqlException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
-        $currency = $found['currency'] ?? 'USD';
+        $currency = $found['currency'];
         $decimals = BogoCalculator::decimalsFor($currency);
 
         $titles = [];
@@ -82,12 +84,16 @@ class TestCartController extends Controller
 
     /**
      * @param  list<string>  $ids
-     * @return array{currency: ?string, nodes: array<string, array>}
+     * The shop currency is always read (typed prices need its decimals); variants only when there are ids.
+     *
+     * @return array{currency: string, nodes: array<string, array>}
+     *
+     * @throws ShopifyGraphqlException
      */
     private function lookup(string $shop, array $settings, array $ids): array
     {
         if ($ids === []) {
-            return ['currency' => null, 'nodes' => []];
+            return ['currency' => $this->currency($this->graphql->query($shop, self::CURRENCY)), 'nodes' => []];
         }
         $variables = ['ids' => array_values(array_unique($ids))];
         if ($settings['appliesTo'] === 'collection' && $settings['collectionId'] !== null) {
@@ -108,7 +114,15 @@ class TestCartController extends Controller
             }
         }
 
-        return ['currency' => $data['shop']['currencyCode'] ?? null, 'nodes' => $nodes];
+        return ['currency' => $this->currency($data), 'nodes' => $nodes];
+    }
+
+    /** @throws ShopifyGraphqlException */
+    private function currency(array $data): string
+    {
+        $code = $data['shop']['currencyCode'] ?? null;
+
+        return is_string($code) && $code !== '' ? $code : throw new ShopifyGraphqlException('Could not read the shop currency.');
     }
 
     private function reason(?array $node, array $settings): ?string
@@ -150,8 +164,11 @@ class TestCartController extends Controller
         if ($total > self::MAX_CANDIDATES) {
             // Keep the chosen split visible even when it would fall past the cap.
             $chosen = array_values(array_filter($candidates, fn ($c) => $c['chosen']));
-            $others = array_values(array_filter($candidates, fn ($c) => ! $c['chosen']));
-            $candidates = [...array_slice($others, 0, self::MAX_CANDIDATES - count($chosen)), ...$chosen];
+            $candidates = array_slice($candidates, 0, self::MAX_CANDIDATES);
+            if (! in_array(true, array_column($candidates, 'chosen'), true)) {
+                // Swap the chosen one in for the last, keeping the list otherwise in order.
+                $candidates[self::MAX_CANDIDATES - 1] = $chosen[0];
+            }
         }
 
         return [

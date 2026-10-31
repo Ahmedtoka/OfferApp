@@ -22,7 +22,7 @@ class TestCartRequest extends FormRequest
      */
     public function rules(): array
     {
-        $price = ['string', 'max:20', 'regex:/^\d+(\.\d+)?$/'];
+        $price = ['string', 'max:12', 'regex:/^\d+(\.\d+)?$/'];
 
         return [
             'lines' => ['required', 'array', 'min:1', 'max:'.self::MAX_LINES],

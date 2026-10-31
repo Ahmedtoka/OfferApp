@@ -23,6 +23,8 @@ class TestCartTest extends TestCase
 
     private string $settings = '';
 
+    private ?string $currency = 'EGP';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -56,9 +58,12 @@ class TestCartTest extends TestCase
         if ($op === 'ReadSettings') {
             return ['shop' => ['metafield' => $this->settings === '' ? null : ['value' => $this->settings]]];
         }
+        if ($op === 'TestCartCurrency') {
+            return ['shop' => ['currencyCode' => $this->currency]];
+        }
         if ($op === 'TestCartVariants') {
             return [
-                'shop' => ['currencyCode' => 'EGP'],
+                'shop' => ['currencyCode' => $this->currency],
                 'nodes' => array_map(fn (string $id) => $this->variants[$id] ?? null, $variables['ids']),
             ];
         }
@@ -205,6 +210,27 @@ class TestCartTest extends TestCase
         $this->assertSame(0, $this->variantCalls());
         $this->assertEquals(70, $res->json('customer.totalPay')); // 30% off the full 100 is 70: no extra discount
         $this->assertEquals(0, $res->json('customer.totalDiscount'));
+    }
+
+    public function test_typed_only_cart_uses_the_shop_currency_and_its_decimals(): void
+    {
+        $this->currency = 'KWD';
+        $res = $this->cart(['lines' => [['title' => 'A', 'price' => '1.235', 'quantity' => 1]]])->assertOk();
+        $this->assertSame('KWD', $res->json('currency'));
+        $this->assertEqualsWithDelta(0.865, $res->json('customer.totalPay'), 0.0000001); // 1.235 less 30% (0.3705 -> 0.371)
+        $this->assertEqualsWithDelta(1.235, $res->json('customer.units.0.price'), 0.0000001);
+
+        $this->currency = 'JPY';
+        $res = $this->cart(['lines' => [['title' => 'A', 'price' => '1000', 'quantity' => 1]]])->assertOk();
+        $this->assertSame('JPY', $res->json('currency'));
+        $this->assertEquals(700, $res->json('customer.totalPay'));
+        $this->assertSame(0, $this->variantCalls());
+    }
+
+    public function test_missing_shop_currency_is_a_422(): void
+    {
+        $this->currency = null;
+        $this->cart(['lines' => [['title' => 'A', 'price' => '10', 'quantity' => 1]]])->assertStatus(422);
     }
 
     public function test_candidates_are_capped_at_25_keeping_the_chosen_one(): void
