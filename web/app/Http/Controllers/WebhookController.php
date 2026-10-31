@@ -46,17 +46,14 @@ class WebhookController extends Controller
     }
 
     /**
-     * The HMAC covers the raw body, so the body is trusted: when it names a shop under $field, that shop
-     * must be the header's. An absent field passes unless $required.
+     * The HMAC covers the raw body but not the headers, so the shop this destructive topic acts on must be named
+     * by the signed body (every real payload does): a signed body from elsewhere cannot be aimed at another shop.
      */
-    private function bodyMatches(string $normalized, Request $request, string $field, bool $required): bool
+    private function bodyMatches(string $normalized, Request $request, string $field): bool
     {
         $value = $request->json($field);
-        if ($value === null) {
-            return ! $required;
-        }
 
-        return Shop::normalizeDomain((string) $value) === $normalized;
+        return is_string($value) && Shop::normalizeDomain($value) === $normalized;
     }
 
     /**
@@ -84,7 +81,7 @@ class WebhookController extends Controller
     private function redact(string $domain, Request $request): void
     {
         $normalized = Shop::normalizeDomain($domain);
-        if ($normalized === null || ! $this->bodyMatches($normalized, $request, 'shop_domain', true)) {
+        if ($normalized === null || ! $this->bodyMatches($normalized, $request, 'shop_domain')) {
             return;
         }
 
@@ -95,7 +92,7 @@ class WebhookController extends Controller
     private function markUninstalled(string $domain, Request $request): void
     {
         $normalized = Shop::normalizeDomain($domain);
-        if ($normalized === null || ! $this->bodyMatches($normalized, $request, 'myshopify_domain', false)) {
+        if ($normalized === null || ! $this->bodyMatches($normalized, $request, 'myshopify_domain')) {
             return;
         }
 

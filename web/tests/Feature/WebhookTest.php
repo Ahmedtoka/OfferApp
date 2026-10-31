@@ -153,17 +153,6 @@ class WebhookTest extends TestCase
         $this->assertSame(1, Shop::count());
     }
 
-    public function test_uninstall_without_body_domain_field_still_uninstalls(): void
-    {
-        $shop = $this->installShop();
-
-        $this->hook('app/uninstalled', null, '{"id":954889}')->assertOk();
-
-        $shop->refresh();
-        $this->assertNotNull($shop->uninstalled_at);
-        $this->assertNull($shop->access_token);
-    }
-
     public function test_uninstall_with_mismatched_body_domain_changes_nothing(): void
     {
         $shop = $this->installShop();

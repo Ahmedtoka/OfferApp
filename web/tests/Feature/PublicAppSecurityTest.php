@@ -94,4 +94,17 @@ class PublicAppSecurityTest extends TestCase
         $this->assertFalse(Cache::has(OfferAnalytics::cacheKey(SessionTokens::SHOP, 30)));
         $this->assertTrue(Cache::has(OfferAnalytics::cacheKey($other, 30)));
     }
+
+    /** F4: the shop header is not signed, so a signed body without the shop's domain cannot uninstall a shop. */
+    public function test_a_signed_body_naming_no_shop_cannot_uninstall_any_shop(): void
+    {
+        $shop = Shop::create(['shop_domain' => SessionTokens::SHOP, 'access_token' => 'shpat_victim', 'installed_at' => now()]);
+
+        // A genuine payload of another topic, replayed with the topic and shop headers swapped.
+        $this->webhook('app/uninstalled', json_encode(['shop_id' => 1, 'customer' => ['id' => 2]]))->assertOk();
+
+        $shop->refresh();
+        $this->assertNull($shop->uninstalled_at);
+        $this->assertSame('shpat_victim', $shop->access_token);
+    }
 }
