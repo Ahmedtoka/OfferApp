@@ -152,9 +152,18 @@ class AuthMiddlewareTest extends TestCase
         $this->assertEmpty401($this->get('/?shop=levoilestores.myshopify.com&timestamp=1&hmac=bad'));
     }
 
-    public function test_admin_load_without_hmac_or_id_token_is_401(): void
+    public function test_admin_load_without_hmac_or_id_token_is_401_off_the_site_host(): void
     {
+        config(['shopify.site_url' => 'https://site.other-host.test']);
         $this->assertEmpty401($this->get('/?shop=levoilestores.myshopify.com'));
+    }
+
+    public function test_load_without_hmac_or_id_token_on_the_site_host_is_the_landing(): void
+    {
+        config(['shopify.site_url' => config('app.url')]);
+        $res = $this->get('/?shop=levoilestores.myshopify.com');
+        $res->assertOk()->assertSee('site.css');
+        $this->assertSame("frame-ancestors 'none';", $res->headers->get('Content-Security-Policy'));
     }
 
     public function test_admin_load_with_valid_hmac_for_disallowed_shop_is_401(): void

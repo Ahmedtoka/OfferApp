@@ -17,6 +17,13 @@ return [
     'app_name' => env('APP_NAME', 'Pairly: BOGO Offers'),
     'site_url' => env('SITE_URL'),
 
+    // Where the site's install button goes; set it to the install or App Store link. Empty: the setup docs.
+    'install_url' => env('SHOPIFY_INSTALL_URL'),
+
+    // Business identity on the legal pages, supplied by the owner. Empty shows a visible placeholder.
+    'legal_name' => env('SHOPIFY_LEGAL_NAME'),
+    'support_email' => env('SHOPIFY_SUPPORT_EMAIL'),
+
     // Shops allowed to install/use the app (lower-cased bare *.myshopify.com hosts).
     // Empty means open: any valid *.myshopify.com store (public app). Set it to restrict.
     'allowed_shops' => array_values(array_filter(array_map(

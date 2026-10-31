@@ -180,8 +180,15 @@ class HomePageTest extends TestCase
         $this->assertStringNotContainsString((string) config('shopify.api_secret'), $res->getContent());
     }
 
-    public function test_page_without_hmac_is_401(): void
+    public function test_page_without_hmac_is_401_off_the_site_host(): void
     {
+        config(['shopify.site_url' => 'https://site.other-host.test']);
         $this->get('/')->assertStatus(401);
+    }
+
+    public function test_page_without_hmac_on_the_site_host_is_the_landing(): void
+    {
+        config(['shopify.site_url' => config('app.url')]);
+        $this->get('/')->assertOk()->assertSee('site.css');
     }
 }

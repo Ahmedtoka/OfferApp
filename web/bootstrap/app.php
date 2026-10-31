@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EmbeddedCsp;
+use App\Http\Middleware\ServeLanding;
 use App\Http\Middleware\VerifyAdminQueryHmac;
 use App\Http\Middleware\VerifySessionToken;
 use App\Http\Middleware\VerifyWebhookHmac;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
+            'site.landing' => ServeLanding::class,
             'shopify.session' => VerifySessionToken::class,
             'shopify.hmac' => VerifyAdminQueryHmac::class,
             'shopify.webhook' => VerifyWebhookHmac::class,
