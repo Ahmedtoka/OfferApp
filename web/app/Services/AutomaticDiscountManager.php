@@ -11,11 +11,11 @@ class AutomaticDiscountManager
 {
     private const FUNCTIONS = 'query AppFunctions { shopifyFunctions(first: 25) { nodes { id title apiType app { title } } } }';
 
-    private const DISCOUNTS = 'query AppDiscounts { discountNodes(first: 50, query: "type:app") { nodes { id discount { __typename ... on DiscountAutomaticApp { title status appDiscountType { functionId } } } } } }';
+    private const DISCOUNTS = 'query AppDiscounts { discountNodes(first: 50, query: "type:app") { nodes { id discount { __typename ... on DiscountAutomaticApp { title status startsAt endsAt appDiscountType { functionId } } } } } }';
 
-    private const CREATE = 'mutation CreateDiscount($d: DiscountAutomaticAppInput!) { discountAutomaticAppCreate(automaticAppDiscount: $d) { automaticAppDiscount { discountId title status } userErrors { field message } } }';
+    private const CREATE = 'mutation CreateDiscount($d: DiscountAutomaticAppInput!) { discountAutomaticAppCreate(automaticAppDiscount: $d) { automaticAppDiscount { discountId title status startsAt endsAt } userErrors { field message } } }';
 
-    private const UPDATE = 'mutation UpdateDiscount($id: ID!, $d: DiscountAutomaticAppInput!) { discountAutomaticAppUpdate(id: $id, automaticAppDiscount: $d) { automaticAppDiscount { discountId title status } userErrors { field message } } }';
+    private const UPDATE = 'mutation UpdateDiscount($id: ID!, $d: DiscountAutomaticAppInput!) { discountAutomaticAppUpdate(id: $id, automaticAppDiscount: $d) { automaticAppDiscount { discountId title status startsAt endsAt } userErrors { field message } } }';
 
     /** Input query variables live on the discount node (Shopify reads them for $eligibleTags). */
     private const WRITE_CONFIG = 'mutation WriteDiscountConfig($metafields: [MetafieldsSetInput!]!) { metafieldsSet(metafields: $metafields) { metafields { id } userErrors { field message } } }';
@@ -39,22 +39,29 @@ class AutomaticDiscountManager
     }
 
     /**
-     * Find or create the discount; reactivates it if it is not ACTIVE (expired, scheduled or
-     * deactivated in Shopify admin), renames it if its title drifted, and makes its
-     * $app:bogo/config metafield {"eligibleTags": [$eligibleTag]} (verified by reading it back).
+     * Find or create the discount and make it carry the offer's rule: title, dates, coupon combination
+     * and the Function input metafield $app:bogo/config {"eligibleTags": [...], "collectionIds": [...]}
+     * (both arrays always present; verified by reading it back). Only an offer that is being switched
+     * on reactivates a discount that is not ACTIVE (deactivated or expired in Shopify admin); an
+     * offer saved as off leaves the discount's own state alone.
      *
-     * @return array{id: string, status: string, adminUrl: string, title: string}
+     * @param  array{enabled: bool, appliesTo: string, eligibleTag: string, collectionId: ?string, combineWithCoupons: bool, startsAt: ?string, endsAt: ?string}  $input
+     * @return array{id: string, status: string, adminUrl: string, title: string, startsAt: ?string, endsAt: ?string}
      *
      * @throws ShopifyGraphqlException|SaveMismatch
      */
-    public function ensure(string $shop, string $eligibleTag): array
+    public function ensure(string $shop, array $input): array
     {
+        $tags = $input['appliesTo'] === 'tag' ? [$input['eligibleTag']] : [];
+        $collections = $input['appliesTo'] === 'collection' ? [(string) $input['collectionId']] : [];
         $metafield = [
             'namespace' => (string) OfferConstants::get('metafieldNamespace'),
             'key' => (string) OfferConstants::get('metafieldDiscountKey'),
             'type' => 'json',
-            'value' => json_encode(['eligibleTags' => [$eligibleTag]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'value' => json_encode(['eligibleTags' => $tags, 'collectionIds' => $collections], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ];
+        $coupons = $input['combineWithCoupons'];
+        $combinesWith = ['orderDiscounts' => $coupons, 'productDiscounts' => $coupons, 'shippingDiscounts' => $coupons];
 
         $functionId = $this->functionId($shop)
             ?? throw new ShopifyGraphqlException('BOGO discount function was not found in this shop; deploy the app first.');
@@ -65,45 +72,54 @@ class AutomaticDiscountManager
             $data = $this->graphql->query($shop, self::CREATE, ['d' => [
                 'title' => $title,
                 'functionId' => $functionId,
-                'startsAt' => now()->toIso8601String(),
+                'startsAt' => $input['startsAt'] ?? now()->utc()->format('Y-m-d\TH:i:s\Z'),
+                'endsAt' => $input['endsAt'],
                 'discountClasses' => ['PRODUCT'],
-                'combinesWith' => ['orderDiscounts' => false, 'productDiscounts' => false, 'shippingDiscounts' => false],
+                'combinesWith' => $combinesWith,
                 'metafields' => [$metafield],
             ]]);
 
             $created = $this->fromMutation($shop, $data['discountAutomaticAppCreate'] ?? null);
-            $this->verifyConfig($shop, $created['id'], $eligibleTag);
+            $this->verifyConfig($shop, $created['id'], $tags, $collections);
 
             return $created;
         }
 
-        if ($existing['status'] !== 'ACTIVE') {
-            $existing = $this->activate($shop, $functionId, $existing);
+        // Activation clears the end date and restarts the discount, so it comes before the dates are written,
+        // and is skipped when the merchant asked for an end date that has already passed.
+        $ended = $input['endsAt'] !== null && \Carbon\CarbonImmutable::parse($input['endsAt'])->lessThanOrEqualTo(now());
+        if ($input['enabled'] && $existing['status'] === 'EXPIRED' && ! $ended) {
+            $this->activate($shop, $functionId, $existing);
         }
 
-        if ($existing['title'] !== $title) {
-            $data = $this->graphql->query($shop, self::UPDATE, ['id' => $existing['id'], 'd' => ['title' => $title]]);
-            $existing = $this->fromMutation($shop, $data['discountAutomaticAppUpdate'] ?? null);
+        $update = ['title' => $title, 'endsAt' => $input['endsAt'], 'combinesWith' => $combinesWith];
+        if ($input['startsAt'] !== null) {
+            $update['startsAt'] = $input['startsAt'];
         }
+        $data = $this->graphql->query($shop, self::UPDATE, ['id' => $existing['id'], 'd' => $update]);
+        $existing = $this->fromMutation($shop, $data['discountAutomaticAppUpdate'] ?? null);
 
         $data = $this->graphql->query($shop, self::WRITE_CONFIG, ['metafields' => [['ownerId' => $existing['id']] + $metafield]]);
         $errors = $data['metafieldsSet']['userErrors'] ?? [];
         if ($errors !== []) {
             throw new ShopifyGraphqlException(implode('; ', array_map(fn ($e) => (string) ($e['message'] ?? 'Unknown error'), $errors)));
         }
-        $this->verifyConfig($shop, $existing['id'], $eligibleTag);
+        $this->verifyConfig($shop, $existing['id'], $tags, $collections);
 
         return $existing;
     }
 
     /**
      * Reads the discount's input-variables metafield back; anything other than exactly
-     * {"eligibleTags": [$eligibleTag]} is a mismatch (the Function would run with the wrong tag,
-     * or fail on a missing required variable).
+     * {"eligibleTags": $tags, "collectionIds": $collections} is a mismatch (the Function would run with
+     * the wrong eligibility, or fail on a missing required variable).
+     *
+     * @param  list<string>  $tags
+     * @param  list<string>  $collections
      *
      * @throws SaveMismatch
      */
-    private function verifyConfig(string $shop, string $discountId, string $eligibleTag): void
+    private function verifyConfig(string $shop, string $discountId, array $tags, array $collections): void
     {
         $data = $this->graphql->query($shop, self::READ_CONFIG, [
             'id' => $discountId,
@@ -113,8 +129,8 @@ class AutomaticDiscountManager
         $raw = $data['discountNode']['metafield']['value'] ?? null;
         $json = is_string($raw) ? json_decode($raw, true) : null;
 
-        if (! is_array($json) || ($json['eligibleTags'] ?? null) !== [$eligibleTag]) {
-            throw new SaveMismatch('discount tag read-back mismatch');
+        if (! is_array($json) || ($json['eligibleTags'] ?? null) !== $tags || ($json['collectionIds'] ?? null) !== $collections) {
+            throw new SaveMismatch('discount config read-back mismatch');
         }
     }
 
@@ -159,7 +175,7 @@ class AutomaticDiscountManager
             $d = $node['discount'] ?? [];
             if (($d['__typename'] ?? null) === 'DiscountAutomaticApp'
                 && ($d['appDiscountType']['functionId'] ?? null) === $functionId) {
-                return $this->shape($shop, (string) $node['id'], (string) ($d['title'] ?? ''), (string) ($d['status'] ?? ''));
+                return $this->shape($shop, (string) $node['id'], (string) ($d['title'] ?? ''), (string) ($d['status'] ?? ''), $d['startsAt'] ?? null, $d['endsAt'] ?? null);
             }
         }
 
@@ -177,10 +193,10 @@ class AutomaticDiscountManager
             throw new ShopifyGraphqlException('Shopify did not return the automatic discount.');
         }
 
-        return $this->shape($shop, (string) $d['discountId'], (string) ($d['title'] ?? ''), (string) ($d['status'] ?? ''));
+        return $this->shape($shop, (string) $d['discountId'], (string) ($d['title'] ?? ''), (string) ($d['status'] ?? ''), $d['startsAt'] ?? null, $d['endsAt'] ?? null);
     }
 
-    private function shape(string $shop, string $gid, string $title, string $status): array
+    private function shape(string $shop, string $gid, string $title, string $status, ?string $startsAt = null, ?string $endsAt = null): array
     {
         $handle = preg_replace('/\.myshopify\.com$/', '', $shop);
         $numeric = substr($gid, (int) strrpos($gid, '/') + 1);
@@ -190,6 +206,8 @@ class AutomaticDiscountManager
             'status' => $status,
             'adminUrl' => "https://admin.shopify.com/store/{$handle}/discounts/{$numeric}",
             'title' => $title,
+            'startsAt' => $startsAt,
+            'endsAt' => $endsAt,
         ];
     }
 }

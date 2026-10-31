@@ -43,7 +43,8 @@ class OfferAnalytics
     public function compute(string $shop, int $rangeDays): AnalyticsResult
     {
         // The tag is part of the cache key: changing it on the settings page recomputes at once.
-        $this->eligibleTag = (string) $this->settings->read($shop)['eligibleTag'];
+        // The public app has no default tag; until analytics learns about collections (later task) fall back to the shared one.
+        $this->eligibleTag = (string) ($this->settings->read($shop)['eligibleTag'] ?: \App\Offer\OfferConstants::get('eligibleTag'));
         $cached = Cache::remember(
             "analytics:{$shop}:{$rangeDays}:".sha1($this->eligibleTag),
             (int) OfferConstants::get('analyticsCacheSeconds'),
