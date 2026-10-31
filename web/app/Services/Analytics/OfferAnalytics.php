@@ -7,6 +7,7 @@ use App\Offer\OfferConstants;
 use App\Services\OfferSettings;
 use App\Shopify\ShopifyAccessDenied;
 use App\Shopify\ShopifyGraphqlException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 /** Live offer numbers from Admin GraphQL orders. Internally everything is integer minor units of the shop currency. */
@@ -18,10 +19,20 @@ class OfferAnalytics
      */
     private const LEGACY_DISCOUNT_TITLES = ['Buy One Get One', 'اشتري واحدة وخد واحدة'];
 
+    /**
+     * The plain gift / percent messages earlier versions emitted. They also read like any merchant's own discount,
+     * so they count only on orders created before shared legacyTitlesUntil.
+     */
+    private const LEGACY_GIFT_MESSAGES = ['Gift', 'هدية'];
+
+    private const LEGACY_PERCENT_TEMPLATES = ['{pct}% off', 'خصم {pct}%'];
+
     private bool $fromMessages = true;
 
     /** Percent-message regexes (every language), built once per compute. */
     private ?array $percentRes = null;
+
+    private ?array $legacyPercentRes = null;
 
     private string $method = 'customer';
 
@@ -81,7 +92,8 @@ class OfferAnalytics
 
     private function build(string $shop, int $rangeDays, ?string $collectionId): AnalyticsResult
     {
-        $this->percentRes = self::percentPatterns();
+        $this->percentRes = self::percentPatterns((array) OfferConstants::get('percentMessageTemplates'));
+        $this->legacyPercentRes = self::percentPatterns(self::LEGACY_PERCENT_TEMPLATES);
         $fetched = $this->fetcher->fetch($shop, $rangeDays, (int) OfferConstants::get('analyticsOrderCap'), $collectionId);
         $currency = $fetched['currency'];
         $this->decimals = BogoCalculator::decimalsFor($currency);
@@ -188,6 +200,7 @@ class OfferAnalytics
         $lines = [];
         $ours = [];
         $hasMessages = false;
+        $legacy = $this->isLegacy((string) ($order['createdAt'] ?? ''));
         $pct = null;
         $gross = $net = $units = 0;
 
@@ -218,13 +231,13 @@ class OfferAnalytics
                     continue;
                 }
                 $title = (string) ($alloc['discountApplication']['title'] ?? '');
-                $kind = $this->classify($title);
+                $kind = $this->classify($title, $legacy);
                 if ($kind === null) {
                     continue;
                 }
                 $hasMessages = $hasMessages || $kind !== 'title';
                 if ($kind === 'percent') {
-                    $pct ??= $this->percentFrom($title);
+                    $pct ??= $this->percentFrom($title, $legacy);
                 }
                 $ours[] = ['kind' => $kind, 'line' => $i, 'amount' => $amount];
             }
@@ -258,18 +271,35 @@ class OfferAnalytics
             : $this->eligibleTag !== '' && in_array($this->eligibleTag, (array) ($product['tags'] ?? []), true);
     }
 
+    /** Whether the order predates legacyTitlesUntil, so the plain legacy messages still count. A missing date is not legacy. */
+    private function isLegacy(string $createdAt): bool
+    {
+        if ($createdAt === '') {
+            return false;
+        }
+        try {
+            return Carbon::parse($createdAt)->lt(Carbon::parse((string) OfferConstants::get('legacyTitlesUntil')));
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     /** @return 'gift'|'percent'|'title'|null null = not ours */
-    private function classify(string $title): ?string
+    private function classify(string $title, bool $legacy): ?string
     {
         if ($title === '') {
             return null;
         }
-        foreach ((array) OfferConstants::get('giftMessages') as $gift) {
+        $gifts = (array) OfferConstants::get('giftMessages');
+        if ($legacy) {
+            array_push($gifts, ...self::LEGACY_GIFT_MESSAGES);
+        }
+        foreach ($gifts as $gift) {
             if (strcasecmp($title, (string) $gift) === 0) {
                 return 'gift';
             }
         }
-        if ($this->percentFrom($title) !== null) {
+        if ($this->percentFrom($title, $legacy) !== null) {
             return 'percent';
         }
         foreach ([OfferConstants::get('discountTitle'), ...self::LEGACY_DISCOUNT_TITLES] as $known) {
@@ -282,9 +312,13 @@ class OfferAnalytics
     }
 
     /** The percent in a percent-message title (any language), if within [minPercent, maxPercent], else null. */
-    private function percentFrom(string $title): ?int
+    private function percentFrom(string $title, bool $legacy): ?int
     {
-        foreach ($this->percentRes ??= self::percentPatterns() as $pattern) {
+        $patterns = $this->percentRes ??= self::percentPatterns((array) OfferConstants::get('percentMessageTemplates'));
+        if ($legacy) {
+            $patterns = [...$patterns, ...($this->legacyPercentRes ??= self::percentPatterns(self::LEGACY_PERCENT_TEMPLATES))];
+        }
+        foreach ($patterns as $pattern) {
             if (preg_match($pattern, $title, $m) === 1) {
                 $pct = (int) $m[1];
                 $inRange = strlen($m[1]) <= 3
@@ -299,17 +333,18 @@ class OfferAnalytics
     }
 
     /**
-     * Every percentMessageTemplates entry as an anchored, case-insensitive regex, e.g. "{pct}% off" -> /^(\d+)% off\z/iu.
+     * Every template as an anchored, case-insensitive regex, e.g. "BOGO {pct}% off" -> /^BOGO (\d+)% off\z/iu.
      *
+     * @param  list<string>  $templates
      * @return list<string>
      */
-    private static function percentPatterns(): array
+    private static function percentPatterns(array $templates): array
     {
         return array_values(array_map(function (string $template) {
             $parts = explode('{pct}', $template);
 
             return '/^'.implode('(\d+)', array_map(fn (string $p) => preg_quote($p, '/'), $parts)).'\z/iu';
-        }, (array) OfferConstants::get('percentMessageTemplates')));
+        }, $templates));
     }
 
     /** The percent found in any percent-message title across the range, else the default. */

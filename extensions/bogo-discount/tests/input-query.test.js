@@ -68,8 +68,9 @@ describe('shopify.extension.toml', () => {
 
 describe('message constants', () => {
   it('has localized gift and percent messages, English and Arabic', () => {
-    expect(constants.giftMessages).toEqual({ en: 'Gift', ar: 'هدية' });
-    expect(constants.percentMessageTemplates).toEqual({ en: '{pct}% off', ar: 'خصم {pct}%' });
+    expect(constants.giftMessages).toEqual({ en: 'BOGO Gift', ar: 'هدية العرض' });
+    expect(constants.legacyTitlesUntil).toBe('2026-11-01T00:00:00Z');
+    expect(constants.percentMessageTemplates).toEqual({ en: 'BOGO {pct}% off', ar: 'عرض خصم {pct}%' });
   });
 });
 

@@ -288,7 +288,7 @@ class BogoCalculatorTest extends TestCase
     {
         config(['shopify.shared_constants_path' => dirname(__DIR__, 4).'/shared/offer-constants.json']);
         $this->assertSame(30, OfferConstants::get('defaultPercent'));
-        $this->assertSame('30% off', OfferConstants::percentMessage(30));
+        $this->assertSame('BOGO 30% off', OfferConstants::percentMessage(30));
     }
 
     public function test_decimals_for_resolves_a_relative_shared_path_against_the_app_root(): void

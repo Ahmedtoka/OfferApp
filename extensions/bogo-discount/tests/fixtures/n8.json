@@ -201,7 +201,7 @@
             "selectionStrategy": "ALL",
             "candidates": [
               {
-                "message": "Gift",
+                "message": "BOGO Gift",
                 "targets": [
                   {
                     "cartLine": {
@@ -218,7 +218,7 @@
                 }
               },
               {
-                "message": "Gift",
+                "message": "BOGO Gift",
                 "targets": [
                   {
                     "cartLine": {
@@ -235,7 +235,7 @@
                 }
               },
               {
-                "message": "Gift",
+                "message": "BOGO Gift",
                 "targets": [
                   {
                     "cartLine": {
@@ -252,7 +252,7 @@
                 }
               },
               {
-                "message": "Gift",
+                "message": "BOGO Gift",
                 "targets": [
                   {
                     "cartLine": {

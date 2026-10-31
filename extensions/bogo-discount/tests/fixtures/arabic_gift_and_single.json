@@ -101,7 +101,7 @@
             "selectionStrategy": "ALL",
             "candidates": [
               {
-                "message": "هدية",
+                "message": "هدية العرض",
                 "targets": [
                   {
                     "cartLine": {
@@ -118,7 +118,7 @@
                 }
               },
               {
-                "message": "خصم 30%",
+                "message": "عرض خصم 30%",
                 "targets": [
                   {
                     "cartLine": {

@@ -171,19 +171,19 @@ describe('localized messages', () => {
   const a = byName('a');
   const ac = byName('ac');
   it('AR gives Arabic percent message', () => {
-    expect(candidates(run(inputFor(a, { language: 'AR' })))).toEqual([cand('A', 1, 'خصم 30%', '360.00')]);
+    expect(candidates(run(inputFor(a, { language: 'AR' })))).toEqual([cand('A', 1, 'عرض خصم 30%', '360.00')]);
   });
   it('AR gives Arabic gift message', () => {
-    expect(candidates(run(inputFor(ac, { language: 'AR' })))).toEqual([cand('C', 1, 'هدية', '900.00')]);
+    expect(candidates(run(inputFor(ac, { language: 'AR' })))).toEqual([cand('C', 1, 'هدية العرض', '900.00')]);
   });
   it.each(['EN', 'FR', 'DE', undefined])('language %s gives English', (language) => {
-    expect(candidates(run(inputFor(a, { language })))[0].message).toBe('30% off');
-    expect(candidates(run(inputFor(ac, { language })))[0].message).toBe('Gift');
+    expect(candidates(run(inputFor(a, { language })))[0].message).toBe('BOGO 30% off');
+    expect(candidates(run(inputFor(ac, { language })))[0].message).toBe('BOGO Gift');
   });
   it('missing localization falls back to English', () => {
     const input = inputFor(a);
     delete input.localization;
-    expect(candidates(run(input))[0].message).toBe('30% off');
+    expect(candidates(run(input))[0].message).toBe('BOGO 30% off');
   });
 });
 

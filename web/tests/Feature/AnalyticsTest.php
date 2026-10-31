@@ -63,10 +63,16 @@ class AnalyticsTest extends TestCase
     /** An inline orders page from lists of line nodes, one list per order. */
     private static function page(array ...$orders): array
     {
+        return self::pageAt('2026-10-28T10:00:00+00:00', ...$orders);
+    }
+
+    /** Like page(), with every order created at $createdAt. */
+    private static function pageAt(string $createdAt, array ...$orders): array
+    {
         return ['orders' => [
             'pageInfo' => ['hasNextPage' => false, 'endCursor' => null],
             'nodes' => array_map(fn (array $lines, int $i) => [
-                'id' => 'gid://shopify/Order/'.(9000 + $i), 'name' => '#'.(9000 + $i), 'createdAt' => '2026-10-28T10:00:00+00:00',
+                'id' => 'gid://shopify/Order/'.(9000 + $i), 'name' => '#'.(9000 + $i), 'createdAt' => $createdAt,
                 'cancelledAt' => null, 'lineItems' => ['nodes' => $lines],
             ], $orders, array_keys($orders)),
         ]];
@@ -255,6 +261,64 @@ class AnalyticsTest extends TestCase
             ->assertJsonPath('percentUnits', 1);
         $this->assertEquals(1370.0, $res->json('totalDiscount'));
         $this->assertEquals([['title' => 'Product B', 'units' => 1, 'value' => 1100.0]], $res->json('topGifts'));
+    }
+
+    public function test_the_distinctive_messages_count_after_the_cut_over(): void
+    {
+        $this->fake([self::pageAt('2026-11-05T10:00:00+00:00',
+            [self::line(['price' => 1200]), self::line(['price' => 1100, 'title' => 'Product B', 'allocs' => [[1100, 'BOGO Gift']]])],
+            [self::line(['price' => 1200]), self::line(['price' => 900, 'title' => 'Product C', 'allocs' => [[900, 'هدية العرض']]])],
+            [self::line(['price' => 500, 'allocs' => [[150, 'BOGO 30% off']]])],
+            [self::line(['price' => 500, 'allocs' => [[150, 'عرض خصم 30%']]])],
+        )]);
+
+        $res = $this->api()->assertOk();
+
+        $res->assertJsonPath('offerOrders', 4)->assertJsonPath('giftUnits', 2)->assertJsonPath('percentUnits', 2);
+        $this->assertEquals(2300.0, $res->json('totalDiscount'));
+    }
+
+    public function test_other_automatic_discounts_are_not_ours_after_the_cut_over(): void
+    {
+        // A merchant's own automatic "Gift" and "10% off" (and a "BOGO 150% off" outside 1-99) are ignored.
+        $this->fake([self::pageAt('2026-11-05T10:00:00+00:00',
+            [self::line(['price' => 1200]), self::line(['price' => 1100, 'title' => 'Product B', 'allocs' => [[1100, 'Gift']]])],
+            [self::line(['price' => 500, 'allocs' => [[50, '10% off']]])],
+            [self::line(['price' => 500, 'allocs' => [[750, 'BOGO 150% off']]])],
+            [self::line(['price' => 1200]), self::line(['price' => 900, 'title' => 'Product C', 'allocs' => [[900, 'BOGO Gift']]])],
+            [self::line(['price' => 1000])],
+        )]);
+
+        $res = $this->api()->assertOk();
+
+        $res->assertJsonPath('ordersTotal', 5)->assertJsonPath('offerOrders', 1)
+            ->assertJsonPath('giftUnits', 1)->assertJsonPath('percentUnits', 0);
+        $this->assertEquals(900.0, $res->json('totalDiscount'));
+    }
+
+    public function test_an_ignored_percent_title_does_not_set_the_range_percent(): void
+    {
+        // The title-only order uses the default 30 for its numbers, not the ignored merchant "10% off".
+        $this->fake([self::pageAt('2026-11-05T10:00:00+00:00',
+            [self::line(['price' => 500, 'allocs' => [[50, '10% off']]])],
+            [self::line(['price' => 1000, 'allocs' => [[300, 'Pairly: BOGO Offers']]])],
+        )]);
+
+        $res = $this->api()->assertOk();
+
+        $res->assertJsonPath('offerOrders', 1)->assertJsonPath('percentUnits', 1);
+        $this->assertEquals(300.0, $res->json('totalDiscount'));
+    }
+
+    public function test_old_titles_only_count_on_orders_before_the_cut_over(): void
+    {
+        $order = [self::line(['price' => 1200]), self::line(['price' => 1100, 'title' => 'Product B', 'allocs' => [[1100, 'Gift']]])];
+        $this->fake([self::pageAt('2026-10-31T23:59:59+00:00', $order)]);
+        $this->api()->assertOk()->assertJsonPath('giftUnits', 1);
+
+        Cache::flush();
+        $this->fake([self::pageAt('2026-11-01T00:00:00+00:00', $order)]);
+        $this->api()->assertOk()->assertJsonPath('offerOrders', 0)->assertJsonPath('giftUnits', 0);
     }
 
     public function test_a_range_mixing_legacy_arabic_and_english_orders_counts_both(): void

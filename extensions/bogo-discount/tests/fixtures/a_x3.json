@@ -61,7 +61,7 @@
             "selectionStrategy": "ALL",
             "candidates": [
               {
-                "message": "Gift",
+                "message": "BOGO Gift",
                 "targets": [
                   {
                     "cartLine": {
@@ -78,7 +78,7 @@
                 }
               },
               {
-                "message": "30% off",
+                "message": "BOGO 30% off",
                 "targets": [
                   {
                     "cartLine": {
