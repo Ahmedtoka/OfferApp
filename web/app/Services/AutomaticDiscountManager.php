@@ -11,7 +11,10 @@ class AutomaticDiscountManager
 {
     private const FUNCTIONS = 'query AppFunctions { shopifyFunctions(first: 25) { nodes { id title apiType app { title } } } }';
 
-    private const DISCOUNTS = 'query AppDiscounts { discountNodes(first: 50, query: "type:app") { nodes { id discount { __typename ... on DiscountAutomaticApp { title status startsAt endsAt appDiscountType { functionId } } } } } }';
+    /** A shop with more than 50 x this many app discounts is not a case worth more calls. */
+    private const MAX_DISCOUNT_PAGES = 20;
+
+    private const DISCOUNTS = 'query AppDiscounts($cursor: String) { discountNodes(first: 50, after: $cursor, query: "type:app") { pageInfo { hasNextPage endCursor } nodes { id discount { __typename ... on DiscountAutomaticApp { title status startsAt endsAt appDiscountType { functionId } } } } } }';
 
     private const CREATE = 'mutation CreateDiscount($d: DiscountAutomaticAppInput!) { discountAutomaticAppCreate(automaticAppDiscount: $d) { automaticAppDiscount { discountId title status startsAt endsAt } userErrors { field message } } }';
 
@@ -67,7 +70,7 @@ class AutomaticDiscountManager
 
         $functionId = $this->functionId($shop)
             ?? throw new ShopifyGraphqlException('BOGO discount function was not found in this shop; deploy the app first.');
-        $title = (string) OfferConstants::get('discountTitle');
+        $title = OfferConstants::discountTitle();
 
         $existing = $this->findByFunction($shop, $functionId);
         if ($existing === null) {
@@ -232,12 +235,20 @@ class AutomaticDiscountManager
 
     private function findByFunction(string $shop, string $functionId): ?array
     {
-        $data = $this->graphql->query($shop, self::DISCOUNTS);
-        foreach ($data['discountNodes']['nodes'] ?? [] as $node) {
-            $d = $node['discount'] ?? [];
-            if (($d['__typename'] ?? null) === 'DiscountAutomaticApp'
-                && ($d['appDiscountType']['functionId'] ?? null) === $functionId) {
-                return $this->shape($shop, (string) $node['id'], (string) ($d['title'] ?? ''), (string) ($d['status'] ?? ''), $d['startsAt'] ?? null, $d['endsAt'] ?? null);
+        $cursor = null;
+        for ($page = 0; $page < self::MAX_DISCOUNT_PAGES; $page++) {
+            $data = $this->graphql->query($shop, self::DISCOUNTS, ['cursor' => $cursor]);
+            foreach ($data['discountNodes']['nodes'] ?? [] as $node) {
+                $d = $node['discount'] ?? [];
+                if (($d['__typename'] ?? null) === 'DiscountAutomaticApp'
+                    && ($d['appDiscountType']['functionId'] ?? null) === $functionId) {
+                    return $this->shape($shop, (string) $node['id'], (string) ($d['title'] ?? ''), (string) ($d['status'] ?? ''), $d['startsAt'] ?? null, $d['endsAt'] ?? null);
+                }
+            }
+            $info = $data['discountNodes']['pageInfo'] ?? [];
+            $cursor = $info['endCursor'] ?? null;
+            if (! ($info['hasNextPage'] ?? false) || $cursor === null) {
+                break;
             }
         }
 

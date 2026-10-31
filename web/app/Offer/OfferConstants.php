@@ -32,6 +32,14 @@ final class OfferConstants
         return dirname($configured).'/'.$file;
     }
 
+    /** The title of the app's one automatic discount: SHOPIFY_DISCOUNT_TITLE, else the shared constant. */
+    public static function discountTitle(): string
+    {
+        $configured = config('shopify.discount_title');
+
+        return is_string($configured) && trim($configured) !== '' ? trim($configured) : (string) self::get('discountTitle');
+    }
+
     public static function percentMessage(int $pct): string
     {
         return str_replace('{pct}', (string) $pct, (string) self::get('percentMessageTemplate'));

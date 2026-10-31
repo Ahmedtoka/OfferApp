@@ -2,6 +2,20 @@
 
 بعد إكمال هذا الدليل سيكون لديك تطبيق Laravel يعمل على `https://offer.arenahere.com`، ونسخة منشورة من تطبيق Shopify (الـ Function + الإعدادات)، وتطبيق مثبّت على المتجر الحقيقي في حالة «متوقف» بانتظار أن يشغّله المالك.
 
+> **تحذير: التطبيقان القديمان (Le Voile وFashion Avenue) لا ينتقلان إلى هذا الكود تلقائياً.**
+> هذا الكود هو التطبيق العام Pairly. أي نشر قديم يعمل بإعدادات مختلفة، ولا يُنشر عليه إلا بعد ضبط ما يلي في `.env` على السيرفر:
+>
+> - `SHOPIFY_BILLING_REQUIRED=false`: وإلا تُرفض إعداداتهما بخطأ 402 لأنهما لا يشتركان في خطة.
+> - `SHOPIFY_ALLOWED_SHOPS=<متاجرهم فقط>`: وإلا صار التطبيق مفتوحاً لأي متجر.
+> - `SHOPIFY_FUNCTION_TITLE=<اسم الـ Function القديم>` (مثل `"BOGO Discount (Le Voile)"`): وإلا لا يجد التطبيق الـ Function.
+> - `SHOPIFY_DISCOUNT_TITLE=<عنوان الخصم القديم>` (مثل `"Buy One Get One"`): وإلا أُعيدت تسمية الخصم عند أول حفظ إلى `Pairly: BOGO Offers`.
+>
+> وكذلك:
+>
+> - **لا تنشر ملفات `shopify.app.*.toml` القديمة من هذا الكود** (`shopify deploy`) قبل مراجعتها وإعادة حفظها: نطاقاتها وروابط webhooks فيها مختلفة.
+> - رسائل الخصم على السطور تغيّرت إلى `BOGO Gift` و`BOGO {pct}% off`؛ والتحليلات تعدّ الرسائل القديمة (`Gift` و`{pct}% off`) فقط في الطلبات قبل `legacyTitlesUntil` في `shared/offer-constants.json`.
+> - **لا تجعل التطبيقين القديمين يتبعان فرع `main`** حتى تُنفَّذ الخطوات أعلاه، وإلا انكسرا عند أول نشر.
+
 الأوامر بالإنجليزية داخل كتل `bash`، وكل أمر في كتلة مستقلة. كل أوامر Shopify CLI المذكورة هنا موجودة في الإصدار 4.9.4 (تُراجَع بـ `shopify app <command> --help`).
 
 ## 1. نظرة عامة وما تحتاجه قبل البدء
@@ -103,6 +117,8 @@ cp .env.example .env
 | `SHOPIFY_ALLOWED_SHOPS` | `levoilestores.myshopify.com,levoilest.myshopify.com` | المتاجر المسموح لها بفتح الصفحة؛ أي متجر غيرها يحصل على 401 |
 | `SHOPIFY_SHARED_CONSTANTS_PATH` | `../shared/offer-constants.json` | مسار الثوابت المشتركة نسبةً إلى `web/` |
 | `SHOPIFY_FUNCTION_TITLE` | `"BOGO Discount (Le Voile)"` | اسم الـ Function كما تُبلغ عنه Shopify؛ التطبيق يكتشف معرّفها وقت التشغيل ولا حاجة لإعداد آخر |
+| `SHOPIFY_DISCOUNT_TITLE` | `"Buy One Get One"` | اختياري: عنوان الخصم الآلي. الافتراضي هو `discountTitle` في الثوابت المشتركة؛ اضبطه في النشرات القديمة كي لا يُعاد تسمية خصمها |
+| `SHOPIFY_BILLING_REQUIRED` | `false` | في النشرات القديمة فقط: تعطيل شرط الاشتراك |
 
 باقي المفاتيح في `.env.example` (البريد، Redis، AWS) تُترك كما هي لأن التطبيق لا يستخدمها.
 

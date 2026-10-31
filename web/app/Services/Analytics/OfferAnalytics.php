@@ -302,7 +302,7 @@ class OfferAnalytics
         if ($this->percentFrom($title, $legacy) !== null) {
             return 'percent';
         }
-        foreach ([OfferConstants::get('discountTitle'), ...self::LEGACY_DISCOUNT_TITLES] as $known) {
+        foreach ([OfferConstants::get('discountTitle'), OfferConstants::discountTitle(), ...self::LEGACY_DISCOUNT_TITLES] as $known) {
             if (strcasecmp($title, (string) $known) === 0) {
                 return 'title';
             }

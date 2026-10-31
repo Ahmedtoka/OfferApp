@@ -552,6 +552,49 @@ class SettingsTest extends TestCase
         $this->assertSame('Pairly: BOGO Offers', $fake->calls[array_search('UpdateDiscount', $fake->ops(), true)]['variables']['d']['title']);
     }
 
+    public function test_a_new_discount_gets_the_shared_title_by_default(): void
+    {
+        $this->save(['enabled' => true, 'percent' => 30])->assertOk();
+
+        $this->assertSame('Pairly: BOGO Offers', $this->fake->calls[array_search('CreateDiscount', $this->fake->ops(), true)]['variables']['d']['title']);
+    }
+
+    public function test_the_discount_title_can_be_configured_for_older_deployments(): void
+    {
+        config(['shopify.discount_title' => 'Buy One Get One']);
+
+        $this->save(['enabled' => true, 'percent' => 30])->assertOk();
+
+        $this->assertSame('Buy One Get One', $this->fake->calls[array_search('CreateDiscount', $this->fake->ops(), true)]['variables']['d']['title']);
+    }
+
+    public function test_an_existing_discount_on_a_later_page_is_found_not_duplicated(): void
+    {
+        $fake = new class extends FakeGraphqlClient
+        {
+            public function query(string $shop, string $query, array $variables = []): array
+            {
+                $data = parent::query($shop, $query, $variables);
+                if (isset($data['discountNodes'])) {
+                    $other = $data['discountNodes']['nodes'][0];
+                    if (($variables['cursor'] ?? null) === null) {
+                        return ['discountNodes' => ['pageInfo' => ['hasNextPage' => true, 'endCursor' => 'c1'], 'nodes' => [$other]]];
+                    }
+                    $data['discountNodes']['pageInfo'] = ['hasNextPage' => false, 'endCursor' => null];
+                }
+
+                return $data;
+            }
+        };
+        $fake->fixtures['AppDiscounts'] = 'discount-nodes-existing';
+        $this->app->instance(GraphqlClient::class, $fake);
+
+        $this->save(['enabled' => true, 'percent' => 30])->assertOk()->assertJsonPath('discount.id', 'gid://shopify/DiscountAutomaticNode/777');
+
+        $this->assertSame(0, $fake->count('CreateDiscount'));
+        $this->assertContains('c1', array_column(array_column($fake->calls, 'variables'), 'cursor'));
+    }
+
     public function test_offer_on_reactivates_an_expired_discount_before_reporting_success(): void
     {
         $this->fake->fixtures['AppDiscounts'] = 'discount-nodes-expired';
