@@ -70,7 +70,7 @@ Turn the Le Voile offer app into a public app on the Shopify App Store, usable b
 - A new app in the Dev Dashboard with its own config file (`shopify.app.bogo.toml`) and client id. `offer-app` and `BOGO Fashion Avenue` stay untouched.
 - The final "Public distribution" selection is irreversible: only with the owner's explicit approval at that moment.
 - All links derive from `APP_URL` and `SITE_URL`.
-- Hosting on Cloudways, separate from the PROMAX server, Hybrid stack, web root `web/public`, Varnish off, HTTPS on. A staging environment against a dev store comes first.
+- Hosting **[owner, 2026-10-31, overriding the earlier separate-server brief]:** a new, separate Cloudways application on the existing PROMAX server, from this same repo. Existing applications on that server, including "BOGO Offer Fashion Avenue", are not changed. Hybrid stack, web root `web/public`, Varnish off, HTTPS on. Its own database and `.env`. Dev store testing comes first; the Cloudways temporary URL is used until the owner buys the domain.
 - No passwords typed or asked for in chat. The owner does every sign-in.
 - Small commits. TDD throughout. Any engine change must pass §4.4 and the brute-force tests.
 
@@ -191,7 +191,7 @@ Served from this repo under `SITE_URL` as public Laravel routes **[Claude's call
 - **Docs:** setup, tag or collection, Test page, theme, pricing, FAQ.
 - **Legal:** privacy policy and terms of use. Text drafted here; the owner is responsible for final legal acceptance and for the business identity shown.
 
-Design direction left to the builder; must look professional and fit phone width.
+**Look [owner, 2026-10-31]:** a 3D website with moving screens showing the product and strong advertising lines, plus a simple logo and an app icon made here. Other design choices are the builder's. It must look professional, fit phone width, stay fast, and honour reduced-motion settings **[Claude's call]**. Advertising lines must avoid outcome guarantees.
 
 ---
 
@@ -257,7 +257,7 @@ The owner asked for the work to be split across agents and to move as fast as po
 ## 16a. Sequencing decisions [Claude's call]
 
 - **Billing before distribution:** the plan starts with a short spike on a throwaway app to learn whether billing and the subscription gate can run end to end before Public distribution is selected. If they cannot, work stops and the owner decides whether to select it early; it is never selected without the owner's explicit approval.
-- **Staging:** the separate Cloudways server is an early owner dependency, requested before QA needs it. Until it exists, local work uses the Shopify CLI tunnel on a dev store. The "BOGO Offer Fashion Avenue" app on PROMAX is not used as staging, because the brief separates this work from PROMAX.
+- **Staging:** local work uses the Shopify CLI tunnel on a dev store, then the new Cloudways application on PROMAX (§3). The "BOGO Offer Fashion Avenue" application is left alone.
 
 ## 17. Left to the builder
 

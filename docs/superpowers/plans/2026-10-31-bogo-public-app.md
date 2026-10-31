@@ -266,7 +266,7 @@ Brute-force test: for random carts up to 7 units with markdowns, enumerate every
 
 - [ ] **Step 1: Write failing tests:** each page returns 200 without auth in both languages; `/` with no auth on the app host still returns 401; `/?hmac=...` valid still renders the app; pages contain `$19.99`, `14`, no competitor name, no `Le Voile`; privacy lists the data the app reads and deletion on `shop/redact`.
 - [ ] **Step 2:** Run. Expected: FAIL.
-- [ ] **Step 3:** Implement using `impeccable` or `frontend-design` for visual direction. Fair comparison with the manual approach. Legal pages carry a visible placeholder for the business identity the owner supplies.
+- [ ] **Step 3:** Implement using `impeccable` or `frontend-design` for visual direction. 3D hero with animated product screens (settings, analytics, test page, cart) and strong advertising lines with no outcome guarantees; Three.js self-hosted in `web/public/vendor/`, lazy-loaded, static fallback when WebGL is missing or `prefers-reduced-motion` is set. Create a simple SVG logo `web/public/brand/logo.svg`, and icon `docs/app-store/assets/icon-1200.png` at 1200×1200 with no text, plus favicon. Fair comparison with the manual approach. Legal pages carry a visible placeholder for the business identity the owner supplies.
 - [ ] **Step 4:** Run tests. View at desktop and 375 px in the built-in browser.
 - [ ] **Step 5:** Commit: `feat(site): landing, docs, privacy, terms`.
 
@@ -296,7 +296,7 @@ The extension rename affects the older configs on their next deploy, so `SHOPIFY
 
 **Files:** Create `docs/deploy-pairly.md`, `docs/app-store/listing.md`, `docs/app-store/requirements-evidence.md`, `docs/app-store/reviewer-instructions.md`, `docs/app-store/assets/**`.
 
-- [ ] **Step 1:** Write the deploy guide for a new separate Cloudways server: Hybrid, web root `web/public`, Varnish off, HTTPS, `.env` keys including `SITE_URL`, empty `SHOPIFY_ALLOWED_SHOPS`, version log.
+- [ ] **Step 1:** Create a new Cloudways application on the PROMAX server, without changing any existing application, and deploy this branch: Hybrid, web root `web/public`, Varnish off, HTTPS, its own database and `.env` with keys including `SITE_URL`, empty `SHOPIFY_ALLOWED_SHOPS`. Point `shopify.app.bogo.toml` at its temporary URL and `shopify app deploy --config bogo`. Smoke test on the dev store. Write the deploy guide with the version log. Stop if a password is required.
 - [ ] **Step 2:** Walk https://shopify.dev/docs/apps/launch/app-requirements-checklist item by item into `requirements-evidence.md`: met with evidence, or waiting on owner.
 - [ ] **Step 3:** Draft the listing within limits: intro 100 characters or fewer, details 500 or fewer, feature lines 80 or fewer, and icon and 3–6 screenshots at the stated sizes. Compare market prices and report findings to the owner without changing the price.
 - [ ] **Step 4:** Final message in Arabic: confirmed, not confirmed, needed from the owner: Cloudways server, domain, business identity, Public distribution approval, submission, review replies, post-approval Fashion Avenue check, cleanup from spec §15.
