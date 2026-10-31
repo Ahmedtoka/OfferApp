@@ -1,6 +1,6 @@
 # Pairly QA, 2026-10-31 (in progress)
 
-Environment: Cloudways application "Pairly BOGO" on the PROMAX server, https://phpstack-1216096-6760392.cloudwaysapps.com. App version 1.0.0-qa. Store: levoilest.myshopify.com (development store). No real store touched.
+Environment: Cloudways application "Pairly BOGO" on the PROMAX server, https://phpstack-1216096-6760392.cloudwaysapps.com. App versions 1.0.0-qa, then 1.0.1-qa after review fixes (message strings changed; dev-store runs above used 1.0.0-qa). Store: levoilest.myshopify.com (development store). No real store touched.
 
 | Check | Expected | Observed | Evidence | Result |
 |---|---|---|---|---|
