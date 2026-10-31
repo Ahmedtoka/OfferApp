@@ -86,6 +86,14 @@ body {
     display: none;
 }
 
+.billing-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    margin-block-end: 16px;
+}
+
 .loading-line {
     display: flex;
     align-items: center;

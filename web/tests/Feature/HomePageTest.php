@@ -118,7 +118,7 @@ class HomePageTest extends TestCase
         foreach ([
             'id="page-home"', 'id="page-settings"', 'id="page-analytics"', 'id="page-test"',
             'id="enabled"', 'id="percent"', 'id="method"', 'id="applies-to"', 'id="eligible-tag"', 'id="collection-pick"',
-            'id="starts-at"', 'id="ends-at"', 'id="coupons"', 'id="save"', 'id="state-line"', 'id="billing-banner"', 'id="checklist"',
+            'id="starts-at"', 'id="ends-at"', 'id="coupons"', 'id="save"', 'id="state-line"', 'id="billing-banner"', 'id="billing-status"', 'id="billing-action"', 'id="checklist"',
         ] as $id) {
             $res->assertSee($id, false);
         }
@@ -147,6 +147,8 @@ class HomePageTest extends TestCase
         $this->assertStringNotContainsString('Could not reach', $js);
         $this->assertStringNotContainsString('pairly.collections', $js); // the collection title comes from the server
         $this->assertStringContainsString('collectionMissing', $js);
+        $this->assertStringContainsString("api('GET', '/api/billing')", $js);
+        $this->assertStringContainsString('e.status === 409', $js);
     }
 
     public function test_range_options_default_to_30(): void

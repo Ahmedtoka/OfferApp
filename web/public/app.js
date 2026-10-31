@@ -3,6 +3,7 @@
 
 import { toIso, fromIso, stateKey, checklist, themeEditorUrl, isShopHost } from './js/lib.js';
 import { summarySentence } from './js/summary.js';
+import { billingView } from './js/billing.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -47,6 +48,9 @@ const MARKS_KEY = 'pairly.checklist';
 
 const els = {
     billingBanner: $('#billing-banner'),
+    billingStatus: $('#billing-status'),
+    billingText: $('#billing-text'),
+    billingAction: $('#billing-action'),
     checklist: $('#checklist'),
     checklistProgress: $('#checklist-progress'),
     settingsBanner: $('#settings-banner'),
@@ -209,6 +213,7 @@ function showBanner(slot, tone, text, action = null) {
         banner.append(button);
     }
     slot.replaceChildren(banner);
+    return banner;
 }
 
 const clearBanner = (slot) => slot.replaceChildren();
@@ -343,10 +348,42 @@ function renderState(data) {
     }
 }
 
-function renderBillingEnded(settings) {
-    if (settings.disabledReason === 'billing') {
-        showBanner(els.billingBanner, 'warning', t('billing.ended'), { label: t('billing.subscribe'), onClick: subscribe });
+// The plan state. Loaded on its own (GET /api/billing) so the page shows it whatever the settings say.
+let billing = null;
+let endedByBilling = false;
+
+function renderBilling() {
+    const view = billingView(billing);
+    els.billingStatus.hidden = view.text === null;
+    els.billingText.textContent = view.text === null ? '' : t(view.text, view.vars);
+    els.billingAction.hidden = view.action === null;
+    if (view.action !== null) {
+        els.billingAction.textContent = t(view.action === 'subscribe' ? 'billing.subscribe' : 'billing.test_subscribe');
     }
+
+    // The "subscription ended" banner shows only while the shop is not covered.
+    const current = els.billingBanner.firstElementChild;
+    if (endedByBilling && !view.hideEnded) {
+        if (!current) showBanner(els.billingBanner, 'warning', t('billing.ended'), { label: t('billing.subscribe'), onClick: subscribe }).dataset.kind = 'ended';
+    } else if (current?.dataset.kind === 'ended' && view.hideEnded) {
+        clearBanner(els.billingBanner);
+    }
+}
+
+async function loadBilling() {
+    try {
+        billing = await api('GET', '/api/billing');
+    } catch {
+        billing = null; // the settings page keeps working; saving still reports a 402
+    }
+    renderBilling();
+}
+
+els.billingAction.addEventListener('click', () => subscribe());
+
+function renderBillingEnded(settings) {
+    endedByBilling = settings.disabledReason === 'billing';
+    renderBilling();
 }
 
 function renderSettings(data) {
@@ -443,13 +480,33 @@ async function subscribe() {
         const data = await api('POST', '/api/billing/subscribe');
         if (typeof data.confirmationUrl === 'string' && data.confirmationUrl !== '') {
             open(data.confirmationUrl, '_top'); // Shopify's approval page must load at top level
+            return true;
         }
     } catch (e) {
-        showBanner(els.billingBanner, 'critical', e.message);
+        if (e.status === 409) {
+            // Already subscribed: the page was out of date, so show the real state.
+            await loadBilling();
+            showBanner(els.billingBanner, 'success', t('billing.already'));
+        } else {
+            showBanner(els.billingBanner, 'critical', e.message);
+        }
     }
+    return false;
 }
 
 let saving = false;
+
+async function saveOffThenSubscribe(payload) {
+    try {
+        const data = await api('PUT', '/api/settings', { ...payload, enabled: false });
+        renderSettings(data);
+    } catch (e) {
+        showBanner(els.settingsBanner, 'critical', e.message);
+        return;
+    }
+    showBanner(els.billingBanner, 'warning', t('billing.saved_off_redirect'));
+    await subscribe();
+}
 
 async function save() {
     if (saving) return;
@@ -471,23 +528,25 @@ async function save() {
     clearBanner(els.billingBanner);
     els.save.setAttribute('loading', '');
     els.save.setAttribute('disabled', '');
+    const payload = {
+        enabled: Boolean(els.enabled.checked),
+        percent,
+        method: String(els.method.value || els.method.dataset.default),
+        appliesTo: tagMode ? 'tag' : 'collection',
+        eligibleTag: tagMode ? eligibleTag : null,
+        collectionId: tagMode ? null : collectionId,
+        combineWithCoupons: Boolean(els.coupons.checked),
+        startsAt: dates.startsAt,
+        endsAt: dates.endsAt,
+    };
     try {
-        const data = await api('PUT', '/api/settings', {
-            enabled: Boolean(els.enabled.checked),
-            percent,
-            method: String(els.method.value || els.method.dataset.default),
-            appliesTo: tagMode ? 'tag' : 'collection',
-            eligibleTag: tagMode ? eligibleTag : null,
-            collectionId: tagMode ? null : collectionId,
-            combineWithCoupons: Boolean(els.coupons.checked),
-            startsAt: dates.startsAt,
-            endsAt: dates.endsAt,
-        });
+        const data = await api('PUT', '/api/settings', payload);
         renderSettings(data);
         showBanner(els.settingsBanner, 'success', typeof data.message === 'string' && data.message !== '' ? data.message : t('settings.saved_fallback'));
     } catch (e) {
         if (e.status === 402) {
-            showBanner(els.billingBanner, 'warning', e.message, { label: t('billing.subscribe'), onClick: subscribe });
+            // The offer needs a plan. Keep everything the merchant typed: save it with the offer off, then go to approval.
+            await saveOffThenSubscribe(payload);
         } else {
             showBanner(els.settingsBanner, 'critical', e.message);
         }
@@ -1018,3 +1077,4 @@ renderTestLines();
 
 showPage(pageFromPath(location.pathname));
 loadSettings();
+loadBilling();

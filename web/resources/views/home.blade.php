@@ -38,6 +38,10 @@
 <s-page heading="{{ $pageTitle }}" inline-size="base">
 
     <div id="billing-banner" class="banner-slot" aria-live="polite"></div>
+    <div id="billing-status" class="billing-status" role="status" hidden>
+        <s-text id="billing-text"></s-text>
+        <s-button id="billing-action" hidden></s-button>
+    </div>
 
     {{-- Home: onboarding --}}
     <div id="page-home" data-page="home" hidden>
