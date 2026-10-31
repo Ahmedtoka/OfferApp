@@ -1,5 +1,6 @@
 query Input($eligibleTags: [String!]!) {
   cart {
+    cost { subtotalAmount { currencyCode } }
     lines {
       id
       quantity

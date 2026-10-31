@@ -123,6 +123,26 @@ class BogoCalculatorTest extends TestCase
         $this->assertSame(0, BogoCalculator::toPiastres(''));
     }
 
+    public function test_to_minor_for_any_decimals(): void
+    {
+        $this->assertSame(12345, BogoCalculator::toMinor('12.345', 3));
+        $this->assertSame(1500, BogoCalculator::toMinor('1500', 0));
+        $this->assertSame(1501, BogoCalculator::toMinor('1500.5', 0));
+        $this->assertSame(1, BogoCalculator::toMinor('0.0005', 3));
+        $this->assertSame(1235, BogoCalculator::toMinor(1.235, 3));
+        $this->assertSame(-150, BogoCalculator::toMinor('-1.50', 2));
+        $this->assertSame(0, BogoCalculator::toMinor('', 3));
+    }
+
+    public function test_decimals_for_currency(): void
+    {
+        $this->assertSame(3, BogoCalculator::decimalsFor('KWD'));
+        $this->assertSame(0, BogoCalculator::decimalsFor('JPY'));
+        $this->assertSame(2, BogoCalculator::decimalsFor('EGP'));
+        $this->assertSame(2, BogoCalculator::decimalsFor('XXX'));
+        $this->assertSame(3, BogoCalculator::decimalsFor('kwd'));
+    }
+
     public function test_offer_constants(): void
     {
         config(['shopify.shared_constants_path' => dirname(__DIR__, 4).'/shared/offer-constants.json']);

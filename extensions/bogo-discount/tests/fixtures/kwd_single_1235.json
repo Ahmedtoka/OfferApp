@@ -1,0 +1,79 @@
+{
+  "payload": {
+    "export": "cart-lines-discounts-generate-run",
+    "target": "cart.lines.discounts.generate.run",
+    "inputVariables": {
+      "eligibleTags": [
+        "FallOffer"
+      ]
+    },
+    "input": {
+      "cart": {
+        "cost": {
+          "subtotalAmount": {
+            "currencyCode": "KWD"
+          }
+        },
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/A",
+            "quantity": 1,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "1.235"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/A",
+              "product": {
+                "id": "gid://shopify/Product/A",
+                "isGiftCard": false,
+                "hasAnyTag": true
+              }
+            }
+          }
+        ]
+      },
+      "discount": {
+        "discountClasses": [
+          "PRODUCT"
+        ]
+      },
+      "shop": {
+        "metafield": {
+          "value": "{\"enabled\":true,\"percent\":30}"
+        }
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "productDiscountsAdd": {
+            "selectionStrategy": "ALL",
+            "candidates": [
+              {
+                "message": "30% off",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/A",
+                      "quantity": 1
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "0.370",
+                    "appliesToEachItem": false
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "default": 2,
+  "zero": ["BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW", "PYG", "RWF", "UGX", "UYI", "VND", "VUV", "XAF", "XOF", "XPF"],
+  "three": ["BHD", "IQD", "JOD", "KWD", "LYD", "OMR", "TND"]
+}

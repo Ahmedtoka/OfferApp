@@ -5,6 +5,9 @@ namespace App\Offer;
 /** Buy one get one free, or a lone piece at pct% off. Port of extensions/bogo-discount/src/bogo.js. */
 final class BogoCalculator
 {
+    /** @var array<string, array<string, mixed>> */
+    private static array $decimals = [];
+
     /**
      * @param  array<int, array{id: string|int, quantity: int, pNow: int, pFull: int}>  $lines
      * @return array<int, Unit>
@@ -159,16 +162,39 @@ final class BogoCalculator
         return $plan;
     }
 
-    /** Decimal string/number of EGP -> integer piastres, rounded half-up, via integer math on the digits. */
-    public static function toPiastres(string|float|int $amount): int
+    /** Decimal string/number -> integer minor units for $decimals, rounded half-up, via integer math on the digits. */
+    public static function toMinor(string|float|int $amount, int $decimals): int
     {
         [$intPart, $fracPart] = array_pad(explode('.', trim((string) $amount), 2), 2, '');
         $negative = str_starts_with($intPart, '-');
-        $whole = abs((int) $intPart) * 100;
-        $digits = (int) substr($fracPart.'00', 0, 2);
-        $roundUp = strlen($fracPart) > 2 && $fracPart[2] >= '5' ? 1 : 0;
+        $whole = abs((int) $intPart) * (10 ** $decimals);
+        $digits = $decimals === 0 ? 0 : (int) substr(str_pad($fracPart, $decimals, '0'), 0, $decimals);
+        $roundUp = strlen($fracPart) > $decimals && $fracPart[$decimals] >= '5' ? 1 : 0;
         $result = $whole + $digits + $roundUp;
 
         return $negative ? -$result : $result;
+    }
+
+    /** Two-decimal shorthand kept for existing callers (analytics migrates in a later task). */
+    public static function toPiastres(string|float|int $amount): int
+    {
+        return self::toMinor($amount, 2);
+    }
+
+    /** ISO 4217 currency code -> number of decimals (unknown codes use the default of 2). */
+    public static function decimalsFor(string $currency): int
+    {
+        $path = dirname((string) config('shopify.shared_constants_path')).'/currency-decimals.json';
+        if (! isset(self::$decimals[$path])) {
+            self::$decimals[$path] = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+        }
+        $table = self::$decimals[$path];
+        $code = strtoupper(trim($currency));
+
+        return match (true) {
+            in_array($code, $table['zero'], true) => 0,
+            in_array($code, $table['three'], true) => 3,
+            default => (int) $table['default'],
+        };
     }
 }

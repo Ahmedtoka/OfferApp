@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { expandUnits, sortUnits, singleDiscount, computeOffer, planLineDiscounts } from '../src/bogo.js';
-import { toPiastres, toAmountString } from '../src/money.js';
+import { toPiastres, toAmountString, toMinor, decimalsFor } from '../src/money.js';
 
 const cases = JSON.parse(fs.readFileSync(new URL('../../../shared/fixtures/bogo-cases.json', import.meta.url), 'utf8'));
 const P = (lines) => lines.map(l => ({ ...l, pNow: toPiastres(l.pNow), pFull: toPiastres(l.pFull) }));
@@ -92,6 +92,27 @@ describe('money', () => {
     expect(toPiastres('1200.0')).toBe(120000);
     expect(toPiastres('0.005')).toBe(1);
     expect(toPiastres(1200)).toBe(120000);
+  });
+  it('converts to minor units for any decimals', () => {
+    expect(toMinor('12.345', 3)).toBe(12345);
+    expect(toMinor('1500', 0)).toBe(1500);
+    expect(toMinor('1500.5', 0)).toBe(1501);
+    expect(toMinor('0.0005', 3)).toBe(1);
+    expect(toMinor(1.235, 3)).toBe(1235);
+    expect(toMinor('-1.50', 2)).toBe(-150);
+  });
+  it('formats minor units for any decimals', () => {
+    expect(toAmountString(12345, 3)).toBe('12.345');
+    expect(toAmountString(5, 3)).toBe('0.005');
+    expect(toAmountString(1500, 0)).toBe('1500');
+    expect(toAmountString(-1500, 0)).toBe('-1500');
+  });
+  it('knows each currency decimals', () => {
+    expect(decimalsFor('KWD')).toBe(3);
+    expect(decimalsFor('JPY')).toBe(0);
+    expect(decimalsFor('EGP')).toBe(2);
+    expect(decimalsFor('XXX')).toBe(2);
+    expect(decimalsFor(undefined)).toBe(2);
   });
   it('formats amounts', () => {
     expect(toAmountString(27000)).toBe('270.00');

@@ -9,6 +9,11 @@
     },
     "input": {
       "cart": {
+        "cost": {
+          "subtotalAmount": {
+            "currencyCode": "EGP"
+          }
+        },
         "lines": [
           {
             "id": "gid://shopify/CartLine/X",

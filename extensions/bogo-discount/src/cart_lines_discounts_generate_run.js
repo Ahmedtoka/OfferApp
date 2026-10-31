@@ -1,6 +1,6 @@
 import constants from '../../../shared/offer-constants.json';
 import { planLineDiscounts } from './bogo.js';
-import { toPiastres, toAmountString } from './money.js';
+import { toMinor, toAmountString, decimalsFor } from './money.js';
 
 const NO_OPERATIONS = { operations: [] };
 
@@ -25,22 +25,22 @@ function isEligible(line) {
   return m?.__typename === 'ProductVariant' && m.product?.isGiftCard === false && m.product?.hasAnyTag === true;
 }
 
-function discountableLines(cartLines) {
+function discountableLines(cartLines, decimals) {
   return cartLines
     .filter(isEligible)
     .map((l) => {
-      const pNow = toPiastres(l.cost.amountPerQuantity.amount);
+      const pNow = toMinor(l.cost.amountPerQuantity.amount, decimals);
       const compareAt = l.cost.compareAtAmountPerQuantity?.amount;
-      const pCompare = compareAt == null ? 0 : toPiastres(compareAt);
+      const pCompare = compareAt == null ? 0 : toMinor(compareAt, decimals);
       return { id: l.id, quantity: l.quantity, pNow, pFull: pCompare > pNow ? pCompare : pNow };
     });
 }
 
-function candidate(lineId, quantity, message, piastres) {
+function candidate(lineId, quantity, message, minor, decimals) {
   return {
     message,
     targets: [{ cartLine: { id: lineId, quantity } }],
-    value: { fixedAmount: { amount: toAmountString(piastres), appliesToEachItem: false } },
+    value: { fixedAmount: { amount: toAmountString(minor, decimals), appliesToEachItem: false } },
   };
 }
 
@@ -49,12 +49,13 @@ export function cartLinesDiscountsGenerateRun(input) {
   const config = readConfig(input.shop?.metafield);
   if (!config) return NO_OPERATIONS;
 
-  const lines = discountableLines(input.cart.lines);
+  const decimals = decimalsFor(input.cart.cost?.subtotalAmount?.currencyCode);
+  const lines = discountableLines(input.cart.lines, decimals);
   const singleMessage = constants.percentMessageTemplate.replace('{pct}', String(config.percent));
   const candidates = [];
   for (const plan of planLineDiscounts(lines, config.percent)) {
-    if (plan.giftQty > 0) candidates.push(candidate(plan.lineId, plan.giftQty, constants.giftMessage, plan.giftAmount));
-    if (plan.singleQty > 0) candidates.push(candidate(plan.lineId, plan.singleQty, singleMessage, plan.singleAmount));
+    if (plan.giftQty > 0) candidates.push(candidate(plan.lineId, plan.giftQty, constants.giftMessage, plan.giftAmount, decimals));
+    if (plan.singleQty > 0) candidates.push(candidate(plan.lineId, plan.singleQty, singleMessage, plan.singleAmount, decimals));
   }
   if (candidates.length === 0) return NO_OPERATIONS;
   return { operations: [{ productDiscountsAdd: { selectionStrategy: 'ALL', candidates } }] };

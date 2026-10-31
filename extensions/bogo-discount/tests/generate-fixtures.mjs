@@ -38,13 +38,14 @@ const HAND_PLANS = {
 };
 
 const dec = (v) => (Number.isInteger(v) ? `${v}.0` : String(v));
-const amountStr = (v) => v.toFixed(2);
+const amountStr = (v, d = 2) => v.toFixed(d);
 const lineGid = (id) => `gid://shopify/CartLine/${id}`;
 
 // Every line is tagged with the eligible tag unless its id is in untaggedIds.
-function buildInput(lines, { classes = ['PRODUCT'], metafield, giftCardIds = [], untaggedIds = [] } = {}) {
+function buildInput(lines, { classes = ['PRODUCT'], metafield, giftCardIds = [], untaggedIds = [], currency = 'EGP' } = {}) {
   return {
     cart: {
+      cost: { subtotalAmount: { currencyCode: currency } },
       lines: lines.map((l) => ({
         id: lineGid(l.id),
         quantity: l.quantity,
@@ -70,10 +71,10 @@ function buildInput(lines, { classes = ['PRODUCT'], metafield, giftCardIds = [],
 
 const cfg = (obj) => ({ value: JSON.stringify(obj) });
 
-function buildOutput(lines, plan, pct) {
+function buildOutput(lines, plan, pct, decimals = 2) {
   const candidates = [];
   const target = (id, quantity) => [{ cartLine: { id: lineGid(id), quantity } }];
-  const value = (amount) => ({ fixedAmount: { amount: amountStr(amount), appliesToEachItem: false } });
+  const value = (amount) => ({ fixedAmount: { amount: amountStr(amount, decimals), appliesToEachItem: false } });
   for (const l of lines) {
     const p = plan[l.id];
     if (!p) continue;
@@ -182,6 +183,17 @@ for (const q of [27, 51, 99]) {
   };
   files.bulk_5lines_199 = fixture(buildInput(lines, { metafield: meta30 }), buildOutput(lines, plan, 30));
 }
+
+// Per-currency rounding. KWD (3 decimals): 1.235 at 30% off -> 1.235 - round(0.8645) = 0.370.
+files.kwd_single_1235 = fixture(
+  buildInput([{ id: 'A', quantity: 1, pNow: 1.235, pFull: 1.235 }], { metafield: meta30, currency: 'KWD' }),
+  buildOutput([{ id: 'A' }], { A: s(0.37) }, 30, 3),
+);
+// JPY (0 decimals): the gift is the whole 1000 yen line price, no decimals.
+files.jpy_gift_1000 = fixture(
+  buildInput([{ id: 'A', quantity: 2, pNow: 1000, pFull: 1000 }], { metafield: meta30, currency: 'JPY' }),
+  buildOutput([{ id: 'A' }], { A: { giftQty: 1, giftAmount: 1000, singleQty: 0, singleAmount: 0 } }, 30, 0),
+);
 
 fs.mkdirSync(outDir, { recursive: true });
 for (const f of fs.readdirSync(outDir)) if (f.endsWith('.json')) fs.unlinkSync(path.join(outDir, f));

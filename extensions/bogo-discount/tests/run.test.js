@@ -120,6 +120,44 @@ describe('eligibility: only products tagged with the eligible tag', () => {
   });
 });
 
+describe('per-currency rounding', () => {
+  const withCurrency = (lines, currencyCode) => ({
+    cart: { cost: { subtotalAmount: { currencyCode } }, lines },
+    discount: { discountClasses: ['PRODUCT'] },
+    shop: { metafield: { value: JSON.stringify({ enabled: true, percent: 30 }) } },
+  });
+  const mkLine = (id, quantity, amount) => ({
+    id: line(id),
+    quantity,
+    cost: { amountPerQuantity: { amount }, compareAtAmountPerQuantity: null },
+    merchandise: {
+      __typename: 'ProductVariant',
+      id: `gid://shopify/ProductVariant/${id}`,
+      product: { id: `gid://shopify/Product/${id}`, isGiftCard: false, hasAnyTag: true },
+    },
+  });
+
+  it('KWD single line 1.235 at 30% gives a valid three-decimal amount', () => {
+    const out = run(withCurrency([mkLine('A', 1, '1.235')], 'KWD'));
+    expect(candidates(out)).toEqual([cand('A', 1, pctMsg(30), '0.370')]);
+  });
+
+  it('JPY gift equals the whole line price with no decimals', () => {
+    const out = run(withCurrency([mkLine('A', 2, '1000.0')], 'JPY'));
+    expect(candidates(out)).toEqual([cand('A', 1, GIFT, '1000')]);
+  });
+
+  it('JPY single is a whole number', () => {
+    const out = run(withCurrency([mkLine('A', 1, '999')], 'JPY'));
+    expect(candidates(out)).toEqual([cand('A', 1, pctMsg(30), '300')]);
+  });
+
+  it('missing currency falls back to two decimals', () => {
+    const out = run(inputFor(byName('a')));
+    expect(candidates(out)).toEqual([cand('A', 1, pctMsg(30), '360.00')]);
+  });
+});
+
 describe('gating returns no operations', () => {
   const a = byName('a');
   it.each([

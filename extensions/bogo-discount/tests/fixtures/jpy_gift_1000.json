@@ -1,0 +1,79 @@
+{
+  "payload": {
+    "export": "cart-lines-discounts-generate-run",
+    "target": "cart.lines.discounts.generate.run",
+    "inputVariables": {
+      "eligibleTags": [
+        "FallOffer"
+      ]
+    },
+    "input": {
+      "cart": {
+        "cost": {
+          "subtotalAmount": {
+            "currencyCode": "JPY"
+          }
+        },
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/A",
+            "quantity": 2,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "1000.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/A",
+              "product": {
+                "id": "gid://shopify/Product/A",
+                "isGiftCard": false,
+                "hasAnyTag": true
+              }
+            }
+          }
+        ]
+      },
+      "discount": {
+        "discountClasses": [
+          "PRODUCT"
+        ]
+      },
+      "shop": {
+        "metafield": {
+          "value": "{\"enabled\":true,\"percent\":30}"
+        }
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "productDiscountsAdd": {
+            "selectionStrategy": "ALL",
+            "candidates": [
+              {
+                "message": "Gift",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/A",
+                      "quantity": 1
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "1000",
+                    "appliesToEachItem": false
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
