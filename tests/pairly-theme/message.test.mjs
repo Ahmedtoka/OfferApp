@@ -4,8 +4,8 @@ import { readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const root = new URL('../', import.meta.url);
-const { nextStepMessage } = require('../assets/pairly.js');
+const root = new URL('../../extensions/pairly-theme/', import.meta.url);
+const { nextStepMessage } = require('../../extensions/pairly-theme/assets/pairly.js');
 const load = (f) => JSON.parse(readFileSync(new URL(f, root), 'utf8')).pairly;
 const en = load('locales/en.default.json');
 const ar = load('locales/ar.json');
