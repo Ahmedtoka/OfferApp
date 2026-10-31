@@ -1,0 +1,235 @@
+{
+  "payload": {
+    "export": "cart-lines-discounts-generate-run",
+    "target": "cart.lines.discounts.generate.run",
+    "inputVariables": {
+      "eligibleTags": [
+        "FallOffer"
+      ]
+    },
+    "input": {
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/A",
+            "quantity": 40,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "100.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/A",
+              "product": {
+                "id": "gid://shopify/Product/A",
+                "isGiftCard": false,
+                "hasAnyTag": true
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/B",
+            "quantity": 40,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "200.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/B",
+              "product": {
+                "id": "gid://shopify/Product/B",
+                "isGiftCard": false,
+                "hasAnyTag": true
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/C",
+            "quantity": 40,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "300.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/C",
+              "product": {
+                "id": "gid://shopify/Product/C",
+                "isGiftCard": false,
+                "hasAnyTag": true
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/D",
+            "quantity": 40,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "400.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/D",
+              "product": {
+                "id": "gid://shopify/Product/D",
+                "isGiftCard": false,
+                "hasAnyTag": true
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/E",
+            "quantity": 39,
+            "cost": {
+              "amountPerQuantity": {
+                "amount": "500.0"
+              },
+              "compareAtAmountPerQuantity": null
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/E",
+              "product": {
+                "id": "gid://shopify/Product/E",
+                "isGiftCard": false,
+                "hasAnyTag": true
+              }
+            }
+          }
+        ]
+      },
+      "discount": {
+        "discountClasses": [
+          "PRODUCT"
+        ]
+      },
+      "shop": {
+        "metafield": {
+          "value": "{\"enabled\":true,\"percent\":30}"
+        }
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "productDiscountsAdd": {
+            "selectionStrategy": "ALL",
+            "candidates": [
+              {
+                "message": "Gift",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/A",
+                      "quantity": 20
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "2000.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              },
+              {
+                "message": "Gift",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/B",
+                      "quantity": 20
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "4000.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              },
+              {
+                "message": "Gift",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/C",
+                      "quantity": 20
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "6000.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              },
+              {
+                "message": "Gift",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/D",
+                      "quantity": 20
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "8000.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              },
+              {
+                "message": "Gift",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/E",
+                      "quantity": 19
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "9500.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              },
+              {
+                "message": "30% off",
+                "targets": [
+                  {
+                    "cartLine": {
+                      "id": "gid://shopify/CartLine/E",
+                      "quantity": 1
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "150.00",
+                    "appliesToEachItem": false
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

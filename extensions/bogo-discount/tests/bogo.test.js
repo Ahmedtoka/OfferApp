@@ -8,12 +8,12 @@ const P = (lines) => lines.map(l => ({ ...l, pNow: toPiastres(l.pNow), pFull: to
 
 describe.each(cases)('$name', (c) => {
   it('pays the expected total and saving', () => {
-    const r = computeOffer(expandUnits(P(c.lines)), c.pct, 'max');
+    const r = computeOffer(expandUnits(P(c.lines)), c.pct, 'customer');
     expect(r.totalPay).toBe(toPiastres(c.expectedPay));
     expect(r.totalDiscount).toBe(toPiastres(c.expectedSaving));
   });
   it('gifts and single land on the expected units', () => {
-    const r = computeOffer(expandUnits(P(c.lines)), c.pct, 'max');
+    const r = computeOffer(expandUnits(P(c.lines)), c.pct, 'customer');
     expect(r.singleUnit?.lineId ?? null).toBe(c.expectedSingle ?? null);
     if (c.expectedGifts === undefined) return;
     const gifts = {};
@@ -26,8 +26,44 @@ describe.each(cases)('$name', (c) => {
       expect(plan[id]).toMatchObject({ giftQty: exp.giftQty, giftAmount: toPiastres(exp.giftAmount), singleQty: exp.singleQty, singleAmount: toPiastres(exp.singleAmount) });
     }
   });
-  it.runIf(c.scenario2Pay !== undefined)('scenario 2 pays the least-generous total', () => {
-    expect(computeOffer(expandUnits(P(c.lines)), c.pct, 'min').totalPay).toBe(toPiastres(c.scenario2Pay));
+});
+
+// §4.4 prices in piastres: A 1200, B 1100, C 900, D 800 (no markdown).
+const PRICE = { A: 1200, B: 1100, C: 900, D: 800 };
+const pay = (ids, pct, method) =>
+  computeOffer(expandUnits(ids.map((id) => ({ id, quantity: 1, pNow: toPiastres(PRICE[id]), pFull: toPiastres(PRICE[id]) }))), pct, method).totalPay;
+
+describe('calculation method', () => {
+  it('company gifts the cheapest half', () => {
+    expect(pay(['A', 'B', 'C', 'D'], 30, 'company')).toBe(230000); // gifts D, C
+    expect(pay(['A', 'B', 'C'], 30, 'company')).toBe(197000); // gift C, B at 30%
+  });
+  it('customer gifts the best pairing', () => {
+    expect(pay(['A', 'B', 'C', 'D'], 30, 'customer')).toBe(210000);
+    expect(pay(['A', 'B', 'C'], 30, 'customer')).toBe(183000);
+  });
+  it('defaults to customer', () => {
+    const units = expandUnits(P([{ id: 'A', quantity: 1, pNow: 1200, pFull: 1200 }, { id: 'B', quantity: 1, pNow: 1100, pFull: 1100 }, { id: 'C', quantity: 1, pNow: 900, pFull: 900 }, { id: 'D', quantity: 1, pNow: 800, pFull: 800 }]));
+    expect(computeOffer(units, 30).totalPay).toBe(210000);
+  });
+});
+
+describe.each(cases.filter((c) => c.company))('$name (company)', (c) => {
+  it('pays the expected total and saving', () => {
+    const r = computeOffer(expandUnits(P(c.lines)), c.pct, 'company');
+    expect(r.totalPay).toBe(toPiastres(c.company.expectedPay));
+    expect(r.totalDiscount).toBe(toPiastres(c.company.expectedSaving));
+  });
+  it('single lands on the expected unit', () => {
+    const r = computeOffer(expandUnits(P(c.lines)), c.pct, 'company');
+    expect(r.singleUnit?.lineId ?? null).toBe(c.company.expectedSingle ?? null);
+  });
+  it('per-line plan matches', () => {
+    const plan = Object.fromEntries(planLineDiscounts(P(c.lines), c.pct, 'company').map(p => [p.lineId, p]));
+    expect(Object.keys(plan).sort()).toEqual(Object.keys(c.company.perLine).sort());
+    for (const [id, exp] of Object.entries(c.company.perLine)) {
+      expect(plan[id]).toMatchObject({ giftQty: exp.giftQty, giftAmount: toPiastres(exp.giftAmount), singleQty: exp.singleQty, singleAmount: toPiastres(exp.singleAmount) });
+    }
   });
 });
 

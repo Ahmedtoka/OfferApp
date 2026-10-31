@@ -12,5 +12,7 @@
   "defaultRange": 30,
   "analyticsOrderCap": 2000,
   "analyticsCacheSeconds": 600,
-  "eligibleTag": "FallOffer"
+  "eligibleTag": "FallOffer",
+  "methods": ["customer", "company"],
+  "defaultMethod": "customer"
 }

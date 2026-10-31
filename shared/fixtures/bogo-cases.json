@@ -1059,5 +1059,232 @@
     "expectedSaving": 2270,
     "expectedSingle": "C",
     "scenario2Pay": 2870
+  },
+  {
+    "name": "company_abcd",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      },
+      {
+        "id": "D",
+        "quantity": 1,
+        "pNow": 800,
+        "pFull": 800
+      }
+    ],
+    "expectedPay": 2100,
+    "expectedSaving": 1900,
+    "expectedGifts": {
+      "D": 1,
+      "B": 1
+    },
+    "perLine": {
+      "D": {
+        "giftQty": 1,
+        "giftAmount": 800,
+        "singleQty": 0,
+        "singleAmount": 0
+      },
+      "B": {
+        "giftQty": 1,
+        "giftAmount": 1100,
+        "singleQty": 0,
+        "singleAmount": 0
+      }
+    },
+    "company": {
+      "expectedPay": 2300,
+      "expectedSaving": 1700,
+      "perLine": {
+        "D": {
+          "giftQty": 1,
+          "giftAmount": 800,
+          "singleQty": 0,
+          "singleAmount": 0
+        },
+        "C": {
+          "giftQty": 1,
+          "giftAmount": 900,
+          "singleQty": 0,
+          "singleAmount": 0
+        }
+      }
+    }
+  },
+  {
+    "name": "company_abc",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 1,
+        "pNow": 1200,
+        "pFull": 1200
+      },
+      {
+        "id": "B",
+        "quantity": 1,
+        "pNow": 1100,
+        "pFull": 1100
+      },
+      {
+        "id": "C",
+        "quantity": 1,
+        "pNow": 900,
+        "pFull": 900
+      }
+    ],
+    "expectedPay": 1830,
+    "expectedSaving": 1370,
+    "expectedGifts": {
+      "B": 1
+    },
+    "expectedSingle": "C",
+    "perLine": {
+      "B": {
+        "giftQty": 1,
+        "giftAmount": 1100,
+        "singleQty": 0,
+        "singleAmount": 0
+      },
+      "C": {
+        "giftQty": 0,
+        "giftAmount": 0,
+        "singleQty": 1,
+        "singleAmount": 270
+      }
+    },
+    "company": {
+      "expectedPay": 1970,
+      "expectedSaving": 1230,
+      "expectedSingle": "B",
+      "perLine": {
+        "C": {
+          "giftQty": 1,
+          "giftAmount": 900,
+          "singleQty": 0,
+          "singleAmount": 0
+        },
+        "B": {
+          "giftQty": 0,
+          "giftAmount": 0,
+          "singleQty": 1,
+          "singleAmount": 330
+        }
+      }
+    }
+  },
+  {
+    "name": "company_bulk_199",
+    "pct": 30,
+    "lines": [
+      {
+        "id": "A",
+        "quantity": 40,
+        "pNow": 100,
+        "pFull": 100
+      },
+      {
+        "id": "B",
+        "quantity": 40,
+        "pNow": 200,
+        "pFull": 200
+      },
+      {
+        "id": "C",
+        "quantity": 40,
+        "pNow": 300,
+        "pFull": 300
+      },
+      {
+        "id": "D",
+        "quantity": 40,
+        "pNow": 400,
+        "pFull": 400
+      },
+      {
+        "id": "E",
+        "quantity": 39,
+        "pNow": 500,
+        "pFull": 500
+      }
+    ],
+    "expectedPay": 29850,
+    "expectedSaving": 29650,
+    "expectedSingle": "E",
+    "perLine": {
+      "A": {
+        "giftQty": 20,
+        "giftAmount": 2000,
+        "singleQty": 0,
+        "singleAmount": 0
+      },
+      "B": {
+        "giftQty": 20,
+        "giftAmount": 4000,
+        "singleQty": 0,
+        "singleAmount": 0
+      },
+      "C": {
+        "giftQty": 20,
+        "giftAmount": 6000,
+        "singleQty": 0,
+        "singleAmount": 0
+      },
+      "D": {
+        "giftQty": 20,
+        "giftAmount": 8000,
+        "singleQty": 0,
+        "singleAmount": 0
+      },
+      "E": {
+        "giftQty": 19,
+        "giftAmount": 9500,
+        "singleQty": 1,
+        "singleAmount": 150
+      }
+    },
+    "company": {
+      "expectedPay": 41710,
+      "expectedSaving": 17790,
+      "expectedSingle": "C",
+      "perLine": {
+        "A": {
+          "giftQty": 40,
+          "giftAmount": 4000,
+          "singleQty": 0,
+          "singleAmount": 0
+        },
+        "B": {
+          "giftQty": 40,
+          "giftAmount": 8000,
+          "singleQty": 0,
+          "singleAmount": 0
+        },
+        "C": {
+          "giftQty": 19,
+          "giftAmount": 5700,
+          "singleQty": 1,
+          "singleAmount": 90
+        }
+      }
+    }
   }
 ]
