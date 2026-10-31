@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Offer\OfferConstants;
 use Illuminate\Testing\TestResponse;
 use Tests\Support\SessionTokens;
 use Tests\TestCase;
@@ -15,12 +14,12 @@ class HomePageTest extends TestCase
         SessionTokens::configure();
     }
 
-    private function loadAdminPage(): TestResponse
+    private function loadAdminPage(array $extra = [], string $path = '/'): TestResponse
     {
-        $params = ['embedded' => '1', 'host' => 'YWRtaW4uc2hvcGlmeS5jb20vc3RvcmUvbGV2b2lsZXN0b3Jlcw', 'shop' => SessionTokens::SHOP, 'timestamp' => '1700000000'];
+        $params = ['embedded' => '1', 'host' => 'YWRtaW4uc2hvcGlmeS5jb20vc3RvcmUvbGV2b2lsZXN0b3Jlcw', 'shop' => SessionTokens::SHOP, 'timestamp' => '1700000000'] + $extra;
         $params['hmac'] = SessionTokens::signQuery($params);
 
-        return $this->get('/?'.http_build_query($params));
+        return $this->get($path.'?'.http_build_query($params));
     }
 
     public function test_page_is_english_ltr_with_app_bridge_and_api_key_meta(): void
@@ -36,56 +35,116 @@ class HomePageTest extends TestCase
         $res->assertSee('href="/app.css', false);
     }
 
-    public function test_page_renders_settings_and_analytics_copy(): void
+    public function test_arabic_locale_is_rtl_with_arabic_strings(): void
     {
-        $res = $this->loadAdminPage();
+        foreach (['ar', 'ar-EG', 'ar_SA'] as $locale) {
+            $res = $this->loadAdminPage(['locale' => $locale]);
 
-        $res->assertOk();
-        foreach ([
-            'Settings', 'Numbers',
-            'Offer is ON', 'Offer is OFF', 'Discount on a single piece (%)', 'Save',
-            'Discount exists and is active in Shopify', 'Open in Discounts', 'No discount yet — click Save to create it',
-            '7 days', '30 days', '60 days',
-            'Orders with the offer', '% of all orders', 'Gifts', '30% off pieces', 'Total discount',
-            'Scenario 2 would have earned extra',
-            'Recalculated on the same orders; even-count orders contribute 0; original price = current compare-at price. Refunded orders are counted as granted; cancelled orders are excluded.',
-            'Computed on the first 2,000 orders',
-            'Top 10 gifted products', 'Product', 'Pieces', 'Value',
-            'Loading…', 'No orders in this period',
-        ] as $text) {
-            $res->assertSee($text, false);
+            $res->assertOk();
+            $res->assertSee('<html lang="ar" dir="rtl">', false);
+            $res->assertSee('>'.trans('app.nav.settings', [], 'ar').'</s-link>', false);
+            $res->assertDontSee('>'.trans('app.nav.settings', [], 'en').'</s-link>', false);
         }
     }
 
-    public function test_tag_field_defaults_to_the_shared_constant_with_the_note_under_it(): void
+    public function test_other_locales_fall_back_to_english_ltr(): void
+    {
+        foreach (['en-GB', 'fr', 'zz'] as $locale) {
+            $this->loadAdminPage(['locale' => $locale])->assertOk()->assertSee('<html lang="en" dir="ltr">', false);
+        }
+    }
+
+    public function test_lang_files_have_identical_keys_and_no_empty_values(): void
+    {
+        $flatten = function (array $a, string $prefix = '') use (&$flatten): array {
+            $out = [];
+            foreach ($a as $k => $v) {
+                is_array($v) ? $out += $flatten($v, $prefix.$k.'.') : $out[$prefix.$k] = $v;
+            }
+
+            return $out;
+        };
+        $en = $flatten(require base_path('lang/en/app.php'));
+        $ar = $flatten(require base_path('lang/ar/app.php'));
+
+        $this->assertSame(array_keys($en), array_keys($ar));
+        foreach ($ar as $key => $value) {
+            $this->assertNotSame('', trim((string) $value), $key);
+            $this->assertNotSame($en[$key], $value, "ar.$key is still English");
+        }
+    }
+
+    public function test_no_other_store_branding_anywhere(): void
+    {
+        foreach (['en', 'ar'] as $locale) {
+            $html = $this->loadAdminPage(['locale' => $locale])->getContent();
+            foreach (['Le Voile', 'FallOffer', 'EGP'] as $needle) {
+                $this->assertStringNotContainsString($needle, $html, "$locale page");
+            }
+        }
+        foreach (['public/app.js', 'public/app.css', 'public/js/lib.js', 'lang/en/app.php', 'lang/ar/app.php', 'resources/views/home.blade.php'] as $file) {
+            foreach (['Le Voile', 'FallOffer', 'EGP'] as $needle) {
+                $this->assertStringNotContainsString($needle, (string) file_get_contents(base_path($file)), $file);
+            }
+        }
+    }
+
+    public function test_title_comes_from_the_app_name_config(): void
+    {
+        config(['shopify.app_name' => 'Pairly: Test Name']);
+
+        $this->loadAdminPage()->assertSee('<title>Pairly: Test Name</title>', false);
+    }
+
+    public function test_strings_are_passed_to_js_as_a_json_block_in_the_page_language(): void
+    {
+        $res = $this->loadAdminPage(['locale' => 'ar']);
+        $res->assertSee('<script type="application/json" id="i18n">', false);
+        preg_match('#<script type="application/json" id="i18n">(.*?)</script>#s', $res->getContent(), $m);
+        $strings = json_decode($m[1], true, 512, JSON_THROW_ON_ERROR);
+
+        $this->assertSame('ar', $strings['locale']);
+        $this->assertSame(trans('app.errors.generic', [], 'ar'), $strings['t']['errors']['generic']);
+    }
+
+    public function test_page_has_nav_pages_and_settings_controls(): void
     {
         $res = $this->loadAdminPage();
 
-        $res->assertOk();
-        $this->assertSame('FallOffer', OfferConstants::get('eligibleTag'));
-        $res->assertSee('Eligible product tag', false);
-        $res->assertSee('Applies only to products tagged "FallOffer".', false);
-        $res->assertSeeInOrder(['id="percent"', 'id="eligible-tag"', 'value="FallOffer"', 'maxLength="100"', 'Applies only to products tagged'], false);
-        // app.js re-renders the note live from this template as the merchant types.
-        $res->assertSee('data-template=\'Applies only to products tagged "{tag}".\'', false);
+        $res->assertSee('<s-app-nav>', false);
+        foreach (['href="/"', 'href="/settings"', 'href="/analytics"', 'href="/test"'] as $href) {
+            $res->assertSee($href, false);
+        }
+        foreach ([
+            'id="page-home"', 'id="page-settings"', 'id="page-analytics"', 'id="page-test"',
+            'id="enabled"', 'id="percent"', 'id="method"', 'id="applies-to"', 'id="eligible-tag"', 'id="collection-pick"',
+            'id="starts-at"', 'id="ends-at"', 'id="coupons"', 'id="save"', 'id="state-line"', 'id="billing-banner"', 'id="checklist"',
+        ] as $id) {
+            $res->assertSee($id, false);
+        }
+        // No default tag in the public app; method defaults to customer.
+        $res->assertSeeInOrder(['id="eligible-tag"', 'value=""'], false);
+        $res->assertSee('<s-option value="customer"', false);
+        $res->assertSee('<s-option value="company"', false);
     }
 
-    public function test_app_js_sends_and_renders_the_tag(): void
+    public function test_every_page_path_serves_the_same_shell(): void
     {
-        $js = (string) file_get_contents(public_path('app.js'));
-
-        $this->assertStringContainsString("{ enabled: Boolean(els.enabled.checked), percent, eligibleTag }", $js);
-        $this->assertStringContainsString("els.tag.addEventListener('input'", $js);
-        $this->assertStringContainsString('settings.eligibleTag', $js);
+        foreach (['/settings', '/analytics', '/test'] as $path) {
+            $this->loadAdminPage([], $path)->assertOk()->assertSee('id="page-settings"', false);
+        }
     }
 
-    public function test_app_js_retries_a_failed_get_once_but_never_a_put(): void
+    public function test_app_js_keeps_the_retry_and_billing_rules(): void
     {
         $js = (string) file_get_contents(public_path('app.js'));
 
         $this->assertStringContainsString('const RETRY_DELAY_MS = 800;', $js);
         $this->assertStringContainsString('const RETRYABLE_STATUSES = [401, 502, 503, 504];', $js);
         $this->assertStringContainsString("if (method !== 'GET' || !(e instanceof RetryableError))", $js);
+        $this->assertStringContainsString("'_top'", $js);
+        $this->assertStringContainsString("resourcePicker({ type: 'collection'", $js);
+        $this->assertStringNotContainsString('Could not reach', $js);
     }
 
     public function test_range_options_default_to_30(): void
@@ -96,6 +155,14 @@ class HomePageTest extends TestCase
         foreach (['7', '30', '60'] as $days) {
             $res->assertSee('<s-option value="'.$days.'"', false);
         }
+    }
+
+    public function test_theme_embed_link_parts_are_passed_to_js(): void
+    {
+        $res = $this->loadAdminPage();
+
+        $res->assertSee('data-theme-handle="app-embed"', false);
+        $res->assertSee('data-api-key="'.SessionTokens::API_KEY.'"', false);
     }
 
     public function test_page_never_contains_the_api_secret(): void

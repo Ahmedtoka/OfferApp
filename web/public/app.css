@@ -1,5 +1,5 @@
 /*
- * Le Voile BOGO admin page. Polaris web components draw the controls; this file only
+ * Pairly admin page. Polaris web components draw the controls; this file only
  * covers the page frame and the plain-HTML parts (stat tiles, notes, loading/empty lines),
  * using Polaris admin values so they sit natively next to the components.
  */
@@ -197,4 +197,104 @@ body {
     .tiles {
         transition: none;
     }
+}
+
+/* ---- Pairly shell: onboarding, settings fields, RTL ---- */
+.progress {
+    color: var(--text-subdued);
+    font-weight: 550;
+}
+
+.checklist {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.step {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: var(--space-1) var(--space-3);
+    align-items: start;
+    padding: var(--space-3);
+    background: var(--surface-subdued);
+    border-radius: var(--radius-sm);
+}
+
+.step-mark {
+    display: grid;
+    place-items: center;
+    inline-size: 28px;
+    block-size: 28px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: #fff;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+}
+
+.step.is-done .step-mark {
+    border-color: transparent;
+    background: #cdfee1;
+    color: #0c5132;
+}
+
+.step-body {
+    color: var(--text-subdued);
+}
+
+.step-actions {
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.state-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-2);
+}
+
+.inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+}
+
+.field-label {
+    font-weight: 450;
+}
+
+.dates {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
+}
+
+.date-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.date-field input {
+    min-block-size: 32px;
+    padding: 0 var(--space-2);
+    border: 1px solid #8a8a8a;
+    border-radius: var(--radius-sm);
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+}
+
+/* Right-to-left: logical properties above do the layout; Arabic gets a font stack that includes Arabic faces. */
+[dir="rtl"] body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif;
 }
