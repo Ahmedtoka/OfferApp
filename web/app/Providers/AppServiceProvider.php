@@ -31,5 +31,12 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(10)->by(is_string($shop) && $shop !== '' ? 'shop:'.$shop : 'ip:'.$request->ip());
         });
+
+        // The Test page's sample cart: one lookup plus the engine per call, kept well under the analytics cost.
+        RateLimiter::for('test-cart', function (Request $request) {
+            $shop = $request->attributes->get('shop');
+
+            return Limit::perMinute(30)->by(is_string($shop) && $shop !== '' ? 'shop:'.$shop : 'ip:'.$request->ip());
+        });
     }
 }
