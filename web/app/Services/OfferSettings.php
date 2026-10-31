@@ -53,15 +53,36 @@ class OfferSettings
      * last, then a read-back of it. If the last step fails the discount's rule is already new while the
      * shop settings are still old; that is reported as an error, never as success.
      *
-     * @param  array{enabled: bool, percent: int, method: string, appliesTo: string, eligibleTag: string, collectionId: ?string, combineWithCoupons: bool, startsAt: ?string, endsAt: ?string}  $input
-     * @return array{settings: array, discount: array{id: string, status: string, adminUrl: string, title: string, startsAt: ?string, endsAt: ?string}}
+     * @param  array{enabled: bool, percent: int, method: string, appliesTo: string, eligibleTag: string, collectionId: ?string, combineWithCoupons: bool, startsAt?: ?string, endsAt?: ?string}  $input
+     * @return array{settings: array, discount: array{id: string, status: string, adminUrl: string, title: string, startsAt?: ?string, endsAt?: ?string}}
      *
      * @throws ShopifyGraphqlException|SaveMismatch
      */
     public function save(string $shop, array $input): array
     {
         $discount = $this->discounts->ensure($shop, $input);
+        $previous = $discount['previous'];
+        unset($discount['previous']);
 
+        try {
+            $stored = $this->writeShopSettings($shop, $input);
+        } catch (ShopifyGraphqlException|SaveMismatch $e) {
+            // The discount already carries the new rule while the page would read the old settings: put the old rule back.
+            try {
+                $this->discounts->restoreRule($shop, $discount['id'], $previous['tags'], $previous['collections']);
+            } catch (ShopifyGraphqlException|SaveMismatch) {
+                throw new ShopifyGraphqlException($e->getMessage().' The discount rule may be out of step with your settings; please Save again.');
+            }
+
+            throw $e;
+        }
+
+        return ['settings' => $stored, 'discount' => $discount];
+    }
+
+    /** @throws ShopifyGraphqlException|SaveMismatch */
+    private function writeShopSettings(string $shop, array $input): array
+    {
         $ownerId = $this->graphql->query($shop, self::SHOP_ID)['shop']['id']
             ?? throw new ShopifyGraphqlException('Could not resolve the shop id.');
 
@@ -95,6 +116,6 @@ class OfferSettings
             }
         }
 
-        return ['settings' => $stored, 'discount' => $discount];
+        return $stored;
     }
 }

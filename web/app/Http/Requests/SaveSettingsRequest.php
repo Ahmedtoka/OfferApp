@@ -54,13 +54,15 @@ class SaveSettingsRequest extends FormRequest
      * The validated body with defaults applied; dates are ISO 8601 in UTC (null startsAt keeps the
      * discount's own start, or now for a new one).
      *
-     * @return array{enabled: bool, percent: int, method: string, appliesTo: string, eligibleTag: string, collectionId: ?string, combineWithCoupons: bool, startsAt: ?string, endsAt: ?string}
+     * startsAt / endsAt are present only when the request carried the key, so an omitted date is never sent to Shopify.
+     *
+     * @return array{enabled: bool, percent: int, method: string, appliesTo: string, eligibleTag: string, collectionId: ?string, combineWithCoupons: bool, startsAt?: ?string, endsAt?: ?string}
      */
     public function offer(): array
     {
         $tag = $this->appliesTo() === 'tag';
 
-        return [
+        $offer = [
             'enabled' => $this->boolean('enabled'),
             'percent' => (int) $this->input('percent'),
             'method' => (string) ($this->input('method') ?: OfferConstants::get('defaultMethod')),
@@ -68,9 +70,14 @@ class SaveSettingsRequest extends FormRequest
             'eligibleTag' => $tag ? (string) $this->input('eligibleTag') : '',
             'collectionId' => $tag ? null : (string) $this->input('collectionId'),
             'combineWithCoupons' => $this->boolean('combineWithCoupons'),
-            'startsAt' => self::utc($this->input('startsAt')),
-            'endsAt' => self::utc($this->input('endsAt')),
         ];
+        foreach (['startsAt', 'endsAt'] as $key) {
+            if ($this->has($key)) {
+                $offer[$key] = self::utc($this->input($key));
+            }
+        }
+
+        return $offer;
     }
 
     private static function utc(mixed $value): ?string

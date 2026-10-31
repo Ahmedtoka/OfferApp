@@ -45,8 +45,15 @@ class AutomaticDiscountManager
      * on reactivates a discount that is not ACTIVE (deactivated or expired in Shopify admin); an
      * offer saved as off leaves the discount's own state alone.
      *
-     * @param  array{enabled: bool, appliesTo: string, eligibleTag: string, collectionId: ?string, combineWithCoupons: bool, startsAt: ?string, endsAt: ?string}  $input
-     * @return array{id: string, status: string, adminUrl: string, title: string, startsAt: ?string, endsAt: ?string}
+     * Dates follow key presence: startsAt / endsAt are sent only when `$input` has the key. A null endsAt
+     * (clear the end date) is sent only when the offer is being switched on, because an offer-off Save must
+     * not wipe the end date Shopify set when the merchant deactivated the discount.
+     *
+     * The result carries `previous` (the rule the discount had before: empty arrays for a new discount) so a
+     * caller can restore it with restoreRule().
+     *
+     * @param  array{enabled: bool, appliesTo: string, eligibleTag: string, collectionId: ?string, combineWithCoupons: bool, startsAt?: ?string, endsAt?: ?string}  $input
+     * @return array{id: string, status: string, adminUrl: string, title: string, startsAt: ?string, endsAt: ?string, previous: array{tags: list<string>, collections: list<string>}}
      *
      * @throws ShopifyGraphqlException|SaveMismatch
      */
@@ -54,12 +61,7 @@ class AutomaticDiscountManager
     {
         $tags = $input['appliesTo'] === 'tag' ? [$input['eligibleTag']] : [];
         $collections = $input['appliesTo'] === 'collection' ? [(string) $input['collectionId']] : [];
-        $metafield = [
-            'namespace' => (string) OfferConstants::get('metafieldNamespace'),
-            'key' => (string) OfferConstants::get('metafieldDiscountKey'),
-            'type' => 'json',
-            'value' => json_encode(['eligibleTags' => $tags, 'collectionIds' => $collections], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        ];
+        $metafield = $this->metafield($tags, $collections);
         $coupons = $input['combineWithCoupons'];
         $combinesWith = ['orderDiscounts' => $coupons, 'productDiscounts' => $coupons, 'shippingDiscounts' => $coupons];
 
@@ -73,40 +75,100 @@ class AutomaticDiscountManager
                 'title' => $title,
                 'functionId' => $functionId,
                 'startsAt' => $input['startsAt'] ?? now()->utc()->format('Y-m-d\TH:i:s\Z'),
-                'endsAt' => $input['endsAt'],
                 'discountClasses' => ['PRODUCT'],
                 'combinesWith' => $combinesWith,
                 'metafields' => [$metafield],
-            ]]);
+            ] + (($input['endsAt'] ?? null) !== null ? ['endsAt' => $input['endsAt']] : [])]);
 
             $created = $this->fromMutation($shop, $data['discountAutomaticAppCreate'] ?? null);
             $this->verifyConfig($shop, $created['id'], $tags, $collections);
 
-            return $created;
+            return $created + ['previous' => ['tags' => [], 'collections' => []]];
         }
+
+        $previous = $this->readConfig($shop, $existing['id']);
 
         // Activation clears the end date and restarts the discount, so it comes before the dates are written,
         // and is skipped when the merchant asked for an end date that has already passed.
-        $ended = $input['endsAt'] !== null && \Carbon\CarbonImmutable::parse($input['endsAt'])->lessThanOrEqualTo(now());
+        $endsAt = $input['endsAt'] ?? null;
+        $ended = $endsAt !== null && \Carbon\CarbonImmutable::parse($endsAt)->lessThanOrEqualTo(now());
         if ($input['enabled'] && $existing['status'] === 'EXPIRED' && ! $ended) {
             $this->activate($shop, $functionId, $existing);
         }
 
-        $update = ['title' => $title, 'endsAt' => $input['endsAt'], 'combinesWith' => $combinesWith];
-        if ($input['startsAt'] !== null) {
+        $update = ['title' => $title, 'combinesWith' => $combinesWith];
+        if (($input['startsAt'] ?? null) !== null) {
             $update['startsAt'] = $input['startsAt'];
+        }
+        if (array_key_exists('endsAt', $input) && ($endsAt !== null || $input['enabled'])) {
+            $update['endsAt'] = $endsAt;
         }
         $data = $this->graphql->query($shop, self::UPDATE, ['id' => $existing['id'], 'd' => $update]);
         $existing = $this->fromMutation($shop, $data['discountAutomaticAppUpdate'] ?? null);
 
-        $data = $this->graphql->query($shop, self::WRITE_CONFIG, ['metafields' => [['ownerId' => $existing['id']] + $metafield]]);
+        $this->writeConfig($shop, $existing['id'], $tags, $collections);
+
+        return $existing + ['previous' => $previous];
+    }
+
+    /**
+     * Puts a previous rule back on the discount (read back, like any rule write).
+     *
+     * @param  list<string>  $tags
+     * @param  list<string>  $collections
+     *
+     * @throws ShopifyGraphqlException|SaveMismatch
+     */
+    public function restoreRule(string $shop, string $discountId, array $tags, array $collections): void
+    {
+        $this->writeConfig($shop, $discountId, $tags, $collections);
+    }
+
+    /**
+     * @param  list<string>  $tags
+     * @param  list<string>  $collections
+     */
+    private function writeConfig(string $shop, string $discountId, array $tags, array $collections): void
+    {
+        $data = $this->graphql->query($shop, self::WRITE_CONFIG, ['metafields' => [['ownerId' => $discountId] + $this->metafield($tags, $collections)]]);
         $errors = $data['metafieldsSet']['userErrors'] ?? [];
         if ($errors !== []) {
             throw new ShopifyGraphqlException(implode('; ', array_map(fn ($e) => (string) ($e['message'] ?? 'Unknown error'), $errors)));
         }
-        $this->verifyConfig($shop, $existing['id'], $tags, $collections);
+        $this->verifyConfig($shop, $discountId, $tags, $collections);
+    }
 
-        return $existing;
+    /**
+     * @param  list<string>  $tags
+     * @param  list<string>  $collections
+     */
+    private function metafield(array $tags, array $collections): array
+    {
+        return [
+            'namespace' => (string) OfferConstants::get('metafieldNamespace'),
+            'key' => (string) OfferConstants::get('metafieldDiscountKey'),
+            'type' => 'json',
+            'value' => json_encode(['eligibleTags' => $tags, 'collectionIds' => $collections], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ];
+    }
+
+    /**
+     * The rule currently on the discount; a missing or malformed metafield means "matches nothing".
+     *
+     * @return array{tags: list<string>, collections: list<string>}
+     */
+    private function readConfig(string $shop, string $discountId): array
+    {
+        $data = $this->graphql->query($shop, self::READ_CONFIG, [
+            'id' => $discountId,
+            'namespace' => (string) OfferConstants::get('metafieldNamespace'),
+            'key' => (string) OfferConstants::get('metafieldDiscountKey'),
+        ]);
+        $raw = $data['discountNode']['metafield']['value'] ?? null;
+        $json = is_string($raw) ? json_decode($raw, true) : null;
+        $strings = fn ($v) => is_array($v) ? array_values(array_filter($v, 'is_string')) : [];
+
+        return ['tags' => $strings($json['eligibleTags'] ?? null), 'collections' => $strings($json['collectionIds'] ?? null)];
     }
 
     /**

@@ -52,6 +52,8 @@ class SettingsTest extends TestCase
     private const COLLECTION = 'gid://shopify/Collection/123';
 
     /** Discount first, shop metafield last. */
+    private const SAVE_OPS_NEW_DISCOUNT = ['AppFunctions', 'AppDiscounts', 'CreateDiscount', 'ReadDiscountConfig'];
+
     private const SAVE_OPS_NEW = ['AppFunctions', 'AppDiscounts', 'CreateDiscount', 'ReadDiscountConfig', 'ShopId', 'WriteSettings', 'ReadSettings'];
 
     private function shopWrite(): array
@@ -113,7 +115,7 @@ class SettingsTest extends TestCase
             ->assertJsonPath('discount.id', 'gid://shopify/DiscountAutomaticNode/777');
 
         $this->assertSame(
-            ['AppFunctions', 'AppDiscounts', 'UpdateDiscount', 'WriteDiscountConfig', 'ReadDiscountConfig', 'ShopId', 'WriteSettings', 'ReadSettings'],
+            ['AppFunctions', 'AppDiscounts', 'ReadDiscountConfig', 'UpdateDiscount', 'WriteDiscountConfig', 'ReadDiscountConfig', 'ShopId', 'WriteSettings', 'ReadSettings'],
             $this->fake->ops()
         );
         $this->assertSame([[
@@ -122,7 +124,7 @@ class SettingsTest extends TestCase
             'key' => 'config',
             'type' => 'json',
             'value' => '{"eligibleTags":["WinterOffer"],"collectionIds":[]}',
-        ]], $this->fake->calls[3]['variables']['metafields']);
+        ]], $this->fake->calls[4]['variables']['metafields']);
         $this->assertSame(0, $this->fake->count('CreateDiscount'));
     }
 
@@ -182,7 +184,8 @@ class SettingsTest extends TestCase
         $this->save(['enabled' => true, 'percent' => 30])
             ->assertStatus(422)
             ->assertExactJson(['error' => 'Value is invalid JSON']);
-        $this->assertSame(0, $this->fake->count('ReadDiscountConfig'));
+        // Only the read of the previous rule; nothing is read back after the failed write.
+        $this->assertSame(1, $this->fake->count('ReadDiscountConfig'));
         $this->assertSame(0, $this->fake->count('WriteSettings'));
     }
 
@@ -206,7 +209,7 @@ class SettingsTest extends TestCase
         $this->save(['enabled' => true, 'percent' => 30])
             ->assertStatus(422)
             ->assertExactJson(['error' => 'Value is invalid JSON']);
-        $this->assertSame(['AppFunctions', 'AppDiscounts', 'CreateDiscount', 'ReadDiscountConfig', 'ShopId', 'WriteSettings'], $this->fake->ops());
+        $this->assertSame([...self::SAVE_OPS_NEW_DISCOUNT, 'ShopId', 'WriteSettings', 'WriteDiscountConfig', 'ReadDiscountConfig'], $this->fake->ops());
     }
 
     public function test_shop_read_back_mismatch_returns_422(): void
@@ -216,7 +219,7 @@ class SettingsTest extends TestCase
         $this->save(['enabled' => true, 'percent' => 30])
             ->assertStatus(422)
             ->assertExactJson(['error' => 'read-back mismatch']);
-        $this->assertSame(self::SAVE_OPS_NEW, $this->fake->ops());
+        $this->assertSame([...self::SAVE_OPS_NEW, 'WriteDiscountConfig', 'ReadDiscountConfig'], $this->fake->ops());
     }
 
     public function test_shop_read_back_method_mismatch_is_rejected(): void
@@ -353,6 +356,115 @@ class SettingsTest extends TestCase
         $this->assertNull($update['endsAt']);
     }
 
+    private function updatePayload(): array
+    {
+        return $this->fake->calls[array_search('UpdateDiscount', $this->fake->ops(), true)]['variables']['d'];
+    }
+
+    public function test_offer_off_save_never_sends_a_null_end_date(): void
+    {
+        $this->fake->fixtures['AppDiscounts'] = 'discount-nodes-expired';
+
+        $this->save(['enabled' => false, 'percent' => 30])->assertOk();
+        $this->assertArrayNotHasKey('endsAt', $this->updatePayload());
+        $this->assertArrayNotHasKey('startsAt', $this->updatePayload());
+
+        $this->fake = new FakeGraphqlClient;
+        $this->fake->fixtures['AppDiscounts'] = 'discount-nodes-expired';
+        $this->app->instance(GraphqlClient::class, $this->fake);
+        $this->save(['enabled' => false, 'percent' => 30, 'endsAt' => null])->assertOk();
+        $this->assertArrayNotHasKey('endsAt', $this->updatePayload());
+        $this->assertSame(0, $this->fake->count('ActivateDiscount'));
+    }
+
+    public function test_omitted_dates_are_not_sent_when_the_offer_is_on(): void
+    {
+        $this->fake->fixtures['AppDiscounts'] = 'discount-nodes-existing';
+
+        $this->save(['enabled' => true, 'percent' => 30])->assertOk();
+        $this->assertArrayNotHasKey('endsAt', $this->updatePayload());
+        $this->assertArrayNotHasKey('startsAt', $this->updatePayload());
+    }
+
+    public function test_explicit_null_end_date_clears_it_when_the_offer_is_on(): void
+    {
+        $this->fake->fixtures['AppDiscounts'] = 'discount-nodes-existing';
+
+        $this->save(['enabled' => true, 'percent' => 30, 'endsAt' => null])->assertOk();
+        $this->assertArrayHasKey('endsAt', $this->updatePayload());
+        $this->assertNull($this->updatePayload()['endsAt']);
+    }
+
+    public function test_offer_off_save_still_sends_a_real_end_date(): void
+    {
+        $this->fake->fixtures['AppDiscounts'] = 'discount-nodes-expired';
+
+        $this->save(['enabled' => false, 'percent' => 30, 'endsAt' => '2026-12-01T00:00:00Z'])->assertOk();
+        $this->assertSame('2026-12-01T00:00:00Z', $this->updatePayload()['endsAt']);
+    }
+
+    public function test_final_write_failure_restores_the_previous_discount_rule(): void
+    {
+        $old = '{"eligibleTags":["OldTag"],"collectionIds":[]}';
+        $this->fake->fixtures['AppDiscounts'] = 'discount-nodes-existing';
+        $this->fake->discountMetafieldValue = $old;
+        $this->fake->fixtures['WriteSettings'] = 'metafields-set-error';
+
+        $this->save(['enabled' => true, 'percent' => 30, 'eligibleTag' => 'WinterOffer'])
+            ->assertStatus(422)
+            ->assertExactJson(['error' => 'Value is invalid JSON']);
+        $this->assertSame($old, $this->fake->discountMetafieldValue);
+        $this->assertSame(2, $this->fake->count('WriteDiscountConfig'));
+    }
+
+    public function test_final_read_back_failure_restores_an_empty_rule_for_a_new_discount(): void
+    {
+        $this->fake->readBackOverride = json_encode(['enabled' => false, 'percent' => 1]);
+
+        $this->save(['enabled' => true, 'percent' => 30])
+            ->assertStatus(422)
+            ->assertExactJson(['error' => 'read-back mismatch']);
+        $this->assertSame('{"eligibleTags":[],"collectionIds":[]}', $this->fake->discountMetafieldValue);
+    }
+
+    public function test_restore_failure_says_the_rule_may_be_out_of_step(): void
+    {
+        $fake = new class extends FakeGraphqlClient
+        {
+            private int $configWrites = 0;
+
+            public function query(string $shop, string $query, array $variables = []): array
+            {
+                if (str_contains($query, 'mutation WriteDiscountConfig') && ++$this->configWrites === 2) {
+                    $this->fixtures['WriteDiscountConfig'] = 'metafields-set-error';
+                }
+
+                return parent::query($shop, $query, $variables);
+            }
+        };
+        $fake->fixtures['AppDiscounts'] = 'discount-nodes-existing';
+        $fake->fixtures['WriteSettings'] = 'metafields-set-error';
+        $this->app->instance(GraphqlClient::class, $fake);
+
+        $res = $this->save(['enabled' => true, 'percent' => 30])->assertStatus(422);
+        $this->assertStringContainsString('Value is invalid JSON', $res->json('error'));
+        $this->assertStringContainsString('out of step', $res->json('error'));
+        $this->assertStringContainsString('Save again', $res->json('error'));
+    }
+
+    public function test_switching_collection_to_tag_writes_tags_and_clears_collection_ids(): void
+    {
+        $this->save(['enabled' => true, 'percent' => 30, 'appliesTo' => 'collection', 'collectionId' => self::COLLECTION], withTag: false)->assertOk();
+        $this->assertSame('{"eligibleTags":[],"collectionIds":["'.self::COLLECTION.'"]}', $this->fake->discountMetafieldValue);
+
+        $this->save(['enabled' => true, 'percent' => 30, 'appliesTo' => 'tag', 'eligibleTag' => 'WinterOffer'])
+            ->assertOk()
+            ->assertJsonPath('settings.appliesTo', 'tag')
+            ->assertJsonPath('settings.eligibleTag', 'WinterOffer')
+            ->assertJsonPath('settings.collectionId', null);
+        $this->assertSame('{"eligibleTags":["WinterOffer"],"collectionIds":[]}', $this->fake->discountMetafieldValue);
+    }
+
     public function test_second_save_does_not_create_a_duplicate_discount(): void
     {
         $this->save(['enabled' => true, 'percent' => 30])->assertOk();
@@ -396,10 +508,10 @@ class SettingsTest extends TestCase
             ->assertJsonPath('discount.id', 'gid://shopify/DiscountAutomaticNode/777')
             ->assertJsonPath('discount.status', 'ACTIVE');
         $this->assertSame(
-            ['AppFunctions', 'AppDiscounts', 'ActivateDiscount', 'AppDiscounts', 'UpdateDiscount', 'WriteDiscountConfig', 'ReadDiscountConfig', 'ShopId', 'WriteSettings', 'ReadSettings'],
+            ['AppFunctions', 'AppDiscounts', 'ReadDiscountConfig', 'ActivateDiscount', 'AppDiscounts', 'UpdateDiscount', 'WriteDiscountConfig', 'ReadDiscountConfig', 'ShopId', 'WriteSettings', 'ReadSettings'],
             $this->fake->ops()
         );
-        $this->assertSame('gid://shopify/DiscountAutomaticNode/777', $this->fake->calls[2]['variables']['id']);
+        $this->assertSame('gid://shopify/DiscountAutomaticNode/777', $this->fake->calls[3]['variables']['id']);
         $this->assertSame(0, $this->fake->count('CreateDiscount'));
     }
 
