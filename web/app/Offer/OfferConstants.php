@@ -10,10 +10,7 @@ final class OfferConstants
 
     public static function get(string $key): mixed
     {
-        $path = (string) config('shopify.shared_constants_path');
-        if (! self::isAbsolute($path)) {
-            $path = base_path($path);
-        }
+        $path = self::sharedPath('offer-constants.json');
 
         if (! isset(self::$cache[$path])) {
             self::$cache[$path] = json_decode(
@@ -22,6 +19,17 @@ final class OfferConstants
         }
 
         return self::$cache[$path][$key];
+    }
+
+    /** Absolute path of a file in the shared/ folder; a relative configured path resolves against the app root. */
+    public static function sharedPath(string $file): string
+    {
+        $configured = (string) config('shopify.shared_constants_path');
+        if (! self::isAbsolute($configured)) {
+            $configured = base_path($configured);
+        }
+
+        return dirname($configured).'/'.$file;
     }
 
     public static function percentMessage(int $pct): string

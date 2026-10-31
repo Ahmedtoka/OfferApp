@@ -246,7 +246,7 @@ final class BogoCalculator
     /** ISO 4217 currency code -> number of decimals (unknown codes use the default of 2). */
     public static function decimalsFor(string $currency): int
     {
-        $path = dirname((string) config('shopify.shared_constants_path')).'/currency-decimals.json';
+        $path = OfferConstants::sharedPath('currency-decimals.json');
         if (! isset(self::$decimals[$path])) {
             self::$decimals[$path] = json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
         }

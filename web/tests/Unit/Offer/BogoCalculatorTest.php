@@ -290,4 +290,17 @@ class BogoCalculatorTest extends TestCase
         $this->assertSame(30, OfferConstants::get('defaultPercent'));
         $this->assertSame('30% off', OfferConstants::percentMessage(30));
     }
+
+    public function test_decimals_for_resolves_a_relative_shared_path_against_the_app_root(): void
+    {
+        config(['shopify.shared_constants_path' => '../shared/offer-constants.json']);
+        $original = getcwd();
+        $tmp = sys_get_temp_dir();
+        chdir($tmp);
+        try {
+            $this->assertSame(3, BogoCalculator::decimalsFor('KWD'));
+        } finally {
+            chdir($original);
+        }
+    }
 }
