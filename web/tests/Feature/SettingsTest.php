@@ -21,7 +21,7 @@ class SettingsTest extends TestCase
     {
         parent::setUp();
         SessionTokens::configure();
-        config(['shopify.function_title' => 'Pairly Discount']);
+        config(['shopify.function_title' => 'Pairly Discount', 'shopify.billing_required' => false]); // the gate is covered in BillingTest
         Shop::create([
             'shop_domain' => SessionTokens::SHOP,
             'access_token' => 'shpat_existing',
@@ -628,7 +628,7 @@ class SettingsTest extends TestCase
             ->assertOk()
             ->assertExactJson(['settings' => [
                 'enabled' => false, 'percent' => 30, 'method' => 'customer', 'appliesTo' => 'tag', 'eligibleTag' => '',
-                'collectionId' => null, 'combineWithCoupons' => false, 'updated_at' => null, 'startsAt' => null, 'endsAt' => null,
+                'collectionId' => null, 'combineWithCoupons' => false, 'updated_at' => null, 'disabledReason' => null, 'startsAt' => null, 'endsAt' => null,
             ], 'discount' => null, 'state' => 'off']);
         $this->assertSame(0, $this->fake->count('CreateDiscount'));
     }

@@ -28,6 +28,8 @@ class FakeGraphqlClient implements GraphqlClient
         'UpdateDiscount' => 'discount-update-ok',
         'ActivateDiscount' => 'discount-activate-ok',
         'WriteDiscountConfig' => 'metafields-set-ok',
+        'BillingStatus' => 'billing-active',
+        'CreateSubscription' => 'subscription-create-ok',
     ];
 
     /** Raw JSON string ReadSettings returns instead of the last write (null = echo the write). */

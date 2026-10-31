@@ -1,0 +1,1 @@
+{"appSubscriptionCreate":{"confirmationUrl":null,"appSubscription":null,"userErrors":[{"field":["name"],"message":"Apps without a public distribution cannot use the Billing API."}]}}

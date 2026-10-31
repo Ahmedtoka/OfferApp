@@ -13,6 +13,9 @@ use App\Shopify\ShopifyGraphqlException;
  */
 class OfferSettings
 {
+    /** The shop metafield's `disabled_reason` when the app turned the offer off because the subscription ended. */
+    public const BILLING_ENDED = 'billing';
+
     private const SHOP_ID = 'query ShopId { shop { id } }';
 
     private const READ = 'query ReadSettings($namespace: String!, $key: String!) { shop { metafield(namespace: $namespace, key: $key) { value } } }';
@@ -21,7 +24,7 @@ class OfferSettings
 
     public function __construct(private GraphqlClient $graphql, private AutomaticDiscountManager $discounts) {}
 
-    /** @return array{enabled: bool, percent: int, method: string, appliesTo: string, eligibleTag: string, collectionId: ?string, combineWithCoupons: bool, updated_at: ?string} */
+    /** @return array{enabled: bool, percent: int, method: string, appliesTo: string, eligibleTag: string, collectionId: ?string, combineWithCoupons: bool, updated_at: ?string, disabledReason: ?string} */
     public function read(string $shop): array
     {
         $data = $this->graphql->query($shop, self::READ, [
@@ -45,6 +48,7 @@ class OfferSettings
             'collectionId' => is_string($collection) && $collection !== '' ? $collection : null,
             'combineWithCoupons' => (bool) ($json['combineWithCoupons'] ?? false),
             'updated_at' => isset($json['updated_at']) ? (string) $json['updated_at'] : null,
+            'disabledReason' => ($json['disabled_reason'] ?? null) === self::BILLING_ENDED ? self::BILLING_ENDED : null,
         ];
     }
 
@@ -80,8 +84,26 @@ class OfferSettings
         return ['settings' => $stored, 'discount' => $discount];
     }
 
+    /**
+     * The subscription ended: switch the offer off in the shop metafield (the Function's switch) and say why.
+     * Everything else in the settings is kept. Returns false when the offer was already off.
+     *
+     * @throws ShopifyGraphqlException|SaveMismatch
+     */
+    public function disableForBilling(string $shop): bool
+    {
+        $current = $this->read($shop);
+        if (! $current['enabled']) {
+            return false;
+        }
+
+        $this->writeShopSettings($shop, ['enabled' => false] + $current, self::BILLING_ENDED);
+
+        return true;
+    }
+
     /** @throws ShopifyGraphqlException|SaveMismatch */
-    private function writeShopSettings(string $shop, array $input): array
+    private function writeShopSettings(string $shop, array $input, ?string $disabledReason = null): array
     {
         $ownerId = $this->graphql->query($shop, self::SHOP_ID)['shop']['id']
             ?? throw new ShopifyGraphqlException('Could not resolve the shop id.');
@@ -96,6 +118,9 @@ class OfferSettings
             'combineWithCoupons' => $input['combineWithCoupons'],
             'updated_at' => now()->toIso8601String(),
         ];
+        if ($disabledReason !== null) {
+            $value['disabled_reason'] = $disabledReason; // any other write drops it
+        }
         $data = $this->graphql->query($shop, self::WRITE, ['metafields' => [[
             'ownerId' => $ownerId,
             'namespace' => OfferConstants::get('metafieldNamespace'),

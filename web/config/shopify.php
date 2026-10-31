@@ -24,6 +24,14 @@ return [
         explode(',', (string) env('SHOPIFY_ALLOWED_SHOPS', ''))
     ))),
 
+    // Turning the offer on needs a Pairly subscription (partner dev stores excepted). Older deployments that
+    // never subscribe (Le Voile, Fashion Avenue) set SHOPIFY_BILLING_REQUIRED=false until they are retired.
+    'billing_required' => filter_var(env('SHOPIFY_BILLING_REQUIRED', true), FILTER_VALIDATE_BOOLEAN),
+
+    // The app's handle in the admin URL (https://admin.shopify.com/store/{shop}/apps/{handle}); the
+    // billing approval returns the merchant there.
+    'app_handle' => env('SHOPIFY_APP_HANDLE', 'pairly-bogo-offers'),
+
     // Title of our Discount Function as Shopify reports it (extension name).
     'function_title' => env('SHOPIFY_FUNCTION_TITLE', 'Pairly Discount'),
 
