@@ -2,7 +2,8 @@
 # application_url is the Cloudways temporary URL until the owner's domain is mapped.
 client_id = "40919f051c4b377ace2d4cb4937a73d4"
 name = "Pairly: BOGO Offers"
-application_url = "https://example.com"
+handle = "pairly-bogo-offers"
+application_url = "https://phpstack-1216096-6760392.cloudwaysapps.com"
 embedded = true
 
 [build]
