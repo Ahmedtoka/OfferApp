@@ -121,13 +121,35 @@ class BillingTest extends TestCase
         $this->assertSame(0, $this->fake->count('CreateSubscription'));
     }
 
-    public function test_subscribe_returns_409_for_a_partner_dev_store(): void
+    public function test_subscribe_is_a_test_charge_for_a_partner_dev_store_even_in_production(): void
     {
+        config(['app.env' => 'production']);
         $this->fake->fixtures['BillingStatus'] = 'billing-dev';
+
+        $this->auth()->postJson('/api/billing/subscribe')->assertOk();
+
+        $this->assertTrue($this->subscribeVariables()['test']);
+    }
+
+    public function test_a_dev_store_with_an_active_test_subscription_gets_409(): void
+    {
+        $this->fake->fixtures['BillingStatus'] = 'billing-dev-subscribed';
 
         $this->auth()->postJson('/api/billing/subscribe')->assertStatus(409);
 
         $this->assertSame(0, $this->fake->count('CreateSubscription'));
+    }
+
+    public function test_status_tells_a_real_subscription_from_dev_store_access(): void
+    {
+        $this->fake->fixtures['BillingStatus'] = 'billing-dev';
+        $this->auth()->getJson('/api/billing')->assertJsonPath('active', true)->assertJsonPath('subscribed', false);
+
+        $this->fake->fixtures['BillingStatus'] = 'billing-dev-subscribed';
+        $this->auth()->getJson('/api/billing')->assertJsonPath('active', true)->assertJsonPath('subscribed', true);
+
+        $this->fake->fixtures['BillingStatus'] = 'billing-none';
+        $this->auth()->getJson('/api/billing')->assertJsonPath('active', false)->assertJsonPath('subscribed', false);
     }
 
     public function test_subscribe_is_404_when_the_deployment_does_not_bill(): void

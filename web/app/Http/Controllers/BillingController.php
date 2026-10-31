@@ -13,7 +13,7 @@ class BillingController extends Controller
     public function show(Request $request, Billing $billing): JsonResponse
     {
         if (! Billing::required()) {
-            return response()->json(['required' => false, 'active' => true, 'trialDaysLeft' => null, 'partnerDevelopment' => false]);
+            return response()->json(['required' => false, 'active' => true, 'subscribed' => false, 'trialDaysLeft' => null, 'partnerDevelopment' => false]);
         }
 
         try {

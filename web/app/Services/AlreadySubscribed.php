@@ -2,5 +2,5 @@
 
 namespace App\Services;
 
-/** The shop is already covered (an active subscription, or a partner development store): nothing to subscribe to. */
+/** The shop already has a counting subscription: no second one is created. */
 class AlreadySubscribed extends \RuntimeException {}

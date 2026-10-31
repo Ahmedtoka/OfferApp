@@ -31,9 +31,9 @@ class Billing
     }
 
     /**
-     * `active` is true for a partner development store or with an ACTIVE subscription.
+     * `active` is true for a partner development store or with a counting ACTIVE subscription; `subscribed` only for the latter.
      *
-     * @return array{active: bool, trialDaysLeft: ?int, partnerDevelopment: bool}
+     * @return array{active: bool, subscribed: bool, trialDaysLeft: ?int, partnerDevelopment: bool}
      *
      * @throws ShopifyGraphqlException
      */
@@ -59,26 +59,28 @@ class Billing
             $left = max(0, (int) ceil(now()->diffInSeconds($end, false) / 86400));
         }
 
-        return ['active' => $partner || $subscription !== null, 'trialDaysLeft' => $left, 'partnerDevelopment' => $partner];
+        return ['active' => $partner || $subscription !== null, 'subscribed' => $subscription !== null, 'trialDaysLeft' => $left, 'partnerDevelopment' => $partner];
     }
 
     /**
      * Creates the subscription and returns the URL the merchant approves it at (opened at top level by the page).
      *
-     * @throws AlreadySubscribed when the shop is covered already (no second subscription is created)
+     * @throws AlreadySubscribed when the shop already has a subscription (no second subscription is created)
      * @throws ShopifyGraphqlException
      */
     public function subscribe(string $shop): string
     {
-        if ($this->status($shop)['active']) {
-            throw new AlreadySubscribed('This store is already covered; there is nothing to subscribe to.');
+        $status = $this->status($shop);
+        if ($status['subscribed']) {
+            throw new AlreadySubscribed('This store already has a Pairly subscription.');
         }
+        $partner = $status['partnerDevelopment'];
         $handle = preg_replace('/\.myshopify\.com$/', '', $shop);
 
         $data = $this->graphql->query($shop, self::CREATE, [
             'name' => self::PLAN_NAME,
             'returnUrl' => "https://admin.shopify.com/store/{$handle}/apps/".config('shopify.app_handle'),
-            'test' => config('app.env') !== 'production',
+            'test' => config('app.env') !== 'production' || $partner,
             'trialDays' => self::TRIAL_DAYS,
             'lineItems' => [[
                 'plan' => ['appRecurringPricingDetails' => [
