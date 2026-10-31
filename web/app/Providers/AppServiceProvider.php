@@ -32,6 +32,13 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by(is_string($shop) && $shop !== '' ? 'shop:'.$shop : 'ip:'.$request->ip());
         });
 
+        // Every other /api call: each can make several Admin API calls, each holding a PHP worker that all shops share.
+        RateLimiter::for('shop-api', function (Request $request) {
+            $shop = $request->attributes->get('shop');
+
+            return Limit::perMinute(60)->by(is_string($shop) && $shop !== '' ? 'shop:'.$shop : 'ip:'.$request->ip());
+        });
+
         // The Test page's sample cart: one lookup plus the engine per call, kept well under the analytics cost.
         RateLimiter::for('test-cart', function (Request $request) {
             $shop = $request->attributes->get('shop');

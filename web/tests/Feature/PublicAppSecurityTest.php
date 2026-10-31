@@ -44,4 +44,22 @@ class PublicAppSecurityTest extends TestCase
         }
         $this->assertSame(0, DB::table('sessions')->count());
     }
+
+    private function api(string $shop = SessionTokens::SHOP)
+    {
+        Shop::firstOrCreate(['shop_domain' => $shop], ['access_token' => 'shpat_x', 'installed_at' => now()]);
+
+        return $this->withHeader('Authorization', 'Bearer '.SessionTokens::mint(['iss' => "https://{$shop}/admin", 'dest' => "https://{$shop}"]));
+    }
+
+    /** F2: with open installs one store must not be able to tie up the workers every other store shares. */
+    public function test_shop_api_routes_are_throttled_per_shop(): void
+    {
+        for ($i = 0; $i < 60; $i++) {
+            $this->api()->getJson('/api/ping')->assertOk();
+        }
+
+        $this->api()->getJson('/api/ping')->assertStatus(429);
+        $this->api('another-store.myshopify.com')->getJson('/api/ping')->assertOk();
+    }
 }
