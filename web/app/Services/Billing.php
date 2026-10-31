@@ -42,9 +42,12 @@ class Billing
         $data = $this->graphql->query($shop, self::STATUS);
         $partner = (bool) ($data['shop']['plan']['partnerDevelopment'] ?? false);
 
+        // On a live store (production, not a partner dev store) a test subscription is not a payment.
+        $testCounts = $partner || config('app.env') !== 'production';
+
         $subscription = null;
         foreach ($data['currentAppInstallation']['activeSubscriptions'] ?? [] as $candidate) {
-            if (($candidate['status'] ?? null) === 'ACTIVE') {
+            if (($candidate['status'] ?? null) === 'ACTIVE' && ($testCounts || ($candidate['test'] ?? true) === false)) {
                 $subscription = $candidate;
                 break;
             }
@@ -62,17 +65,20 @@ class Billing
     /**
      * Creates the subscription and returns the URL the merchant approves it at (opened at top level by the page).
      *
+     * @throws AlreadySubscribed when the shop is covered already (no second subscription is created)
      * @throws ShopifyGraphqlException
      */
     public function subscribe(string $shop): string
     {
-        $partner = $this->status($shop)['partnerDevelopment'];
+        if ($this->status($shop)['active']) {
+            throw new AlreadySubscribed('This store is already covered; there is nothing to subscribe to.');
+        }
         $handle = preg_replace('/\.myshopify\.com$/', '', $shop);
 
         $data = $this->graphql->query($shop, self::CREATE, [
             'name' => self::PLAN_NAME,
             'returnUrl' => "https://admin.shopify.com/store/{$handle}/apps/".config('shopify.app_handle'),
-            'test' => config('app.env') !== 'production' || $partner,
+            'test' => config('app.env') !== 'production',
             'trialDays' => self::TRIAL_DAYS,
             'lineItems' => [[
                 'plan' => ['appRecurringPricingDetails' => [

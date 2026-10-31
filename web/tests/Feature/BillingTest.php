@@ -112,18 +112,86 @@ class BillingTest extends TestCase
         $this->assertTrue($this->subscribeVariables()['test']);
     }
 
-    public function test_subscribe_is_a_test_charge_for_a_partner_dev_store_even_in_production(): void
+    public function test_subscribe_returns_409_and_creates_nothing_when_already_subscribed(): void
     {
-        config(['app.env' => 'production']);
+        $this->auth()->postJson('/api/billing/subscribe')
+            ->assertStatus(409)
+            ->assertJsonPath('error', fn ($m) => str_contains($m, 'already'));
+
+        $this->assertSame(0, $this->fake->count('CreateSubscription'));
+    }
+
+    public function test_subscribe_returns_409_for_a_partner_dev_store(): void
+    {
         $this->fake->fixtures['BillingStatus'] = 'billing-dev';
 
-        $this->auth()->postJson('/api/billing/subscribe')->assertOk();
+        $this->auth()->postJson('/api/billing/subscribe')->assertStatus(409);
 
-        $this->assertTrue($this->subscribeVariables()['test']);
+        $this->assertSame(0, $this->fake->count('CreateSubscription'));
+    }
+
+    public function test_subscribe_is_404_when_the_deployment_does_not_bill(): void
+    {
+        config(['shopify.billing_required' => false]);
+
+        $this->auth()->postJson('/api/billing/subscribe')->assertStatus(404);
+
+        $this->assertSame([], $this->fake->ops());
+    }
+
+    public function test_a_test_subscription_does_not_count_on_a_live_store(): void
+    {
+        config(['app.env' => 'production']);
+        $this->fake->fixtures['BillingStatus'] = 'billing-test-subscription';
+
+        $this->auth()->getJson('/api/billing')->assertOk()->assertJsonPath('active', false)->assertJsonPath('trialDaysLeft', null);
+        $this->turnOn()->assertStatus(402);
+    }
+
+    public function test_a_test_subscription_counts_outside_production(): void
+    {
+        config(['app.env' => 'local']);
+        $this->fake->fixtures['BillingStatus'] = 'billing-test-subscription';
+
+        $this->auth()->getJson('/api/billing')->assertOk()->assertJsonPath('active', true);
+        $this->turnOn()->assertOk();
+    }
+
+    public function test_a_live_subscription_counts_in_production(): void
+    {
+        config(['app.env' => 'production']);
+
+        $this->auth()->getJson('/api/billing')->assertOk()->assertJsonPath('active', true);
+    }
+
+    public function test_a_live_store_with_only_a_test_subscription_can_subscribe(): void
+    {
+        config(['app.env' => 'production']);
+        $this->fake->fixtures['BillingStatus'] = 'billing-test-subscription';
+
+        $this->auth()->postJson('/api/billing/subscribe')->assertOk();
+    }
+
+    public function test_a_webhook_with_a_missing_or_empty_status_is_a_no_op(): void
+    {
+        $this->seedSettings();
+        foreach ([null, ''] as $status) {
+            $body = json_encode(['app_subscription' => $status === null ? ['name' => 'Pairly'] : ['name' => 'Pairly', 'status' => $status]]);
+            $hmac = base64_encode(hash_hmac('sha256', $body, SessionTokens::API_SECRET, true));
+            $this->call('POST', '/webhooks', [], [], [], [
+                'CONTENT_TYPE' => 'application/json',
+                'HTTP_X_SHOPIFY_HMAC_SHA256' => $hmac,
+                'HTTP_X_SHOPIFY_TOPIC' => 'app_subscriptions/update',
+                'HTTP_X_SHOPIFY_SHOP_DOMAIN' => SessionTokens::SHOP,
+            ], $body)->assertOk();
+        }
+
+        $this->assertSame([], $this->fake->ops());
     }
 
     public function test_subscribe_user_error_returns_422_with_its_text(): void
     {
+        $this->fake->fixtures['BillingStatus'] = 'billing-none';
         $this->fake->fixtures['CreateSubscription'] = 'subscription-create-error';
 
         $this->auth()->postJson('/api/billing/subscribe')

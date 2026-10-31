@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AlreadySubscribed;
 use App\Services\Billing;
 use App\Shopify\ShopifyGraphqlException;
 use Illuminate\Http\JsonResponse;
@@ -24,8 +25,14 @@ class BillingController extends Controller
 
     public function subscribe(Request $request, Billing $billing): JsonResponse
     {
+        if (! Billing::required()) {
+            abort(404);
+        }
+
         try {
             return response()->json(['confirmationUrl' => $billing->subscribe((string) $request->attributes->get('shop'))]);
+        } catch (AlreadySubscribed $e) {
+            return response()->json(['error' => $e->getMessage()], 409);
         } catch (ShopifyGraphqlException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
