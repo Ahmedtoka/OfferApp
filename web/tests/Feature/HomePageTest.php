@@ -145,6 +145,8 @@ class HomePageTest extends TestCase
         $this->assertStringContainsString("'_top'", $js);
         $this->assertStringContainsString("resourcePicker({ type: 'collection'", $js);
         $this->assertStringNotContainsString('Could not reach', $js);
+        $this->assertStringNotContainsString('pairly.collections', $js); // the collection title comes from the server
+        $this->assertStringContainsString('collectionMissing', $js);
     }
 
     public function test_range_options_default_to_30(): void

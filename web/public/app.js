@@ -1,7 +1,7 @@
 // Pairly admin page. Every /api call carries a fresh App Bridge session token; nothing secret is ever
 // read from or written to the page. All user-facing text comes from the server (the #i18n JSON block).
 
-import { toIso, fromIso, stateKey, checklist, themeEditorUrl } from './js/lib.js';
+import { toIso, fromIso, stateKey, checklist, themeEditorUrl, isShopHost } from './js/lib.js';
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -41,7 +41,6 @@ function writeStore(key, value) {
 }
 
 const MARKS_KEY = 'pairly.checklist';
-const COLLECTIONS_KEY = 'pairly.collections';
 
 // ---------------------------------------------------------------- elements
 
@@ -70,6 +69,7 @@ const els = {
     endsAt: $('#ends-at'),
     clearEnd: $('#clear-end'),
     datesError: $('#dates-error'),
+    datesNote: $('#dates-note'),
     coupons: $('#coupons'),
     save: $('#save'),
     range: $('#range'),
@@ -269,17 +269,17 @@ function renderAppliesTo() {
 
 let collectionId = null;
 
-function renderCollection() {
+function renderCollection(title, missing) {
+    els.collectionPick.textContent = t(collectionId === null ? 'settings.collection_choose' : 'settings.collection_change');
     if (collectionId === null) {
         els.collectionTitle.textContent = t('settings.collection_none');
-        els.collectionPick.textContent = t('settings.collection_choose');
-        return;
+    } else if (typeof title === 'string' && title !== '') {
+        els.collectionTitle.textContent = title;
+    } else {
+        // Deleted in Shopify, or the lookup failed: say so only when the server confirmed it is gone.
+        els.collectionTitle.textContent = t('settings.collection_none');
+        if (missing) setError(els.collectionError, t('settings.collection_missing'));
     }
-    const title = readStore(COLLECTIONS_KEY)[collectionId];
-    els.collectionTitle.textContent = typeof title === 'string' && title !== ''
-        ? title
-        : t('settings.collection_unknown', { id: collectionId.split('/').pop() });
-    els.collectionPick.textContent = t('settings.collection_change');
 }
 
 async function pickCollection() {
@@ -291,11 +291,8 @@ async function pickCollection() {
         const item = Array.isArray(picked) ? picked[0] : null;
         if (!item || typeof item.id !== 'string') return;
         collectionId = item.id;
-        const titles = readStore(COLLECTIONS_KEY);
-        titles[item.id] = String(item.title ?? '');
-        writeStore(COLLECTIONS_KEY, titles);
         setError(els.collectionError, null);
-        renderCollection();
+        renderCollection(String(item.title ?? ''), false);
     } catch {
         // the picker was closed or could not open; nothing to change
     }
@@ -346,9 +343,11 @@ function renderSettings(data) {
     els.tag.removeAttribute('error');
     renderTagNote();
     collectionId = typeof settings.collectionId === 'string' && settings.collectionId !== '' ? settings.collectionId : null;
-    renderCollection();
+    setError(els.collectionError, null);
+    renderCollection(data.collectionTitle, Boolean(data.collectionMissing));
     els.startsAt.value = fromIso(settings.startsAt);
     els.endsAt.value = fromIso(settings.endsAt);
+    renderEndNote();
     setError(els.datesError, null);
     els.coupons.checked = Boolean(settings.combineWithCoupons);
     renderState(data);
@@ -396,6 +395,13 @@ function readTag() {
     }
     els.tag.removeAttribute('error');
     return tag;
+}
+
+// With the offer off the server keeps a saved end date (it only clears it once the offer is on): say so.
+function renderEndNote() {
+    const kept = Boolean(loaded?.settings?.endsAt) && els.endsAt.value === '' && !els.enabled.checked;
+    els.datesNote.textContent = kept ? t('settings.end_clear_note') : '';
+    els.datesNote.hidden = !kept;
 }
 
 function readDates() {
@@ -473,18 +479,23 @@ async function save() {
 // ---------------------------------------------------------------- Home (onboarding)
 
 function shopDomain() {
+    let host = '';
     try {
-        if (typeof shopify.config?.shop === 'string') return shopify.config.shop;
+        if (typeof shopify.config?.shop === 'string') host = shopify.config.shop;
     } catch {
         // fall through to the query string
     }
-    return new URLSearchParams(location.search).get('shop') ?? '';
+    if (!isShopHost(host)) host = new URLSearchParams(location.search).get('shop') ?? '';
+    return isShopHost(host) ? host : '';
 }
 
 function stepAction(id) {
     if (id === 'test') return () => goTo('test');
     if (id === 'theme') {
-        return () => open(themeEditorUrl(shopDomain(), document.body.dataset.apiKey, document.body.dataset.themeHandle), '_blank');
+        return () => {
+            const shop = shopDomain();
+            if (shop !== '') open(themeEditorUrl(shop, document.body.dataset.apiKey, document.body.dataset.themeHandle), '_blank');
+        };
     }
     return () => goTo('settings');
 }
@@ -646,9 +657,14 @@ els.collectionPick.addEventListener('click', pickCollection);
 els.clearEnd.addEventListener('click', () => {
     els.endsAt.value = '';
     setError(els.datesError, null);
+    renderEndNote();
 });
 els.startsAt.addEventListener('input', () => setError(els.datesError, null));
-els.endsAt.addEventListener('input', () => setError(els.datesError, null));
+els.endsAt.addEventListener('input', () => {
+    setError(els.datesError, null);
+    renderEndNote();
+});
+els.enabled.addEventListener('change', renderEndNote);
 els.save.addEventListener('click', save);
 els.form.addEventListener('submit', (e) => {
     e.preventDefault();

@@ -42,6 +42,9 @@ class FakeGraphqlClient implements GraphqlClient
 
     public ?string $discountMetafieldValue = null;
 
+    /** Collections that exist in the shop: gid => title (CollectionTitle returns null for any other id). */
+    public array $collections = [];
+
     /** AppDiscounts fixture served after a successful ActivateDiscount. */
     public string $afterActivate = 'discount-nodes-existing';
 
@@ -58,6 +61,12 @@ class FakeGraphqlClient implements GraphqlClient
             }
 
             return $data;
+        }
+
+        if ($op === 'CollectionTitle') {
+            $title = $this->collections[$variables['id']] ?? null;
+
+            return ['collection' => $title === null ? null : ['title' => $title]];
         }
 
         if ($op === 'ReadSettings') {

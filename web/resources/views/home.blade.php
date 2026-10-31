@@ -134,6 +134,7 @@
                             <s-button id="clear-end" variant="tertiary">{{ __('app.settings.clear_end') }}</s-button>
                         </div>
                         <s-text id="dates-error" tone="critical" hidden></s-text>
+                        <s-text id="dates-note" color="subdued" hidden></s-text>
                         <s-text color="subdued">{{ __('app.settings.dates_help') }}</s-text>
                     </div>
 

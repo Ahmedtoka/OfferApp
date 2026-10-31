@@ -317,6 +317,44 @@ class SettingsTest extends TestCase
             ->assertJsonPath('settings.collectionId', self::COLLECTION);
     }
 
+    public function test_collection_title_is_read_from_shopify_on_get_and_put(): void
+    {
+        $this->fake->collections[self::COLLECTION] = 'Summer pieces';
+
+        $this->save(['enabled' => true, 'percent' => 30, 'appliesTo' => 'collection', 'collectionId' => self::COLLECTION], withTag: false)
+            ->assertOk()
+            ->assertJsonPath('collectionTitle', 'Summer pieces')
+            ->assertJsonPath('collectionMissing', false);
+
+        $this->auth()->getJson('/api/settings')
+            ->assertOk()
+            ->assertJsonPath('collectionTitle', 'Summer pieces')
+            ->assertJsonPath('collectionMissing', false);
+    }
+
+    public function test_deleted_collection_gives_null_title_and_missing_flag(): void
+    {
+        $this->fake->collections[self::COLLECTION] = 'Gone soon';
+        $this->save(['enabled' => false, 'percent' => 30, 'appliesTo' => 'collection', 'collectionId' => self::COLLECTION], withTag: false)->assertOk();
+
+        $this->fake->collections = [];
+
+        $this->auth()->getJson('/api/settings')
+            ->assertOk()
+            ->assertJsonPath('collectionTitle', null)
+            ->assertJsonPath('collectionMissing', true);
+    }
+
+    public function test_tag_rule_never_looks_up_a_collection(): void
+    {
+        $this->save(['enabled' => true, 'percent' => 30])->assertOk()
+            ->assertJsonPath('collectionTitle', null)
+            ->assertJsonPath('collectionMissing', false);
+        $this->auth()->getJson('/api/settings')->assertOk()->assertJsonPath('collectionMissing', false);
+
+        $this->assertSame(0, $this->fake->count('CollectionTitle'));
+    }
+
     public function test_method_is_written_to_the_shop_metafield(): void
     {
         $this->save(['enabled' => true, 'percent' => 30, 'method' => 'company'])->assertOk()->assertJsonPath('settings.method', 'company');
@@ -629,7 +667,7 @@ class SettingsTest extends TestCase
             ->assertExactJson(['settings' => [
                 'enabled' => false, 'percent' => 30, 'method' => 'customer', 'appliesTo' => 'tag', 'eligibleTag' => '',
                 'collectionId' => null, 'combineWithCoupons' => false, 'updated_at' => null, 'disabledReason' => null, 'startsAt' => null, 'endsAt' => null,
-            ], 'discount' => null, 'state' => 'off']);
+            ], 'discount' => null, 'state' => 'off', 'collectionTitle' => null, 'collectionMissing' => false]);
         $this->assertSame(0, $this->fake->count('CreateDiscount'));
     }
 

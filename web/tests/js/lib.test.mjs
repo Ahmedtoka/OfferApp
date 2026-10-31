@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { toIso, fromIso, stateKey, checklist, themeEditorUrl, localeInfo } from '../../public/js/lib.js';
+import { toIso, fromIso, stateKey, checklist, themeEditorUrl, isShopHost } from '../../public/js/lib.js';
 
 test('toIso converts a datetime-local value to ISO 8601 with a timezone, and empty to null', () => {
     const iso = toIso('2026-11-01T10:30');
@@ -43,8 +43,11 @@ test('themeEditorUrl follows the documented deep link', () => {
     assert.equal(url, 'https://shop-1.myshopify.com/admin/themes/current/editor?context=apps&activateAppId=KEY/app-embed');
 });
 
-test('localeInfo: ar* is rtl, anything else is english ltr', () => {
-    assert.deepEqual(localeInfo('ar-EG'), { lang: 'ar', dir: 'rtl' });
-    assert.deepEqual(localeInfo('fr'), { lang: 'en', dir: 'ltr' });
-    assert.deepEqual(localeInfo(null), { lang: 'en', dir: 'ltr' });
+
+test('isShopHost accepts only myshopify.com hosts', () => {
+    assert.equal(isShopHost('shop-1.myshopify.com'), true);
+    assert.equal(isShopHost('evil.com'), false);
+    assert.equal(isShopHost('shop.myshopify.com.evil.com'), false);
+    assert.equal(isShopHost('a/b.myshopify.com'), false);
+    assert.equal(isShopHost(null), false);
 });

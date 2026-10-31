@@ -20,6 +20,8 @@ class OfferSettings
 
     private const READ = 'query ReadSettings($namespace: String!, $key: String!) { shop { metafield(namespace: $namespace, key: $key) { value } } }';
 
+    private const COLLECTION_TITLE = 'query CollectionTitle($id: ID!) { collection(id: $id) { title } }';
+
     private const WRITE = 'mutation WriteSettings($metafields: [MetafieldsSetInput!]!) { metafieldsSet(metafields: $metafields) { metafields { id } userErrors { field message } } }';
 
     public function __construct(private GraphqlClient $graphql, private AutomaticDiscountManager $discounts) {}
@@ -50,6 +52,18 @@ class OfferSettings
             'updated_at' => isset($json['updated_at']) ? (string) $json['updated_at'] : null,
             'disabledReason' => ($json['disabled_reason'] ?? null) === self::BILLING_ENDED ? self::BILLING_ENDED : null,
         ];
+    }
+
+    /**
+     * The title of the collection the rule uses, or null when it no longer exists in the shop.
+     *
+     * @throws ShopifyGraphqlException
+     */
+    public function collectionTitle(string $shop, string $id): ?string
+    {
+        $title = $this->graphql->query($shop, self::COLLECTION_TITLE, ['id' => $id])['collection']['title'] ?? null;
+
+        return is_string($title) && $title !== '' ? $title : null;
     }
 
     /**

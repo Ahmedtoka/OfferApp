@@ -19,7 +19,7 @@ class SettingsController extends Controller
         $shop = (string) $request->attributes->get('shop');
 
         try {
-            return response()->json($this->payload($settings->read($shop), $discounts->find($shop)));
+            return response()->json($this->payload($shop, $settings, $settings->read($shop), $discounts->find($shop)));
         } catch (ShopifyGraphqlException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
@@ -42,17 +42,42 @@ class SettingsController extends Controller
         }
 
         return response()->json(
-            $this->payload($result['settings'], $result['discount']) + ['message' => 'Saved. The discount in Shopify is up to date.']
+            $this->payload($shop, $settings, $result['settings'], $result['discount']) + ['message' => 'Saved. The discount in Shopify is up to date.']
         );
     }
 
     /** Settings plus the discount's dates (they live on the discount), and the combined state. */
-    private function payload(array $settings, ?array $discount): array
+    private function payload(string $shop, OfferSettings $store, array $settings, ?array $discount): array
     {
+        [$title, $missing] = $this->collectionTitle($shop, $store, $settings);
+
         return [
+            'collectionTitle' => $title,
+            'collectionMissing' => $missing,
             'settings' => $settings + ['startsAt' => $discount['startsAt'] ?? null, 'endsAt' => $discount['endsAt'] ?? null],
             'discount' => $discount,
             'state' => OfferState::from($settings, $discount, now()),
         ];
+    }
+
+    /**
+     * Only a collection rule has a title. A lookup that fails is "unknown" (no title, not missing), so a Shopify
+     * hiccup never tells the merchant their collection was deleted.
+     *
+     * @return array{0: ?string, 1: bool}
+     */
+    private function collectionTitle(string $shop, OfferSettings $store, array $settings): array
+    {
+        if (($settings['appliesTo'] ?? 'tag') !== 'collection' || ! is_string($settings['collectionId'] ?? null)) {
+            return [null, false];
+        }
+
+        try {
+            $title = $store->collectionTitle($shop, $settings['collectionId']);
+        } catch (ShopifyGraphqlException) {
+            return [null, false];
+        }
+
+        return [$title, $title === null];
     }
 }

@@ -46,8 +46,8 @@ export function themeEditorUrl(shop, apiKey, handle) {
     return `https://${shop}/admin/themes/current/editor?context=apps&activateAppId=${encodeURIComponent(apiKey)}/${encodeURIComponent(handle)}`;
 }
 
-/** Shopify's `locale` param (e.g. ar, ar-EG): Arabic is RTL, everything else English. */
-export function localeInfo(locale) {
-    const base = String(locale ?? '').toLowerCase().split(/[-_]/)[0];
-    return base === 'ar' ? { lang: 'ar', dir: 'rtl' } : { lang: 'en', dir: 'ltr' };
+
+/** Only a real *.myshopify.com host may be used to build the theme editor link. */
+export function isShopHost(host) {
+    return typeof host === 'string' && /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/i.test(host);
 }
