@@ -5,29 +5,32 @@ namespace App\Services\Analytics;
 use App\Offer\BogoCalculator;
 use App\Offer\OfferConstants;
 use App\Services\OfferSettings;
+use App\Shopify\ShopifyAccessDenied;
 use App\Shopify\ShopifyGraphqlException;
 use Illuminate\Support\Facades\Cache;
 
-/** Live offer numbers from Admin GraphQL orders. Internally everything is integer piastres. */
+/** Live offer numbers from Admin GraphQL orders. Internally everything is integer minor units of the shop currency. */
 class OfferAnalytics
 {
     /**
-     * Arabic allocation titles the offer used before the English switch (Oct 2026). Orders placed
-     * before then still carry them, so analytics must keep recognising them. Never emitted again.
+     * Allocation titles earlier versions emitted. Orders placed before still carry them, so analytics must keep
+     * recognising them. Never emitted again (the current ones are in the shared constants).
      */
-    private const LEGACY_TITLES = [
-        'gift' => 'هدية',
-        'percent' => '/^خصم (\d+)%\z/u',
-        'title' => 'اشتري واحدة وخد واحدة',
-    ];
+    private const LEGACY_DISCOUNT_TITLES = ['Buy One Get One', 'اشتري واحدة وخد واحدة'];
 
     private bool $fromMessages = true;
 
-    /** Current-template percent regex, built once per compute. */
-    private ?string $percentRe = null;
+    /** Percent-message regexes (every language), built once per compute. */
+    private ?array $percentRes = null;
+
+    private string $method = 'customer';
+
+    private string $appliesTo = 'tag';
 
     /** The merchant's eligible tag (shop config), set per compute. */
     private string $eligibleTag = '';
+
+    private int $decimals = 2;
 
     public function __construct(private OrdersFetcher $fetcher, private OfferSettings $settings) {}
 
@@ -39,35 +42,54 @@ class OfferAnalytics
         return $this;
     }
 
-    /** @throws ShopifyGraphqlException */
+    /**
+     * @throws ShopifyAccessDenied when the app may not read orders
+     * @throws ShopifyGraphqlException
+     */
     public function compute(string $shop, int $rangeDays): AnalyticsResult
     {
-        // The tag is part of the cache key: changing it on the settings page recomputes at once.
-        // The public app has no default tag; until analytics learns about collections (later task) fall back to the shared one.
-        $this->eligibleTag = (string) ($this->settings->read($shop)['eligibleTag'] ?: \App\Offer\OfferConstants::get('eligibleTag'));
+        // Method and rule are part of the cache key: changing them on the settings page recomputes at once.
+        $config = $this->settings->read($shop);
+        $this->method = $config['method'];
+        $this->appliesTo = $config['appliesTo'];
+        $this->eligibleTag = $config['eligibleTag'];
+        $rule = $this->appliesTo === 'collection' ? (string) $config['collectionId'] : $this->eligibleTag;
+
         $cached = Cache::remember(
-            "analytics:{$shop}:{$rangeDays}:".sha1($this->eligibleTag),
+            "analytics:{$shop}:{$rangeDays}:".sha1("{$this->method}|{$this->appliesTo}|{$rule}"),
             (int) OfferConstants::get('analyticsCacheSeconds'),
-            fn () => $this->build($shop, $rangeDays)->toArray()
+            fn () => $this->build($shop, $rangeDays, $this->appliesTo === 'collection' ? $config['collectionId'] : null)->toArray()
         );
 
         return AnalyticsResult::fromArray($cached);
     }
 
-    private function build(string $shop, int $rangeDays): AnalyticsResult
+    private function build(string $shop, int $rangeDays, ?string $collectionId): AnalyticsResult
     {
-        $this->percentRe = self::percentPattern();
-        $fetched = $this->fetcher->fetch($shop, $rangeDays, (int) OfferConstants::get('analyticsOrderCap'));
+        $this->percentRes = self::percentPatterns();
+        $fetched = $this->fetcher->fetch($shop, $rangeDays, (int) OfferConstants::get('analyticsOrderCap'), $collectionId);
+        $currency = $fetched['currency'];
+        $this->decimals = BogoCalculator::decimalsFor($currency);
         $orders = array_map(fn (array $o) => $this->analyseOrder($o), $fetched['orders']);
         $rangePct = $this->rangePercent($orders);
+        $otherMethod = $this->method === 'company' ? 'customer' : 'company';
 
-        $offerOrders = $giftUnits = $percentUnits = $totalDiscount = $scenario2 = 0;
+        $offerOrders = $giftUnits = $percentUnits = $totalDiscount = $difference = 0;
+        $offerSales = $offerGross = $otherSales = $unitsOffer = $unitsOther = 0;
         $gifts = [];
+        $offerLines = [];
         foreach ($orders as $order) {
             if ($order['ours'] === []) {
+                $otherSales += $order['net'];
+                $unitsOther += $order['units'];
+
                 continue;
             }
             $offerOrders++;
+            $offerSales += $order['net'];
+            $offerGross += $order['gross'];
+            $unitsOffer += $order['units'];
+            array_push($offerLines, ...$order['lines']);
             $totalDiscount += array_sum(array_column($order['ours'], 'amount'));
             $pct = $order['pct'] ?? $rangePct;
 
@@ -81,30 +103,70 @@ class OfferAnalytics
                 $gifts[$title]['value'] = ($gifts[$title]['value'] ?? 0) + $g['value'];
             }
 
-            $scenario2 += $this->scenario2Extra($order, $pct);
+            $difference += $this->otherMethodDifference($order, $pct, $otherMethod);
         }
 
         $ordersTotal = count($orders);
+        $otherOrders = $ordersTotal - $offerOrders;
 
         return new AnalyticsResult(
+            currency: $currency,
             rangeDays: $rangeDays,
             ordersTotal: $ordersTotal,
             offerOrders: $offerOrders,
             offerOrdersPct: $ordersTotal === 0 ? 0.0 : round($offerOrders * 100 / $ordersTotal, 1),
+            offerSales: $this->money($offerSales),
+            totalDiscount: $this->money($totalDiscount),
+            discountPctOfSales: $offerGross <= 0 ? 0.0 : round($totalDiscount * 100 / $offerGross, 1),
+            aovOffer: $offerOrders === 0 ? null : $this->money((int) round($offerSales / $offerOrders)),
+            aovOther: $otherOrders === 0 ? null : $this->money((int) round($otherSales / $otherOrders)),
+            unitsOffer: $unitsOffer,
+            unitsOther: $unitsOther,
             giftUnits: $giftUnits,
             percentUnits: $percentUnits,
-            totalDiscount: $this->egp($totalDiscount),
-            scenario2Extra: $this->egp($scenario2),
+            otherMethod: ['method' => $otherMethod, 'difference' => $this->money($difference)],
             topGifts: $this->topGifts($gifts),
+            profit: $this->profit($shop, $offerLines, $unitsOffer),
             capped: $fetched['capped'],
             computedAt: now()->toIso8601String(),
         );
     }
 
     /**
+     * Profit on offer orders: what was paid for each line (after every discount) minus unit cost x units, over the
+     * lines whose variant has a cost. null when the app may not read costs or no line has one.
+     *
+     * @param  list<array>  $lines
+     * @return ?array{amount: float, coveredPct: float}
+     */
+    private function profit(string $shop, array $lines, int $units): ?array
+    {
+        $variantIds = array_values(array_filter(array_column($lines, 'variant')));
+        if ($variantIds === [] || $units === 0) {
+            return null;
+        }
+        $costs = $this->fetcher->unitCosts($shop, $variantIds);
+        if ($costs === null) {
+            return null;
+        }
+
+        $amount = $covered = 0;
+        foreach ($lines as $line) {
+            $cost = $line['variant'] === null ? null : ($costs[$line['variant']] ?? null);
+            if ($cost === null) {
+                continue;
+            }
+            $covered += $line['quantity'];
+            $amount += $line['net'] - BogoCalculator::toMinor($cost, $this->decimals) * $line['quantity'];
+        }
+
+        return $covered === 0 ? null : ['amount' => $this->money($amount), 'coveredPct' => round($covered * 100 / $units, 1)];
+    }
+
+    /**
      * Normalises one order: priced lines, plus the allocations that belong to the offer.
      *
-     * @return array{lines: list<array>, ours: list<array>, hasMessages: bool, pct: ?int}
+     * @return array{lines: list<array>, ours: list<array>, hasMessages: bool, pct: ?int, gross: int, net: int, units: int}
      */
     private function analyseOrder(array $order): array
     {
@@ -112,26 +174,30 @@ class OfferAnalytics
         $ours = [];
         $hasMessages = false;
         $pct = null;
-        $eligibleTag = $this->eligibleTag;
+        $gross = $net = $units = 0;
 
         foreach ($order['lineItems']['nodes'] ?? [] as $i => $item) {
-            $pNow = BogoCalculator::toPiastres($item['originalUnitPriceSet']['shopMoney']['amount'] ?? 0);
+            $pNow = $this->minor($item['originalUnitPriceSet']['shopMoney']['amount'] ?? 0);
             $compare = $item['variant']['compareAtPrice'] ?? null;
+            $quantity = (int) ($item['quantity'] ?? 0);
+            $deleted = ($item['product'] ?? null) === null;
+            $lineDiscount = 0;
             $lines[$i] = [
                 'id' => (string) $i,
-                'quantity' => (int) ($item['quantity'] ?? 0),
+                'quantity' => $quantity,
                 'pNow' => $pNow,
-                'pFull' => max($pNow, $compare === null ? 0 : BogoCalculator::toPiastres($compare)),
-                'product' => ($item['product'] ?? null) === null
-                    ? 'Deleted product'
-                    : (string) ($item['product']['title'] ?? ''),
-                // Same rule as the Function: only products carrying the exact (case-sensitive) tag take part.
-                // Refined per order below: tags are read now, not at order time.
-                'eligible' => in_array($eligibleTag, (array) ($item['product']['tags'] ?? []), true),
-                'deleted' => ($item['product'] ?? null) === null,
+                'pFull' => max($pNow, $compare === null ? 0 : $this->minor($compare)),
+                'product' => $deleted ? 'Deleted product' : (string) ($item['product']['title'] ?? ''),
+                'variant' => $item['variant']['id'] ?? null,
+                // Same rule as the Function. Refined per order below: tags and collections are read now, not at order time.
+                'eligible' => $this->matchesRule($item['product'] ?? null),
+                'deleted' => $deleted,
+                'net' => 0,
             ];
 
             foreach ($item['discountAllocations'] ?? [] as $alloc) {
+                $amount = $this->minor($alloc['allocatedAmountSet']['shopMoney']['amount'] ?? 0);
+                $lineDiscount += $amount;
                 // Only automatic discounts can be ours: manual (staff/POS) and code discounts never are.
                 if (($alloc['discountApplication']['__typename'] ?? null) !== 'AutomaticDiscountApplication') {
                     continue;
@@ -145,12 +211,13 @@ class OfferAnalytics
                 if ($kind === 'percent') {
                     $pct ??= $this->percentFrom($title);
                 }
-                $ours[] = [
-                    'kind' => $kind,
-                    'line' => $i,
-                    'amount' => BogoCalculator::toPiastres($alloc['allocatedAmountSet']['shopMoney']['amount'] ?? 0),
-                ];
+                $ours[] = ['kind' => $kind, 'line' => $i, 'amount' => $amount];
             }
+
+            $lines[$i]['net'] = $pNow * $quantity - $lineDiscount;
+            $gross += $pNow * $quantity;
+            $net += $lines[$i]['net'];
+            $units += $quantity;
         }
 
         // A line that carries one of our allocations took part, whatever its tags say today. A line whose
@@ -161,25 +228,48 @@ class OfferAnalytics
         }
         unset($line);
 
-        return ['lines' => $lines, 'ours' => $ours, 'hasMessages' => $hasMessages, 'pct' => $pct];
+        return ['lines' => $lines, 'ours' => $ours, 'hasMessages' => $hasMessages, 'pct' => $pct, 'gross' => $gross, 'net' => $net, 'units' => $units];
+    }
+
+    /** Whether the product meets the merchant's rule today: carries the exact (case-sensitive) tag, or is in the collection. */
+    private function matchesRule(?array $product): bool
+    {
+        if ($product === null) {
+            return false;
+        }
+
+        return $this->appliesTo === 'collection'
+            ? ($product['inCollection'] ?? false) === true
+            : $this->eligibleTag !== '' && in_array($this->eligibleTag, (array) ($product['tags'] ?? []), true);
     }
 
     /** @return 'gift'|'percent'|'title'|null null = not ours */
     private function classify(string $title): ?string
     {
-        return match (true) {
-            $title === '' => null,
-            strcasecmp($title, (string) OfferConstants::get('giftMessage')) === 0, $title === self::LEGACY_TITLES['gift'] => 'gift',
-            $this->percentFrom($title) !== null => 'percent',
-            strcasecmp($title, (string) OfferConstants::get('discountTitle')) === 0, $title === self::LEGACY_TITLES['title'] => 'title',
-            default => null,
-        };
+        if ($title === '') {
+            return null;
+        }
+        foreach ((array) OfferConstants::get('giftMessages') as $gift) {
+            if (strcasecmp($title, (string) $gift) === 0) {
+                return 'gift';
+            }
+        }
+        if ($this->percentFrom($title) !== null) {
+            return 'percent';
+        }
+        foreach ([OfferConstants::get('discountTitle'), ...self::LEGACY_DISCOUNT_TITLES] as $known) {
+            if (strcasecmp($title, (string) $known) === 0) {
+                return 'title';
+            }
+        }
+
+        return null;
     }
 
-    /** The percent in a current or legacy percent-message title, if within [minPercent, maxPercent], else null. */
+    /** The percent in a percent-message title (any language), if within [minPercent, maxPercent], else null. */
     private function percentFrom(string $title): ?int
     {
-        foreach ([$this->percentRe ??= self::percentPattern(), self::LEGACY_TITLES['percent']] as $pattern) {
+        foreach ($this->percentRes ??= self::percentPatterns() as $pattern) {
             if (preg_match($pattern, $title, $m) === 1) {
                 $pct = (int) $m[1];
                 $inRange = strlen($m[1]) <= 3
@@ -193,12 +283,18 @@ class OfferAnalytics
         return null;
     }
 
-    /** percentMessageTemplate as an anchored, case-insensitive regex, e.g. "{pct}% off" -> /^(\d+)% off\z/iu. */
-    private static function percentPattern(): string
+    /**
+     * Every percentMessageTemplates entry as an anchored, case-insensitive regex, e.g. "{pct}% off" -> /^(\d+)% off\z/iu.
+     *
+     * @return list<string>
+     */
+    private static function percentPatterns(): array
     {
-        $parts = explode('{pct}', (string) OfferConstants::get('percentMessageTemplate'));
+        return array_values(array_map(function (string $template) {
+            $parts = explode('{pct}', $template);
 
-        return '/^'.implode('(\d+)', array_map(fn (string $p) => preg_quote($p, '/'), $parts)).'\z/iu';
+            return '/^'.implode('(\d+)', array_map(fn (string $p) => preg_quote($p, '/'), $parts)).'\z/iu';
+        }, (array) OfferConstants::get('percentMessageTemplates')));
     }
 
     /** The percent found in any percent-message title across the range, else the default. */
@@ -238,7 +334,7 @@ class OfferAnalytics
     {
         $giftUnits = $percentUnits = 0;
         $gifts = [];
-        $result = BogoCalculator::compute(BogoCalculator::expandUnits($this->eligibleLines($order)), $pct, 'max');
+        $result = BogoCalculator::compute(BogoCalculator::expandUnits($this->eligibleLines($order)), $pct, $this->method);
         foreach ($result->assignments as $a) {
             if ($a['role'] === 'gift' && $a['discount'] > 0) {
                 $product = $order['lines'][(int) $a['unit']->lineId]['product'];
@@ -254,10 +350,12 @@ class OfferAnalytics
     }
 
     /**
-     * What the margin-protecting variant (smallest saving) would have charged above what was charged.
-     * Never negative; an even unit count is identical to scenario 1, so contributes 0.
+     * What the method that is not selected would have changed on the same cart, over the eligible lines:
+     * selected "customer": what "company" would have charged on top of what was charged (the company's gain);
+     * selected "company": what was charged on top of what "customer" would have charged (the customers' saving).
+     * Never negative.
      */
-    private function scenario2Extra(array $order, int $pct): int
+    private function otherMethodDifference(array $order, int $pct, string $otherMethod): int
     {
         $lines = $this->eligibleLines($order);
         $gross = 0;
@@ -267,14 +365,15 @@ class OfferAnalytics
         // Charged on those same lines (every line with our allocation is eligible, so this is all of ours).
         $ours = array_filter($order['ours'], fn (array $a) => isset($lines[$a['line']]));
         $charged = $gross - array_sum(array_column($ours, 'amount'));
-        $alt = BogoCalculator::compute(BogoCalculator::expandUnits($lines), $pct, 'min')->totalPay;
+        $alt = BogoCalculator::compute(BogoCalculator::expandUnits($lines), $pct, $otherMethod)->totalPay;
 
-        return max(0, $alt - $charged);
+        return max(0, $this->method === 'company' ? $charged - $alt : $alt - $charged);
     }
 
     /**
-     * The order's lines that take part in the offer, keyed as in $order['lines']: tagged now, carrying one of
-     * our allocations, or (in an offer order) of a deleted product. Other lines contribute nothing to the scenario recompute; the order still counts in ordersTotal.
+     * The order's lines that take part in the offer, keyed as in $order['lines']: matching the rule now, carrying one
+     * of our allocations, or (in an offer order) of a deleted product. Other lines contribute nothing to the
+     * recompute; the order still counts in ordersTotal.
      */
     private function eligibleLines(array $order): array
     {
@@ -294,13 +393,19 @@ class OfferAnalytics
         usort($rows, fn ($a, $b) => $b['value'] <=> $a['value'] ?: strcmp($a['title'], $b['title']));
 
         return array_map(
-            fn ($r) => ['title' => $r['title'], 'units' => $r['units'], 'value' => $this->egp($r['value'])],
+            fn ($r) => ['title' => $r['title'], 'units' => $r['units'], 'value' => $this->money($r['value'])],
             array_slice($rows, 0, 10)
         );
     }
 
-    private function egp(int $piastres): float
+    private function minor(string|float|int $amount): int
     {
-        return round($piastres / 100, 2);
+        return BogoCalculator::toMinor($amount, $this->decimals);
+    }
+
+    /** Minor units -> amount in the shop currency, rounded to its decimals. */
+    private function money(int $minor): float
+    {
+        return round($minor / (10 ** $this->decimals), $this->decimals);
     }
 }

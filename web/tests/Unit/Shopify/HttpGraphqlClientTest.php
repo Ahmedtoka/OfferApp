@@ -5,6 +5,7 @@ namespace Tests\Unit\Shopify;
 use App\Models\Shop;
 use App\Shopify\GraphqlClient;
 use App\Shopify\HttpGraphqlClient;
+use App\Shopify\ShopifyAccessDenied;
 use App\Shopify\ShopifyGraphqlException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
@@ -101,6 +102,19 @@ class HttpGraphqlClientTest extends TestCase
         }
         Http::assertSentCount(1);
         $this->assertSame([], $this->slept);
+    }
+
+    public function test_access_denied_error_gets_its_own_exception(): void
+    {
+        Http::fake([self::URL => Http::response(['errors' => [['message' => 'Access denied for orders field.', 'extensions' => ['code' => 'ACCESS_DENIED']]]])]);
+
+        try {
+            $this->client()->query(SessionTokens::SHOP, '{ x }');
+            $this->fail('expected exception');
+        } catch (ShopifyAccessDenied $e) {
+            $this->assertStringContainsString('Access denied for orders', $e->getMessage());
+        }
+        Http::assertSentCount(1);
     }
 
     public function test_container_binds_interface_to_http_client(): void

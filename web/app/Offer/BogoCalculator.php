@@ -125,7 +125,7 @@ final class BogoCalculator
             return null;
         }
 
-        $smallest = in_array($method, ['company', 'min'], true);
+        $smallest = $method === 'company';
         $best = null;
         $bestIndex = -1;
         foreach (array_keys($sorted) as $i) {
@@ -152,7 +152,6 @@ final class BogoCalculator
     /**
      * @param  array<int, Unit>  $units
      * @param  string  $method  'customer' (largest saving) or 'company' (smallest valid saving).
-     *                          'max' (= customer) and 'min' (neighbour pairs, smallest saving) stay until Task 9 moves OfferAnalytics.
      */
     public static function compute(array $units, int $pct, string $method = 'customer'): OfferResult
     {
@@ -242,12 +241,6 @@ final class BogoCalculator
         $result = $whole + $digits + $roundUp;
 
         return $negative ? -$result : $result;
-    }
-
-    /** Two-decimal shorthand kept for existing callers (analytics migrates in a later task). */
-    public static function toPiastres(string|float|int $amount): int
-    {
-        return self::toMinor($amount, 2);
     }
 
     /** ISO 4217 currency code -> number of decimals (unknown codes use the default of 2). */

@@ -32,9 +32,44 @@ class AnalyticsTest extends TestCase
     private function fake(array $pages): FakeOrdersClient
     {
         $fake = new FakeOrdersClient($pages);
+        $fake->settingsValue = self::settings();
         $this->app->instance(GraphqlClient::class, $fake);
 
         return $fake;
+    }
+
+    private static function settings(array $over = []): string
+    {
+        return json_encode($over + ['enabled' => true, 'percent' => 30, 'method' => 'customer', 'appliesTo' => 'tag', 'eligibleTag' => 'FallOffer', 'collectionId' => null]);
+    }
+
+    /** One order-line node for an inline page. $o: qty, price, title, tags, variant, inCollection, allocs [[amount, title, type?]], compareAt. */
+    private static function line(array $o): array
+    {
+        $o += ['qty' => 1, 'title' => 'Product A', 'tags' => ['FallOffer'], 'variant' => null, 'inCollection' => false, 'allocs' => [], 'compareAt' => null];
+
+        return [
+            'quantity' => $o['qty'],
+            'originalUnitPriceSet' => ['shopMoney' => ['amount' => (string) $o['price']]],
+            'variant' => $o['variant'] === null ? null : ['id' => $o['variant'], 'compareAtPrice' => $o['compareAt']],
+            'product' => ['id' => 'gid://shopify/Product/1', 'title' => $o['title'], 'tags' => $o['tags'], 'inCollection' => $o['inCollection']],
+            'discountAllocations' => array_map(fn (array $a) => [
+                'allocatedAmountSet' => ['shopMoney' => ['amount' => (string) $a[0]]],
+                'discountApplication' => ['__typename' => $a[2] ?? 'AutomaticDiscountApplication', 'title' => $a[1]],
+            ], $o['allocs']),
+        ];
+    }
+
+    /** An inline orders page from lists of line nodes, one list per order. */
+    private static function page(array ...$orders): array
+    {
+        return ['orders' => [
+            'pageInfo' => ['hasNextPage' => false, 'endCursor' => null],
+            'nodes' => array_map(fn (array $lines, int $i) => [
+                'id' => 'gid://shopify/Order/'.(9000 + $i), 'name' => '#'.(9000 + $i), 'createdAt' => '2026-10-28T10:00:00+00:00',
+                'cancelledAt' => null, 'lineItems' => ['nodes' => $lines],
+            ], $orders, array_keys($orders)),
+        ]];
     }
 
     private function api(string $url = '/api/analytics')
@@ -56,7 +91,9 @@ class AnalyticsTest extends TestCase
             ->assertJsonPath('capped', false);
         $this->assertSame(77.8, $res->json('offerOrdersPct'));
         $this->assertEquals(9370.0, $res->json('totalDiscount'));
-        $this->assertEquals(390.0, $res->json('scenario2Extra'));
+        $this->assertSame('EGP', $res->json('currency'));
+        $this->assertSame('company', $res->json('otherMethod.method'));
+        $this->assertEquals(750.0, $res->json('otherMethod.difference'));
         $this->assertEquals([
             ['title' => 'Product B', 'units' => 3, 'value' => 3300.0],
             ['title' => 'Product A', 'units' => 2, 'value' => 2400.0],
@@ -79,7 +116,7 @@ class AnalyticsTest extends TestCase
             ->assertJsonPath('percentUnits', 4);
         $this->assertSame(77.8, $res->json('offerOrdersPct'));
         $this->assertEquals(9370.0, $res->json('totalDiscount'));
-        $this->assertEquals(390.0, $res->json('scenario2Extra'));
+        $this->assertEquals(750.0, $res->json('otherMethod.difference'));
         $this->assertNotContains('Product Cancelled', array_column($res->json('topGifts'), 'title'));
         $this->assertSame('Product B', $res->json('topGifts.0.title'));
     }
@@ -95,9 +132,13 @@ class AnalyticsTest extends TestCase
 
     public function test_orders_query_asks_for_product_tags(): void
     {
-        $query = (new \ReflectionClassConstant(OrdersFetcher::class, 'QUERY'))->getValue();
+        $fake = $this->fake(['orders_all_rows']);
 
-        $this->assertStringContainsString('product { id title tags }', $query);
+        $this->api()->assertOk();
+
+        $this->assertStringContainsString('product { id title tags }', $fake->calls[0]['query']);
+        $this->assertStringContainsString('shop { currencyCode }', $fake->calls[0]['query']);
+        $this->assertStringNotContainsString('inCollection', $fake->calls[0]['query']);
     }
 
     public function test_untagged_lines_are_left_out_of_the_scenario_recompute(): void
@@ -115,7 +156,7 @@ class AnalyticsTest extends TestCase
             $this->assertSame(1, $result->giftUnits);
             $this->assertSame(1, $result->percentUnits);
             $this->assertEquals(1370.0, $result->totalDiscount);
-            $this->assertEquals(140.0, $result->scenario2Extra);
+            $this->assertEquals(140.0, $result->otherMethod['difference']);
             $this->assertEquals([['title' => 'Product B', 'units' => 1, 'value' => 1100.0]], $result->topGifts);
         }
     }
@@ -131,7 +172,7 @@ class AnalyticsTest extends TestCase
 
             $this->assertSame(4, $result->offerOrders);
             $this->assertEquals(5200.0, $result->totalDiscount);
-            $this->assertEquals(280.0, $result->scenario2Extra);
+            $this->assertEquals(280.0, $result->otherMethod['difference']);
             $this->assertSame(4, $result->giftUnits);
             $this->assertSame(3, $result->percentUnits);
             $this->assertNotEmpty($result->topGifts);
@@ -171,7 +212,7 @@ class AnalyticsTest extends TestCase
             ->assertJsonPath('giftUnits', 1)
             ->assertJsonPath('percentUnits', 1);
         $this->assertEquals(1370.0, $res->json('totalDiscount'));
-        $this->assertEquals(140.0, $res->json('scenario2Extra'));
+        $this->assertEquals(140.0, $res->json('otherMethod.difference'));
         $this->assertEquals([['title' => 'Product B', 'units' => 1, 'value' => 1100.0]], $res->json('topGifts'));
     }
 
@@ -187,7 +228,7 @@ class AnalyticsTest extends TestCase
             ->assertJsonPath('giftUnits', 8)
             ->assertJsonPath('percentUnits', 4);
         $this->assertEquals(9370.0, $res->json('totalDiscount'));
-        $this->assertEquals(390.0, $res->json('scenario2Extra'));
+        $this->assertEquals(750.0, $res->json('otherMethod.difference'));
 
         Cache::flush();
         $this->fake(['orders_legacy_arabic_title']);
@@ -238,7 +279,7 @@ class AnalyticsTest extends TestCase
         $this->assertEquals(9370.0, $result->totalDiscount);
         $this->assertSame(8, $result->giftUnits);
         $this->assertSame(4, $result->percentUnits);
-        $this->assertEquals(390.0, $result->scenario2Extra);
+        $this->assertEquals(750.0, $result->otherMethod['difference']);
     }
 
     public function test_second_call_within_ttl_hits_the_client_once(): void
@@ -250,7 +291,7 @@ class AnalyticsTest extends TestCase
 
         $this->assertCount(1, $fake->calls);
         $this->assertSame($first, $second);
-        $this->assertTrue(Cache::has('analytics:'.SessionTokens::SHOP.':30:'.sha1('FallOffer')));
+        $this->assertTrue(Cache::has('analytics:'.SessionTokens::SHOP.':30:'.sha1('customer|tag|FallOffer')));
         $this->assertSame(2, $fake->settingsReads);
     }
 
@@ -259,10 +300,24 @@ class AnalyticsTest extends TestCase
         $fake = $this->fake(['orders_all_rows', 'orders_all_rows']);
 
         $this->api()->assertOk();
-        $fake->settingsValue = json_encode(['enabled' => true, 'percent' => 30, 'eligibleTag' => 'WinterOffer']);
+        $fake->settingsValue = self::settings(['eligibleTag' => 'WinterOffer']);
         $this->api()->assertOk();
 
         $this->assertCount(2, $fake->calls);
+    }
+
+    public function test_changing_the_method_or_the_collection_recomputes_instead_of_serving_the_cache(): void
+    {
+        $fake = $this->fake(['orders_all_rows', 'orders_all_rows', 'orders_all_rows']);
+
+        $this->api()->assertOk();
+        $fake->settingsValue = self::settings(['method' => 'company']);
+        $this->api()->assertOk();
+        $fake->settingsValue = self::settings(['method' => 'company', 'appliesTo' => 'collection', 'collectionId' => 'gid://shopify/Collection/9']);
+        $this->api()->assertOk();
+
+        $this->assertCount(3, $fake->calls);
+        $this->assertTrue(Cache::has('analytics:'.SessionTokens::SHOP.':30:'.sha1('company|collection|gid://shopify/Collection/9')));
     }
 
     public function test_recompute_uses_the_tag_from_the_shop_config_not_the_constant(): void
@@ -271,7 +326,7 @@ class AnalyticsTest extends TestCase
         foreach ([true, false] as $fromMessages) {
             Cache::flush();
             $fake = $this->fake(['orders_mixed_untagged_winter']);
-            $fake->settingsValue = json_encode(['enabled' => true, 'percent' => 30, 'eligibleTag' => 'WinterOffer']);
+            $fake->settingsValue = self::settings(['eligibleTag' => 'WinterOffer']);
 
             $result = $this->app->make(OfferAnalytics::class)->classifyFromMessages($fromMessages)->compute(SessionTokens::SHOP, 30);
 
@@ -280,7 +335,7 @@ class AnalyticsTest extends TestCase
             $this->assertSame(1, $result->giftUnits);
             $this->assertSame(1, $result->percentUnits);
             $this->assertEquals(1370.0, $result->totalDiscount);
-            $this->assertEquals(140.0, $result->scenario2Extra);
+            $this->assertEquals(140.0, $result->otherMethod['difference']);
             $this->assertEquals([['title' => 'Product B', 'units' => 1, 'value' => 1100.0]], $result->topGifts);
         }
     }
@@ -292,7 +347,7 @@ class AnalyticsTest extends TestCase
         // so the recompute pairs B with C and derives one gift (C) and no percent unit.
         Cache::flush();
         $fake = $this->fake(['orders_mixed_untagged']);
-        $fake->settingsValue = json_encode(['enabled' => true, 'percent' => 30, 'eligibleTag' => 'WinterOffer']);
+        $fake->settingsValue = self::settings(['eligibleTag' => 'WinterOffer']);
 
         $result = $this->app->make(OfferAnalytics::class)->classifyFromMessages(false)->compute(SessionTokens::SHOP, 30);
 
@@ -300,6 +355,218 @@ class AnalyticsTest extends TestCase
         $this->assertSame(1, $result->giftUnits);
         $this->assertSame(0, $result->percentUnits);
         $this->assertEquals([['title' => 'Product C', 'units' => 1, 'value' => 900.0]], $result->topGifts);
+    }
+
+    public function test_sales_comparison_between_offer_and_other_orders(): void
+    {
+        $this->fake([self::page(
+            [self::line(['price' => 1200]), self::line(['price' => 1100, 'title' => 'Product B', 'allocs' => [[1100, 'Gift']]])],
+            [self::line(['price' => 500, 'title' => 'Product D', 'allocs' => [[150, '30% off']]])],
+            [self::line(['price' => 400, 'qty' => 2, 'tags' => []])],
+            [self::line(['price' => 600])],
+        )]);
+
+        $res = $this->api()->assertOk();
+
+        $res->assertJsonPath('ordersTotal', 4)->assertJsonPath('offerOrders', 2)
+            ->assertJsonPath('unitsOffer', 3)->assertJsonPath('unitsOther', 3)
+            ->assertJsonPath('giftUnits', 1)->assertJsonPath('percentUnits', 1);
+        $this->assertEquals(50.0, $res->json('offerOrdersPct'));
+        $this->assertEquals(1250.0, $res->json('totalDiscount'));
+        $this->assertEquals(1550.0, $res->json('offerSales'));
+        $this->assertEquals(775.0, $res->json('aovOffer'));
+        $this->assertEquals(700.0, $res->json('aovOther'));
+        $this->assertSame(44.6, $res->json('discountPctOfSales'));
+        $this->assertNull($res->json('profit'));
+        $this->assertEqualsCanonicalizing(['currency', 'rangeDays', 'ordersTotal', 'offerOrders', 'offerOrdersPct', 'offerSales', 'totalDiscount',
+            'discountPctOfSales', 'aovOffer', 'aovOther', 'unitsOffer', 'unitsOther', 'giftUnits', 'percentUnits', 'otherMethod', 'topGifts',
+            'profit', 'capped', 'computedAt'], array_keys($res->json()));
+    }
+
+    public function test_aov_other_is_null_without_non_offer_orders(): void
+    {
+        $this->fake([self::page(
+            [self::line(['price' => 1200]), self::line(['price' => 1100, 'allocs' => [[1100, 'Gift']]])],
+        )]);
+
+        $res = $this->api()->assertOk();
+
+        $this->assertNull($res->json('aovOther'));
+        $this->assertSame(0, $res->json('unitsOther'));
+        $this->assertEquals(1200.0, $res->json('aovOffer'));
+    }
+
+    public function test_no_offer_orders_gives_null_aov_offer_and_zero_difference(): void
+    {
+        $this->fake([self::page([self::line(['price' => 600])])]);
+
+        $res = $this->api()->assertOk();
+
+        $this->assertNull($res->json('aovOffer'));
+        $this->assertEquals(600.0, $res->json('aovOther'));
+        $this->assertEquals(0.0, $res->json('discountPctOfSales'));
+        $this->assertEquals(0.0, $res->json('otherMethod.difference'));
+    }
+
+    public function test_amounts_use_the_shop_currency_and_its_decimals(): void
+    {
+        $fake = $this->fake([self::page(
+            [self::line(['price' => '12.345']), self::line(['price' => '10.500', 'title' => 'Product B', 'allocs' => [['10.500', 'Gift']]])],
+        )]);
+        $fake->currency = 'KWD';
+
+        $res = $this->api()->assertOk();
+
+        $this->assertSame('KWD', $res->json('currency'));
+        $this->assertSame(10.5, (float) $res->json('totalDiscount'));
+        $this->assertSame(12.345, (float) $res->json('offerSales'));
+        $this->assertSame(10.5, (float) $res->json('topGifts.0.value'));
+
+        Cache::flush();
+        $fake = $this->fake([self::page(
+            [self::line(['price' => '1500']), self::line(['price' => '1000', 'title' => 'Product B', 'allocs' => [['1000', 'Gift']]])],
+        )]);
+        $fake->currency = 'JPY';
+
+        $res = $this->api()->assertOk();
+
+        $this->assertSame('JPY', $res->json('currency'));
+        $this->assertEquals(1000, $res->json('totalDiscount'));
+        $this->assertEquals(1500, $res->json('offerSales'));
+    }
+
+    public function test_every_current_and_legacy_title_is_classified_and_manual_discounts_are_ignored(): void
+    {
+        $this->fake([self::page(
+            [self::line(['price' => 1200]), self::line(['price' => 1100, 'title' => 'Product B', 'allocs' => [[1100, 'Gift']]])],
+            [self::line(['price' => 1200]), self::line(['price' => 900, 'title' => 'Product C', 'allocs' => [[900, 'هدية']]])],
+            [self::line(['price' => 500, 'allocs' => [[150, '30% off']]])],
+            [self::line(['price' => 500, 'allocs' => [[150, 'خصم 30%']]])],
+            [self::line(['price' => 1200]), self::line(['price' => 800, 'title' => 'Product D', 'allocs' => [[800, 'Pairly: BOGO Offers']]])],
+            [self::line(['price' => 1200]), self::line(['price' => 700, 'allocs' => [[700, 'Gift', 'ManualDiscountApplication']]])],
+        )]);
+
+        $res = $this->api()->assertOk();
+
+        $res->assertJsonPath('ordersTotal', 6)->assertJsonPath('offerOrders', 5)
+            ->assertJsonPath('giftUnits', 3)->assertJsonPath('percentUnits', 2);
+        $this->assertEquals(1100.0 + 900 + 150 + 150 + 800, $res->json('totalDiscount'));
+    }
+
+    public function test_other_method_is_what_the_other_method_would_have_changed(): void
+    {
+        // A 1200, B 1100, C 900, D 800 paired by "customer": D and B are gifts, so 2100 is charged.
+        // "company" would gift the cheapest two (D and C): 2300 charged, i.e. 200 more for the company.
+        $this->fake([self::page([
+            self::line(['price' => 1200]), self::line(['price' => 1100, 'title' => 'Product B', 'allocs' => [[1100, 'Gift']]]),
+            self::line(['price' => 900, 'title' => 'Product C']), self::line(['price' => 800, 'title' => 'Product D', 'allocs' => [[800, 'Gift']]]),
+        ])]);
+
+        $res = $this->api()->assertOk();
+
+        $this->assertSame('company', $res->json('otherMethod.method'));
+        $this->assertEquals(200.0, $res->json('otherMethod.difference'));
+
+        // Selected "company" on an order charged 2300: customers would have saved 200 more under "customer".
+        Cache::flush();
+        $fake = $this->fake([self::page([
+            self::line(['price' => 1200]), self::line(['price' => 1100, 'title' => 'Product B']),
+            self::line(['price' => 900, 'title' => 'Product C', 'allocs' => [[900, 'Gift']]]), self::line(['price' => 800, 'title' => 'Product D', 'allocs' => [[800, 'Gift']]]),
+        ])]);
+        $fake->settingsValue = self::settings(['method' => 'company']);
+
+        $res = $this->api()->assertOk();
+
+        $this->assertSame('customer', $res->json('otherMethod.method'));
+        $this->assertEquals(200.0, $res->json('otherMethod.difference'));
+    }
+
+    public function test_other_method_difference_is_never_negative(): void
+    {
+        // This order charged 3200 although "company" would have charged 2300 (less discount): it counts 0, not -900.
+        $lightlyDiscounted = [
+            self::line(['price' => 1200]), self::line(['price' => 1100, 'title' => 'Product B']),
+            self::line(['price' => 900, 'title' => 'Product C']), self::line(['price' => 800, 'title' => 'Product D', 'allocs' => [[800, 'Gift']]]),
+        ];
+        $positive = [
+            self::line(['price' => 1200]), self::line(['price' => 1100, 'title' => 'Product B', 'allocs' => [[1100, 'Gift']]]),
+            self::line(['price' => 900, 'title' => 'Product C']), self::line(['price' => 800, 'title' => 'Product D', 'allocs' => [[800, 'Gift']]]),
+        ];
+        $this->fake([self::page($lightlyDiscounted, $positive)]);
+
+        $this->assertEquals(200.0, $this->api()->assertOk()->json('otherMethod.difference'));
+
+        Cache::flush();
+        $this->fake([self::page($lightlyDiscounted)]);
+
+        $this->assertEquals(0.0, $this->api()->assertOk()->json('otherMethod.difference'));
+    }
+
+    public function test_collection_rule_asks_shopify_and_uses_membership_for_eligibility(): void
+    {
+        $collection = ['appliesTo' => 'collection', 'collectionId' => 'gid://shopify/Collection/9', 'eligibleTag' => ''];
+        // A and B are in the collection; C (5000, in no collection, untagged) is not: leaving C out keeps the pair even.
+        $fake = $this->fake([self::page([
+            self::line(['price' => 1200, 'tags' => [], 'inCollection' => true]),
+            self::line(['price' => 1100, 'tags' => [], 'inCollection' => true, 'title' => 'Product B', 'allocs' => [[1100, 'Pairly: BOGO Offers']]]),
+            self::line(['price' => 5000, 'tags' => [], 'inCollection' => false, 'title' => 'Product C']),
+        ])]);
+        $fake->settingsValue = self::settings($collection);
+
+        $res = $this->api()->assertOk();
+
+        $this->assertStringContainsString('inCollection(id: $collectionId)', $fake->calls[0]['query']);
+        $this->assertSame('gid://shopify/Collection/9', $fake->calls[0]['variables']['collectionId']);
+        $res->assertJsonPath('offerOrders', 1)->assertJsonPath('giftUnits', 1)->assertJsonPath('percentUnits', 0);
+        $this->assertEquals([['title' => 'Product B', 'units' => 1, 'value' => 1100.0]], $res->json('topGifts'));
+        $this->assertEquals(0.0, $res->json('otherMethod.difference'));
+    }
+
+    public function test_missing_read_orders_scope_answers_403(): void
+    {
+        $fake = $this->fake([]);
+        $fake->ordersDenied = true;
+
+        $this->api()->assertStatus(403)->assertExactJson(['error' => 'needs_read_orders']);
+    }
+
+    public function test_profit_is_null_without_cost_access_and_does_not_break_analytics(): void
+    {
+        $fake = $this->fake([self::page([self::line(['price' => 1200, 'variant' => 'gid://shopify/ProductVariant/1', 'allocs' => [[360, '30% off']]])])]);
+
+        $res = $this->api()->assertOk();
+
+        $this->assertNull($res->json('profit'));
+        $this->assertSame(1, $res->json('offerOrders'));
+        $this->assertSame([['gid://shopify/ProductVariant/1']], $fake->costCalls);
+    }
+
+    public function test_profit_from_unit_costs_with_covered_share(): void
+    {
+        $v1 = 'gid://shopify/ProductVariant/1';
+        $v2 = 'gid://shopify/ProductVariant/2';
+        $page = self::page(
+            [self::line(['price' => 1200, 'variant' => $v1]), self::line(['price' => 1100, 'variant' => $v2, 'title' => 'Product B', 'allocs' => [[1100, 'Gift']]])],
+            [self::line(['price' => 600, 'variant' => 'gid://shopify/ProductVariant/3'])], // not an offer order: never asked for
+        );
+        $fake = $this->fake([$page]);
+        $fake->unitCosts = [$v1 => '700.00', $v2 => '300.00'];
+
+        $res = $this->api()->assertOk();
+
+        // (1200 - 700) + (0 - 300) = 200 over 2 of 2 offer units.
+        $this->assertEquals(200.0, $res->json('profit.amount'));
+        $this->assertEquals(100.0, $res->json('profit.coveredPct'));
+        $this->assertSame([[$v1, $v2]], $fake->costCalls);
+
+        Cache::flush();
+        $fake = $this->fake([$page]);
+        $fake->unitCosts = [$v1 => '700.00', $v2 => null];
+
+        $res = $this->api()->assertOk();
+
+        $this->assertEquals(500.0, $res->json('profit.amount'));
+        $this->assertEquals(50.0, $res->json('profit.coveredPct'));
     }
 
     public function test_cache_is_per_range(): void

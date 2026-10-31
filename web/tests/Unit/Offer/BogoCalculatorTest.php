@@ -27,8 +27,8 @@ class BogoCalculatorTest extends TestCase
         return array_map(fn ($l) => [
             'id' => $l['id'],
             'quantity' => $l['quantity'],
-            'pNow' => BogoCalculator::toPiastres($l['pNow']),
-            'pFull' => BogoCalculator::toPiastres($l['pFull']),
+            'pNow' => BogoCalculator::toMinor($l['pNow'], 2),
+            'pFull' => BogoCalculator::toMinor($l['pFull'], 2),
         ], $lines);
     }
 
@@ -39,8 +39,8 @@ class BogoCalculatorTest extends TestCase
         $units = BogoCalculator::expandUnits($lines);
         $result = BogoCalculator::compute($units, $case['pct'], 'customer');
 
-        $this->assertSame(BogoCalculator::toPiastres($case['expectedPay']), $result->totalPay);
-        $this->assertSame(BogoCalculator::toPiastres($case['expectedSaving']), $result->totalDiscount);
+        $this->assertSame(BogoCalculator::toMinor($case['expectedPay'], 2), $result->totalPay);
+        $this->assertSame(BogoCalculator::toMinor($case['expectedSaving'], 2), $result->totalDiscount);
 
         if (array_key_exists('expectedGifts', $case)) {
             $gifts = [];
@@ -59,16 +59,11 @@ class BogoCalculatorTest extends TestCase
             $this->assertSame($case['expectedSingle'], $result->singleUnit?->lineId);
         }
 
-        if (array_key_exists('scenario2Pay', $case)) {
-            $min = BogoCalculator::compute($units, $case['pct'], 'min');
-            $this->assertSame(BogoCalculator::toPiastres($case['scenario2Pay']), $min->totalPay);
-        }
-
         if (isset($case['company'])) {
             $company = $case['company'];
             $result = BogoCalculator::compute($units, $case['pct'], 'company');
-            $this->assertSame(BogoCalculator::toPiastres($company['expectedPay']), $result->totalPay);
-            $this->assertSame(BogoCalculator::toPiastres($company['expectedSaving']), $result->totalDiscount);
+            $this->assertSame(BogoCalculator::toMinor($company['expectedPay'], 2), $result->totalPay);
+            $this->assertSame(BogoCalculator::toMinor($company['expectedSaving'], 2), $result->totalDiscount);
             if (array_key_exists('expectedSingle', $company)) {
                 $this->assertSame($company['expectedSingle'], $result->singleUnit?->lineId);
             }
@@ -84,9 +79,9 @@ class BogoCalculatorTest extends TestCase
                 $expected[] = [
                     'lineId' => (string) $id,
                     'giftQty' => $p['giftQty'],
-                    'giftAmount' => BogoCalculator::toPiastres($p['giftAmount']),
+                    'giftAmount' => BogoCalculator::toMinor($p['giftAmount'], 2),
                     'singleQty' => $p['singleQty'],
-                    'singleAmount' => BogoCalculator::toPiastres($p['singleAmount']),
+                    'singleAmount' => BogoCalculator::toMinor($p['singleAmount'], 2),
                 ];
             }
             $actual = BogoCalculator::planLineDiscounts($lines, $case['pct']);
@@ -151,15 +146,16 @@ class BogoCalculatorTest extends TestCase
         $this->assertCount(3, BogoCalculator::candidates($units, 30, 'company'));
     }
 
-    public function test_method_names_and_legacy_aliases(): void
+    public function test_method_names_and_no_legacy_aliases(): void
     {
         $units = [new Unit('A', 1200, 1200), new Unit('B', 1100, 1100), new Unit('C', 900, 900)];
 
         $this->assertSame(1830, BogoCalculator::compute($units, 30, 'customer')->totalPay);
-        $this->assertSame(BogoCalculator::compute($units, 30, 'max')->totalPay, BogoCalculator::compute($units, 30, 'customer')->totalPay);
         $this->assertSame(BogoCalculator::compute($units, 30)->totalPay, BogoCalculator::compute($units, 30, 'customer')->totalPay);
         $this->assertSame(1970, BogoCalculator::compute($units, 30, 'company')->totalPay);
-        $this->assertSame(1970, BogoCalculator::compute($units, 30, 'min')->totalPay);
+        // The old analytics-only names are gone: 'min' is just an unknown method now and behaves as the default.
+        $this->assertSame(1830, BogoCalculator::compute($units, 30, 'min')->totalPay);
+        $this->assertFalse(method_exists(BogoCalculator::class, 'toPiastres'));
     }
 
     /**
@@ -211,9 +207,9 @@ class BogoCalculatorTest extends TestCase
             $expected[] = [
                 'lineId' => (string) $id,
                 'giftQty' => $p['giftQty'],
-                'giftAmount' => BogoCalculator::toPiastres($p['giftAmount']),
+                'giftAmount' => BogoCalculator::toMinor($p['giftAmount'], 2),
                 'singleQty' => $p['singleQty'],
-                'singleAmount' => BogoCalculator::toPiastres($p['singleAmount']),
+                'singleAmount' => BogoCalculator::toMinor($p['singleAmount'], 2),
             ];
         }
 
@@ -257,15 +253,15 @@ class BogoCalculatorTest extends TestCase
 
     public function test_to_piastres(): void
     {
-        $this->assertSame(120000, BogoCalculator::toPiastres('1200.0'));
-        $this->assertSame(120000, BogoCalculator::toPiastres(1200));
-        $this->assertSame(120000, BogoCalculator::toPiastres(1200.0));
-        $this->assertSame(1, BogoCalculator::toPiastres('0.005'));
-        $this->assertSame(0, BogoCalculator::toPiastres('0.004'));
-        $this->assertSame(150, BogoCalculator::toPiastres('1.5'));
-        $this->assertSame(1999, BogoCalculator::toPiastres(19.99));
-        $this->assertSame(-150, BogoCalculator::toPiastres('-1.50'));
-        $this->assertSame(0, BogoCalculator::toPiastres(''));
+        $this->assertSame(120000, BogoCalculator::toMinor('1200.0', 2));
+        $this->assertSame(120000, BogoCalculator::toMinor(1200, 2));
+        $this->assertSame(120000, BogoCalculator::toMinor(1200.0, 2));
+        $this->assertSame(1, BogoCalculator::toMinor('0.005', 2));
+        $this->assertSame(0, BogoCalculator::toMinor('0.004', 2));
+        $this->assertSame(150, BogoCalculator::toMinor('1.5', 2));
+        $this->assertSame(1999, BogoCalculator::toMinor(19.99, 2));
+        $this->assertSame(-150, BogoCalculator::toMinor('-1.50', 2));
+        $this->assertSame(0, BogoCalculator::toMinor('', 2));
     }
 
     public function test_to_minor_for_any_decimals(): void

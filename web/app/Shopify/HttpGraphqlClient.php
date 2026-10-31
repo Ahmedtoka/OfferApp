@@ -65,12 +65,16 @@ class HttpGraphqlClient implements GraphqlClient
         if ($response->status() === 429) {
             return true;
         }
-        $errors = $response->json('errors');
+        return $this->hasCode($response->json('errors'), 'THROTTLED');
+    }
+
+    private function hasCode(mixed $errors, string $code): bool
+    {
         if (! is_array($errors)) {
             return false;
         }
         foreach ($errors as $e) {
-            if (is_array($e) && ($e['extensions']['code'] ?? null) === 'THROTTLED') {
+            if (is_array($e) && ($e['extensions']['code'] ?? null) === $code) {
                 return true;
             }
         }
@@ -93,6 +97,9 @@ class HttpGraphqlClient implements GraphqlClient
 
         $errors = $response->json('errors');
         if (! empty($errors)) {
+            if ($this->hasCode($errors, 'ACCESS_DENIED')) {
+                throw new ShopifyAccessDenied('Shopify GraphQL errors: '.$this->messages($errors));
+            }
             throw new ShopifyGraphqlException('Shopify GraphQL errors: '.$this->messages($errors));
         }
 

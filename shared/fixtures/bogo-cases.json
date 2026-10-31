@@ -20,8 +20,7 @@
         "singleQty": 1,
         "singleAmount": 360
       }
-    },
-    "scenario2Pay": 840
+    }
   },
   {
     "name": "ac",
@@ -96,8 +95,7 @@
         "singleQty": 1,
         "singleAmount": 270
       }
-    },
-    "scenario2Pay": 1970
+    }
   },
   {
     "name": "abcd",
@@ -176,8 +174,7 @@
       "D": 1,
       "B": 1
     },
-    "expectedSingle": "E",
-    "scenario2Pay": 2770
+    "expectedSingle": "E"
   },
   {
     "name": "a_x2",
@@ -228,8 +225,7 @@
         "singleQty": 1,
         "singleAmount": 360
       }
-    },
-    "scenario2Pay": 2040
+    }
   },
   {
     "name": "markdown_single_800",
@@ -404,8 +400,7 @@
         "singleQty": 1,
         "singleAmount": 270
       }
-    },
-    "scenario2Pay": 2940
+    }
   },
   {
     "name": "empty",
@@ -439,8 +434,7 @@
     ],
     "expectedPay": 1830,
     "expectedSaving": 1370,
-    "expectedSingle": "C",
-    "scenario2Pay": 1970
+    "expectedSingle": "C"
   },
   {
     "name": "n4",
@@ -472,8 +466,7 @@
       }
     ],
     "expectedPay": 2100,
-    "expectedSaving": 1900,
-    "scenario2Pay": 2100
+    "expectedSaving": 1900
   },
   {
     "name": "n5",
@@ -512,8 +505,7 @@
     ],
     "expectedPay": 2520,
     "expectedSaving": 2080,
-    "expectedSingle": "E",
-    "scenario2Pay": 2770
+    "expectedSingle": "E"
   },
   {
     "name": "n6",
@@ -557,8 +549,7 @@
       }
     ],
     "expectedPay": 2800,
-    "expectedSaving": 2500,
-    "scenario2Pay": 2800
+    "expectedSaving": 2500
   },
   {
     "name": "n7",
@@ -609,8 +600,7 @@
     ],
     "expectedPay": 3150,
     "expectedSaving": 2650,
-    "expectedSingle": "G",
-    "scenario2Pay": 3370
+    "expectedSingle": "G"
   },
   {
     "name": "n8",
@@ -666,8 +656,7 @@
       }
     ],
     "expectedPay": 3300,
-    "expectedSaving": 2900,
-    "scenario2Pay": 3300
+    "expectedSaving": 2900
   },
   {
     "name": "n9",
@@ -730,8 +719,7 @@
     ],
     "expectedPay": 3510,
     "expectedSaving": 2990,
-    "expectedSingle": "I",
-    "scenario2Pay": 3770
+    "expectedSingle": "I"
   },
   {
     "name": "n10",
@@ -799,8 +787,7 @@
       }
     ],
     "expectedPay": 3600,
-    "expectedSaving": 3150,
-    "scenario2Pay": 3600
+    "expectedSaving": 3150
   },
   {
     "name": "n11",
@@ -875,8 +862,7 @@
     ],
     "expectedPay": 3740,
     "expectedSaving": 3210,
-    "expectedSingle": "K",
-    "scenario2Pay": 4020
+    "expectedSingle": "K"
   },
   {
     "name": "n12",
@@ -956,8 +942,7 @@
       }
     ],
     "expectedPay": 3800,
-    "expectedSaving": 3300,
-    "scenario2Pay": 3800
+    "expectedSaving": 3300
   },
   {
     "name": "same2_plus3",
@@ -990,8 +975,7 @@
     ],
     "expectedPay": 2660,
     "expectedSaving": 2240,
-    "expectedSingle": "D",
-    "scenario2Pay": 2870
+    "expectedSingle": "D"
   },
   {
     "name": "same2_plus4",
@@ -1029,8 +1013,7 @@
       }
     ],
     "expectedPay": 2900,
-    "expectedSaving": 2600,
-    "scenario2Pay": 2900
+    "expectedSaving": 2600
   },
   {
     "name": "same3_plus2",
@@ -1057,8 +1040,7 @@
     ],
     "expectedPay": 2730,
     "expectedSaving": 2270,
-    "expectedSingle": "C",
-    "scenario2Pay": 2870
+    "expectedSingle": "C"
   },
   {
     "name": "company_abcd",

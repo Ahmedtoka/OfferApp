@@ -495,7 +495,7 @@ class SettingsTest extends TestCase
         $this->save(['enabled' => true, 'percent' => 30])->assertOk();
 
         $this->assertSame(0, $fake->count('CreateDiscount'));
-        $this->assertSame('Buy One Get One', $fake->calls[array_search('UpdateDiscount', $fake->ops(), true)]['variables']['d']['title']);
+        $this->assertSame('Pairly: BOGO Offers', $fake->calls[array_search('UpdateDiscount', $fake->ops(), true)]['variables']['d']['title']);
     }
 
     public function test_offer_on_reactivates_an_expired_discount_before_reporting_success(): void
